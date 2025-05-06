@@ -15,6 +15,20 @@ public class QuizServiceImpl implements QuizService {
 
     @Override
     public Quiz createQuiz(Quiz quiz) {
+        if (quiz.getQuizName() == null || quiz.getQuizName().trim().isEmpty()) {
+            throw new IllegalArgumentException("Quiz name is required");
+        }
+
+        if (quiz.getTimeLimit() <= 0) {
+            throw new IllegalArgumentException("Time limit must be greater than 0");
+        }
+
+        if (quiz.getPassAccuracy() < 0 || quiz.getPassAccuracy() > 100) {
+            throw new IllegalArgumentException("Pass accuracy must be between 0 and 100");
+        }
+
+        // Add more validations as needed
+
         return quizRepository.save(quiz);
     }
 }
