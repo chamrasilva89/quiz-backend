@@ -3,7 +3,7 @@ package com.sasip.quizz.controller;
 import com.sasip.quizz.dto.ApiResponse;
 import com.sasip.quizz.dto.QuestionRequest;
 import com.sasip.quizz.model.Question;
-import com.sasip.quizz.service.impl.QuestionService;
+import com.sasip.quizz.service.QuestionService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

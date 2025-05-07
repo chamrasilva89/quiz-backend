@@ -1,4 +1,4 @@
-package com.sasip.quizz.service.impl;
+package com.sasip.quizz.service;
 
 import com.sasip.quizz.model.Question;
 import java.util.List;

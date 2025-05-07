@@ -9,6 +9,7 @@ import com.sasip.quizz.dto.QuestionRequest;
 import com.sasip.quizz.exception.ResourceNotFoundException;
 import com.sasip.quizz.model.Question;
 import com.sasip.quizz.repository.QuestionRepository;
+import com.sasip.quizz.service.QuestionService;
 
 import java.util.List;
 
