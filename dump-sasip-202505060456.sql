@@ -42,18 +42,18 @@ CREATE TABLE user_settings (
 );
 CREATE TABLE questions (
     question_id INT PRIMARY KEY AUTO_INCREMENT,
-    quiz_id VARCHAR(50), -- optional FK if you later add a quizzes table
+    quiz_id VARCHAR(50), 
     al_year YEAR,
     question_text TEXT NOT NULL,
-    options JSON NOT NULL, -- Storing answer options as a JSON array
+    options JSON NOT NULL, 
     correct_option_index INT NOT NULL,
     explanation TEXT,
     subject VARCHAR(100),
-    type VARCHAR(50),         -- e.g., MCQ, True/False, etc.
-    subtype VARCHAR(100),     -- Optional, can store topic or sub-category
-    points INT DEFAULT 1,     -- Default 1 point per question unless specified
-    difficulty_level VARCHAR(50), -- e.g., Easy, Medium, Hard
-    max_time_sec INT DEFAULT 30,  -- Maximum time to answer
+    type VARCHAR(50),        
+    subtype VARCHAR(100),    
+    points INT DEFAULT 1,     
+    difficulty_level VARCHAR(50), 
+    max_time_sec INT DEFAULT 30, 
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -80,14 +80,14 @@ CREATE TABLE quizzes (
     quiz_name VARCHAR(255) NOT NULL,
     intro TEXT,
     modules JSON,              -- Store as JSON array: ["Forces", "Motion"]
-    time_limit INT,            -- in seconds
+    time_limit INT,           
     xp INT,
-    pass_accuracy INT,         -- percentage
+    pass_accuracy INT,        
     al_year YEAR,
     attempts_allowed INT,
     scheduled_time DATETIME,
     deadline DATETIME,
-    reward_ids JSON,           -- Store reward IDs as array: ["reward_123"]
+    reward_ids JSON,          
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -95,7 +95,7 @@ CREATE TABLE quiz_questions (
     id INT PRIMARY KEY AUTO_INCREMENT,
     quiz_id VARCHAR(50),
     question_id INT,
-    sort_order INT DEFAULT 1, -- Optional: maintain question order in quiz
+    sort_order INT DEFAULT 1, 
     FOREIGN KEY (quiz_id) REFERENCES quizzes(quiz_id) ON DELETE CASCADE,
     FOREIGN KEY (question_id) REFERENCES questions(question_id) ON DELETE CASCADE
 );
