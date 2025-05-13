@@ -40,7 +40,7 @@ CREATE TABLE user_settings (
     notifications_enabled BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
-CREATE TABLE questions (
+CREATE TABLE question (
     question_id INT PRIMARY KEY AUTO_INCREMENT,
     quiz_id VARCHAR(50), 
     al_year YEAR,
@@ -100,7 +100,7 @@ CREATE TABLE quiz_questions (
     FOREIGN KEY (question_id) REFERENCES questions(question_id) ON DELETE CASCADE
 );
 
-ALTER TABLE questions 
+ALTER TABLE question 
     DROP COLUMN quiz_id,
     ADD COLUMN has_attachment BOOLEAN DEFAULT FALSE,
     CHANGE correct_option_index correct_answer_id INT,
@@ -114,3 +114,7 @@ CREATE TABLE question_attachments (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (question_id) REFERENCES questions(question_id) ON DELETE CASCADE
 );
+
+ALTER TABLE quiz
+ADD COLUMN question_ids JSON DEFAULT NULL;
+

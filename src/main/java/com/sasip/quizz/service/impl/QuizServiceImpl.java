@@ -4,6 +4,9 @@ package com.sasip.quizz.service.impl;
 import com.sasip.quizz.model.Quiz;
 import com.sasip.quizz.repository.QuizRepository;
 import com.sasip.quizz.service.QuizService;
+
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +32,16 @@ public class QuizServiceImpl implements QuizService {
 
         // Add more validations as needed
 
+        return quizRepository.save(quiz);
+    }
+
+    @Override
+    public Optional<Quiz> getQuizById(String id) { 
+        return quizRepository.findById(id);
+    }
+
+    @Override
+    public Quiz save(Quiz quiz) {
         return quizRepository.save(quiz);
     }
 }
