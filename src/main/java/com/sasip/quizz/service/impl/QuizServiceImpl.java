@@ -2,7 +2,11 @@ package com.sasip.quizz.service.impl;
 
 
 import com.sasip.quizz.dto.QuizRequest;
+import com.sasip.quizz.dto.QuizResponse;
+import com.sasip.quizz.exception.ResourceNotFoundException;
+import com.sasip.quizz.model.Question;
 import com.sasip.quizz.model.Quiz;
+import com.sasip.quizz.repository.QuestionRepository;
 import com.sasip.quizz.repository.QuizRepository;
 import com.sasip.quizz.service.QuizService;
 
@@ -18,6 +22,8 @@ public class QuizServiceImpl implements QuizService {
 
     @Autowired
     private QuizRepository quizRepository;
+    @Autowired
+    private QuestionRepository questionRepository;
 
 @Override
 public Quiz createQuizFromRequest(QuizRequest request) {
@@ -62,5 +68,18 @@ public Quiz createQuizFromRequest(QuizRequest request) {
         Quiz quiz = quizOptional.get();
         quiz.setQuestionIds(questionIds);  // Set new question IDs
         return quizRepository.save(quiz);  // Save the updated quiz
+    }
+
+
+
+    @Override
+    public QuizResponse getQuizWithQuestions(String quizId) {
+        Quiz quiz = quizRepository.findById(quizId)
+                .orElseThrow(() -> new ResourceNotFoundException("Quiz not found with ID: " + quizId));
+
+        List<Long> questionIds = quiz.getQuestionIds();
+        List<Question> questions = questionRepository.findAllById(questionIds);
+
+        return new QuizResponse(quiz, questions);
     }
 }

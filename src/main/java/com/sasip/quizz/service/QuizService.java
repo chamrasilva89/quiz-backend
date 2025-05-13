@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.sasip.quizz.dto.QuizRequest;
+import com.sasip.quizz.dto.QuizResponse;
 import com.sasip.quizz.model.Quiz;
 
 public interface QuizService {
@@ -12,6 +13,7 @@ public interface QuizService {
     Quiz save(Quiz quiz);
     Quiz createQuizFromRequest(QuizRequest request);
     Quiz updateQuizQuestions(String quizId, List<Long> questionIds);
+    QuizResponse getQuizWithQuestions(String quizId);
 }
 
 

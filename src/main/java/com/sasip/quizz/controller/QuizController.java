@@ -2,7 +2,9 @@ package com.sasip.quizz.controller;
 
 import com.sasip.quizz.dto.ApiResponse;
 import com.sasip.quizz.dto.QuizRequest;
+import com.sasip.quizz.dto.QuizResponse;
 import com.sasip.quizz.dto.UpdateQuizQuestionsRequest;
+import com.sasip.quizz.exception.ResourceNotFoundException;
 import com.sasip.quizz.model.Quiz;
 import com.sasip.quizz.service.QuizService;
 
@@ -10,7 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
-import java.util.Optional;
+
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -50,5 +52,18 @@ public class QuizController {
         }
     }
     
+    @GetMapping("/{quizId}")
+    public ResponseEntity<ApiResponse<QuizResponse>> getQuizWithQuestions(@PathVariable String quizId) {
+        try {
+            QuizResponse quizResponse = quizService.getQuizWithQuestions(quizId);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Quiz fetched successfully", quizResponse, null));
+        } catch (ResourceNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(false, ex.getMessage(), null, 404));
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(false, "An unexpected error occurred", null, 500));
+        }
+    }
 
 }
