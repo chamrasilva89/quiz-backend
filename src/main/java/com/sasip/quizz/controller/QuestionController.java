@@ -29,7 +29,7 @@ public class QuestionController {
     @PostMapping("/add")
     public ResponseEntity<ApiResponse<Question>> addQuestion(@Valid @RequestBody QuestionRequest request) {
         Question question = questionService.addQuestion(request);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Question added successfully", question));
+        return ResponseEntity.ok(new ApiResponse<>(true, "Question added successfully", question,null));
     }
 
 
@@ -37,7 +37,7 @@ public class QuestionController {
     @GetMapping("/all")
     public ResponseEntity<ApiResponse<List<Question>>> getAllQuestions() {
         List<Question> questions = questionService.getAllQuestions();
-        ApiResponse<List<Question>> response = new ApiResponse<>(true, "Questions fetched successfully", questions);
+        ApiResponse<List<Question>> response = new ApiResponse<>(true, "Questions fetched successfully", questions,null);
         return ResponseEntity.ok(response);
     }
     
@@ -45,7 +45,7 @@ public class QuestionController {
     @GetMapping("/{questionId}")
     public ResponseEntity<ApiResponse<Question>> getQuestionById(@PathVariable Long questionId) {
         Question question = questionService.getQuestionById(questionId);
-        ApiResponse<Question> response = new ApiResponse<>(true, "Question retrieved successfully", question);
+        ApiResponse<Question> response = new ApiResponse<>(true, "Question retrieved successfully", question,null);
         return ResponseEntity.ok(response);
     }
 

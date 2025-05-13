@@ -14,7 +14,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<String>> handleResourceNotFound(ResourceNotFoundException ex) {
-        ApiResponse<String> response = new ApiResponse<>(false, ex.getMessage(), null);
+        ApiResponse<String> response = new ApiResponse<>(false, ex.getMessage(), null,HttpStatus.NOT_FOUND.value());
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
@@ -23,14 +23,14 @@ public class GlobalExceptionHandler {
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(error ->
             errors.put(error.getField(), error.getDefaultMessage()));
-        ApiResponse<Map<String, String>> response = new ApiResponse<>(false, "Validation failed", errors);
+        ApiResponse<Map<String, String>> response = new ApiResponse<>(false, "Validation failed", errors,HttpStatus.INTERNAL_SERVER_ERROR.value());
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     // Handle other exceptions
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<String>> handleGeneralException(Exception ex) {
-        ApiResponse<String> response = new ApiResponse<>(false, "An unexpected error occurred", null);
+        ApiResponse<String> response = new ApiResponse<>(false, "An unexpected error occurred", null,HttpStatus.INTERNAL_SERVER_ERROR.value());
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

@@ -31,9 +31,9 @@ public class QuizController {
     public ResponseEntity<ApiResponse<Quiz>> createQuiz(@RequestBody @Valid QuizRequest request) {
         try {
             Quiz quiz = quizService.createQuizFromRequest(request);
-            return ResponseEntity.ok(new ApiResponse<>(true, "Quiz created successfully", quiz));
+            return ResponseEntity.ok(new ApiResponse<>(true, "Quiz created successfully", quiz,null));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(new ApiResponse<>(false, e.getMessage(), null));
+            return ResponseEntity.badRequest().body(new ApiResponse<>(false, e.getMessage(), null,null));
         }
     }
 
@@ -44,9 +44,9 @@ public class QuizController {
             @RequestBody UpdateQuizQuestionsRequest request) {
         try {
             Quiz updatedQuiz = quizService.updateQuizQuestions(quizId, request.getQuestionIds());
-            return ResponseEntity.ok(new ApiResponse<>(true, "Quiz questions updated successfully", updatedQuiz));
+            return ResponseEntity.ok(new ApiResponse<>(true, "Quiz questions updated successfully", updatedQuiz,null));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ApiResponse<>(false, e.getMessage(), null));
+            return ResponseEntity.badRequest().body(new ApiResponse<>(false, e.getMessage(), null,null));
         }
     }
     
