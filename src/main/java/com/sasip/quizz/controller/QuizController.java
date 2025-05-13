@@ -37,24 +37,17 @@ public class QuizController {
         }
     }
 
-    @Operation(summary = "Update question IDs for a quiz", description = "Patch question ID list for an existing quiz")
-    @PatchMapping("/{id}")
+    // PATCH method to update questionIds for a quiz
+    @PatchMapping("/{quizId}/update-questions")
     public ResponseEntity<ApiResponse<Quiz>> updateQuizQuestions(
-            @PathVariable String id,
-            @RequestBody UpdateQuizQuestionsRequest request
-    ) {
-        Optional<Quiz> optionalQuiz = quizService.getQuizById(id);
-        if (!optionalQuiz.isPresent()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new ApiResponse<>(false, "Quiz not found", null));
+            @PathVariable String quizId,
+            @RequestBody UpdateQuizQuestionsRequest request) {
+        try {
+            Quiz updatedQuiz = quizService.updateQuizQuestions(quizId, request.getQuestionIds());
+            return ResponseEntity.ok(new ApiResponse<>(true, "Quiz questions updated successfully", updatedQuiz));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ApiResponse<>(false, e.getMessage(), null));
         }
-
-        Quiz quiz = optionalQuiz.get();
-        quiz.setQuestionIds(request.getQuestionIds());
-
-        Quiz updated = quizService.save(quiz);
-
-        return ResponseEntity.ok(new ApiResponse<>(true, "Quiz questions updated successfully", updated));
     }
     
 

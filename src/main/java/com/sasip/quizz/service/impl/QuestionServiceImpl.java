@@ -6,11 +6,13 @@ import com.sasip.quizz.dto.QuestionRequest;
 import com.sasip.quizz.exception.ResourceNotFoundException;
 import com.sasip.quizz.model.Question;
 import com.sasip.quizz.model.QuestionAttachment;
+import com.sasip.quizz.model.Quiz;
 import com.sasip.quizz.repository.QuestionRepository;
 import com.sasip.quizz.service.QuestionService;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class QuestionServiceImpl implements QuestionService {
@@ -64,4 +66,6 @@ public Question addQuestion(QuestionRequest request) {
         return questionRepository.findById(questionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Question not found with ID: " + questionId));
     }
+
+
 }

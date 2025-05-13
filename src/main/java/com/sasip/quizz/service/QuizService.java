@@ -1,5 +1,6 @@
 package com.sasip.quizz.service;
 
+import java.util.List;
 import java.util.Optional;
 
 import com.sasip.quizz.dto.QuizRequest;
@@ -10,6 +11,7 @@ public interface QuizService {
     Optional<Quiz> getQuizById(String id); 
     Quiz save(Quiz quiz);
     Quiz createQuizFromRequest(QuizRequest request);
+    Quiz updateQuizQuestions(String quizId, List<Long> questionIds);
 }
 
 

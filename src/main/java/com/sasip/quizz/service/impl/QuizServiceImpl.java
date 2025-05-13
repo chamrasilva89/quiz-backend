@@ -6,6 +6,7 @@ import com.sasip.quizz.model.Quiz;
 import com.sasip.quizz.repository.QuizRepository;
 import com.sasip.quizz.service.QuizService;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -49,5 +50,17 @@ public Quiz createQuizFromRequest(QuizRequest request) {
     @Override
     public Quiz save(Quiz quiz) {
         return quizRepository.save(quiz);
+    }
+
+        @Override
+    public Quiz updateQuizQuestions(String quizId, List<Long> questionIds) {
+        Optional<Quiz> quizOptional = quizRepository.findById(quizId);
+        if (!quizOptional.isPresent()) {
+            throw new RuntimeException("Quiz not found");
+        }
+
+        Quiz quiz = quizOptional.get();
+        quiz.setQuestionIds(questionIds);  // Set new question IDs
+        return quizRepository.save(quiz);  // Save the updated quiz
     }
 }
