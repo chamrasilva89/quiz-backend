@@ -62,7 +62,7 @@ public Question addQuestion(QuestionRequest request) {
 public Question addQuestion(QuestionRequest request) {
     Question question = new Question();
     question.setQuestionText(request.getQuestionText());
-    question.setOptions(request.getOptions());
+    question.setOptionsList(request.getOptions());
     question.setCorrectAnswerId(request.getCorrectAnswerId());
     question.setExplanation(request.getExplanation());
     question.setSubject(request.getSubject());

@@ -12,9 +12,8 @@ public class QuestionRequest {
     private String questionText;
 
     @NotNull(message = "Options are required")
-    private String options;
+    private List<String> options; 
 
-    private int correctOptionIndex;
     private String explanation;
     private String subject;
     private String type;
