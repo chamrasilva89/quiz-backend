@@ -1,5 +1,7 @@
 package com.sasip.quizz.dto;
 
+import java.util.List;
+
 import jakarta.validation.constraints.*;
 
 import lombok.Data;
@@ -8,9 +10,6 @@ import lombok.Data;
 public class QuestionRequest {
     @NotBlank(message = "Question text is required")
     private String questionText;
-
-    @NotBlank(message = "Quiz ID is required")
-    private String quizId;
 
     @NotNull(message = "Options are required")
     private String options;
@@ -23,4 +22,11 @@ public class QuestionRequest {
     private int points;
     private String difficultyLevel;
     private int maxTimeSec;
+    private boolean hasAttachment;
+    private String module;
+    private String submodule;
+    private int correctAnswerId;
+    private String alYear;
+    private List<String> attachmentPaths;
+
 }

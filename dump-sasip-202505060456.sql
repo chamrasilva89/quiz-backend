@@ -99,3 +99,18 @@ CREATE TABLE quiz_questions (
     FOREIGN KEY (quiz_id) REFERENCES quizzes(quiz_id) ON DELETE CASCADE,
     FOREIGN KEY (question_id) REFERENCES questions(question_id) ON DELETE CASCADE
 );
+
+ALTER TABLE questions 
+    DROP COLUMN quiz_id,
+    ADD COLUMN has_attachment BOOLEAN DEFAULT FALSE,
+    CHANGE correct_option_index correct_answer_id INT,
+    ADD COLUMN module VARCHAR(100),
+    ADD COLUMN submodule VARCHAR(100);
+
+CREATE TABLE question_attachments (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    question_id INT,
+    file_path TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (question_id) REFERENCES questions(question_id) ON DELETE CASCADE
+);
