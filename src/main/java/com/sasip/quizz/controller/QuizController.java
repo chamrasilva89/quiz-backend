@@ -1,12 +1,14 @@
 package com.sasip.quizz.controller;
 
 import com.sasip.quizz.dto.ApiResponse;
+import com.sasip.quizz.dto.QuizRequest;
 import com.sasip.quizz.dto.UpdateQuizQuestionsRequest;
 import com.sasip.quizz.model.Quiz;
 import com.sasip.quizz.service.QuizService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 import java.util.Optional;
 
@@ -26,10 +28,10 @@ public class QuizController {
 
     @Operation(summary = "Create a new quiz", description = "Provide quiz details to create a new quiz")
     @PostMapping
-    public ResponseEntity<ApiResponse<Quiz>> createQuiz(@RequestBody Quiz quiz) {
+    public ResponseEntity<ApiResponse<Quiz>> createQuiz(@RequestBody @Valid QuizRequest request) {
         try {
-            Quiz savedQuiz = quizService.createQuiz(quiz);
-            return ResponseEntity.ok(new ApiResponse<>(true, "Quiz created successfully", savedQuiz));
+            Quiz quiz = quizService.createQuizFromRequest(request);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Quiz created successfully", quiz));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new ApiResponse<>(false, e.getMessage(), null));
         }

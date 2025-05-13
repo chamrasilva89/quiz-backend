@@ -23,6 +23,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "quiz")
 public class Quiz {
     @Id
+    @Column(name = "quiz_id", nullable = false, updatable = false)
     private String quizId;
 
     private String quizName;
@@ -34,7 +35,7 @@ public class Quiz {
     private int timeLimit;
     private int xp;
     private int passAccuracy;
-    private int alYear;
+    private String alYear;
     private int attemptsAllowed;
 
     private LocalDateTime scheduledTime;
@@ -71,4 +72,53 @@ public class Quiz {
         }
     }
 
+    @Transient
+    private List<String> moduleList;
+
+    public List<String> getModuleList() {
+        if (this.moduleList == null && this.modules != null) {
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                this.moduleList = mapper.readValue(this.modules, new TypeReference<List<String>>() {});
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to parse modules JSON", e);
+            }
+        }
+        return this.moduleList;
+    }
+
+    public void setModuleList(List<String> moduleList) {
+        this.moduleList = moduleList;
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            this.modules = mapper.writeValueAsString(moduleList);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize modules to JSON", e);
+        }
+    }
+    @Transient
+    private List<Long> rewardIdList;
+    
+    public List<Long> getRewardIdList() {
+        if (this.rewardIdList == null && this.rewardIds != null) {
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                this.rewardIdList = mapper.readValue(this.rewardIds, new TypeReference<List<Long>>() {});
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to parse reward IDs JSON", e);
+            }
+        }
+        return this.rewardIdList;
+    }
+    
+    public void setRewardIdList(List<Long> rewardIdList) {
+        this.rewardIdList = rewardIdList;
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            this.rewardIds = mapper.writeValueAsString(rewardIdList);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize reward IDs to JSON", e);
+        }
+    }
+    
 }
