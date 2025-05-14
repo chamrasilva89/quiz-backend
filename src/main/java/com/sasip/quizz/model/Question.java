@@ -37,7 +37,7 @@ public class Question {
     @Column(columnDefinition = "json")
     private String options;
 
-    private int correctAnswerId; 
+    private Long correctAnswerId; 
 
     private String explanation;
     private String subject;

@@ -24,7 +24,7 @@ public class QuestionRequest {
     private boolean hasAttachment;
     private String module;
     private String submodule;
-    private int correctAnswerId;
+    private Long correctAnswerId;
     private String alYear;
     private List<String> attachmentPaths;
 

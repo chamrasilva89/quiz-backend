@@ -3,10 +3,12 @@ package com.sasip.quizz.controller;
 import com.sasip.quizz.dto.ApiResponse;
 import com.sasip.quizz.dto.QuizRequest;
 import com.sasip.quizz.dto.QuizResponse;
+import com.sasip.quizz.dto.QuizSubmissionRequest;
 import com.sasip.quizz.dto.UpdateQuizQuestionsRequest;
 import com.sasip.quizz.exception.ResourceNotFoundException;
 import com.sasip.quizz.model.Quiz;
 import com.sasip.quizz.service.QuizService;
+import com.sasip.quizz.service.UserQuizAnswerService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,6 +29,9 @@ public class QuizController {
 
     @Autowired
     private QuizService quizService;
+
+    @Autowired
+    private UserQuizAnswerService userQuizAnswerService;
 
     @Operation(summary = "Create a new quiz", description = "Provide quiz details to create a new quiz")
     @PostMapping
@@ -63,6 +68,17 @@ public class QuizController {
         } catch (Exception ex) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>(false, "An unexpected error occurred", null, 500));
+        }
+    }
+
+    @PostMapping("/submit-quiz")
+    public ResponseEntity<ApiResponse<String>> submitQuiz(@RequestBody QuizSubmissionRequest request) {
+        try {
+            userQuizAnswerService.submitQuizAnswers(request);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Quiz submitted successfully", null,null));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(false, "Submission failed: " + e.getMessage(), null,null));
         }
     }
 

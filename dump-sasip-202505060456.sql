@@ -40,81 +40,58 @@ CREATE TABLE user_settings (
     notifications_enabled BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
+
 CREATE TABLE question (
-    question_id INT PRIMARY KEY AUTO_INCREMENT,
-    quiz_id VARCHAR(50), 
-    al_year YEAR,
-    question_text TEXT NOT NULL,
-    options JSON NOT NULL, 
-    correct_option_index INT NOT NULL,
+    question_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    question_text VARCHAR(1000) NOT NULL,
+    options JSON NOT NULL,
     explanation TEXT,
-    subject VARCHAR(100),
-    type VARCHAR(50),        
-    subtype VARCHAR(100),    
-    points INT DEFAULT 1,     
-    difficulty_level VARCHAR(50), 
-    max_time_sec INT DEFAULT 30, 
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-INSERT INTO questions (
-    quiz_id, al_year, question_text, options, correct_option_index, explanation,
-    subject, type, subtype, points, difficulty_level, max_time_sec
-) VALUES (
-    'quiz_001',
-    2024,
-    "What is Newton's second law?",
-    '["F = ma", "E = mc^2", "V = IR", "P = mv"]',
-    0,
-    "F = ma defines the relationship between force, mass, and acceleration in Newton's second law.",
-    "Physics",
-    "MCQ",
-    NULL,
-    1,
-    "Medium",
-    30
+    subject VARCHAR(255),
+    type VARCHAR(255),
+    sub_type VARCHAR(255),
+    points INT,
+    difficulty_level VARCHAR(255),
+    max_time_sec INT,
+    has_attachment BOOLEAN,
+    module VARCHAR(255),
+    submodule VARCHAR(255),
+    correct_answer_id INT NOT NULL,
+    al_year VARCHAR(10),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE quizzes (
-    quiz_id VARCHAR(50) PRIMARY KEY,
+CREATE TABLE question_attachments (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    question_id BIGINT NOT NULL,
+    attachment_path VARCHAR(1000),
+    FOREIGN KEY (question_id) REFERENCES question(question_id) ON DELETE CASCADE
+);
+
+CREATE TABLE quiz (
+    quiz_id VARCHAR(255) PRIMARY KEY,
     quiz_name VARCHAR(255) NOT NULL,
     intro TEXT,
-    modules JSON,              -- Store as JSON array: ["Forces", "Motion"]
-    time_limit INT,           
+    modules JSON,
+    time_limit INT,
     xp INT,
-    pass_accuracy INT,        
-    al_year YEAR,
+    pass_accuracy INT,
+    al_year INT,
     attempts_allowed INT,
     scheduled_time DATETIME,
     deadline DATETIME,
-    reward_ids JSON,          
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-CREATE TABLE quiz_questions (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    quiz_id VARCHAR(50),
-    question_id INT,
-    sort_order INT DEFAULT 1, 
-    FOREIGN KEY (quiz_id) REFERENCES quizzes(quiz_id) ON DELETE CASCADE,
-    FOREIGN KEY (question_id) REFERENCES questions(question_id) ON DELETE CASCADE
+    reward_ids JSON,
+    question_ids JSON
 );
 
-ALTER TABLE question 
-    DROP COLUMN quiz_id,
-    ADD COLUMN has_attachment BOOLEAN DEFAULT FALSE,
-    CHANGE correct_option_index correct_answer_id INT,
-    ADD COLUMN module VARCHAR(100),
-    ADD COLUMN submodule VARCHAR(100);
 
-CREATE TABLE question_attachments (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    question_id INT,
-    file_path TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (question_id) REFERENCES questions(question_id) ON DELETE CASCADE
+CREATE TABLE user_quiz_answers (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id VARCHAR(100) NOT NULL,
+    quiz_id VARCHAR(100) NOT NULL,
+    question_id BIGINT NOT NULL,
+    submitted_answer_id BIGINT NOT NULL,
+    correct_answer_id BIGINT NOT NULL,
+    is_correct BOOLEAN NOT NULL,
+    awarded_points INT NOT NULL,
+    answered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
-ALTER TABLE quiz
-ADD COLUMN question_ids JSON DEFAULT NULL;
-
