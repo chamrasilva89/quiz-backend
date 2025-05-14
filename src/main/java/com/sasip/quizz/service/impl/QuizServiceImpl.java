@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -91,14 +92,25 @@ public Quiz createQuizFromRequest(QuizRequest request) {
     @Override
     public Page<QuizResponse> getAllQuizzesWithQuestions(Pageable pageable) {
         Page<Quiz> quizzes = quizRepository.findAll(pageable);
+    
         List<QuizResponse> quizResponses = quizzes.stream()
             .map(quiz -> {
                 List<Long> questionIds = quiz.getQuestionIds();
-                List<Question> questions = questionRepository.findAllById(questionIds);
+                List<Question> questions;
+    
+                // If questionIds is null or empty, set questions as an empty list
+                if (questionIds == null || questionIds.isEmpty()) {
+                    questions = Collections.emptyList();
+                } else {
+                    questions = questionRepository.findAllById(questionIds);
+                }
+    
                 return new QuizResponse(quiz, questions);
             })
             .collect(Collectors.toList());
+    
         return new PageImpl<>(quizResponses, pageable, quizzes.getTotalElements());
     }
+    
 
 }

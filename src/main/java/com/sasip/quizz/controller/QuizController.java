@@ -89,11 +89,15 @@ public class QuizController {
         try {
             Pageable pageable = PageRequest.of(page, size);
             Page<QuizResponse> quizPage = quizService.getAllQuizzesWithQuestions(pageable);
-            return ResponseEntity.ok(new ApiResponse<>( quizPage));
-        } catch (Exception ex) {
+            return ResponseEntity.ok(new ApiResponse<>(quizPage));
+        }catch (Exception e) {
+                e.printStackTrace(); // OR use a logger
+                throw e; // rethrow to see full stack trace
+            }
+       /* } catch (Exception ex) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>( "Unexpected error occurred", 500));
-        }
+        }*/ 
     }
     
 
