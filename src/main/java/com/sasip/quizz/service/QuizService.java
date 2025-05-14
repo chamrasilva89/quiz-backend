@@ -2,7 +2,8 @@ package com.sasip.quizz.service;
 
 import java.util.List;
 import java.util.Optional;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import com.sasip.quizz.dto.QuizRequest;
 import com.sasip.quizz.dto.QuizResponse;
 import com.sasip.quizz.model.Quiz;
@@ -14,6 +15,8 @@ public interface QuizService {
     Quiz createQuizFromRequest(QuizRequest request);
     Quiz updateQuizQuestions(String quizId, List<Long> questionIds);
     QuizResponse getQuizWithQuestions(String quizId);
+    Page<QuizResponse> getAllQuizzesWithQuestions(Pageable pageable);
+
 }
 
 

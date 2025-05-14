@@ -9,6 +9,8 @@ import com.sasip.quizz.model.Quiz;
 import com.sasip.quizz.repository.QuestionRepository;
 import com.sasip.quizz.repository.QuizRepository;
 import com.sasip.quizz.service.QuizService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -81,5 +83,17 @@ public Quiz createQuizFromRequest(QuizRequest request) {
         List<Question> questions = questionRepository.findAllById(questionIds);
 
         return new QuizResponse(quiz, questions);
+    }
+
+    
+    @Override
+    public Page<QuizResponse> getAllQuizzesWithQuestions(Pageable pageable) {
+        Page<Quiz> quizPage = quizRepository.findAll(pageable);
+
+        return quizPage.map(quiz -> {
+            List<Long> questionIds = quiz.getQuestionIds();
+            List<Question> questions = questionRepository.findAllById(questionIds);
+            return new QuizResponse(quiz, questions);
+        });
     }
 }

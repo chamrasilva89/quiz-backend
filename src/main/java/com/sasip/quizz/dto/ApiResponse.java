@@ -1,13 +1,47 @@
 package com.sasip.quizz.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
-@Data
-@AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
-    private boolean success;
-    private String message;
+
     private T data;
-    private Integer errorCode;
+    private String error;
+    private Integer status;
+
+    // Success constructor
+    public ApiResponse(T data) {
+        this.data = data;
+    }
+
+    //Error constructor
+    public ApiResponse(String error, Integer status) {
+        this.error = error;
+        this.status = status;
+    }
+
+    // Getters
+    public T getData() {
+        return data;
+    }
+
+    public String getError() {
+        return error;
+    }
+
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setData(T data) {
+        this.data = data;
+    }
+
+    public void setError(String error) {
+        this.error = error;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
+    }
 }

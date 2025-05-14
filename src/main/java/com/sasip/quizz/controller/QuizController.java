@@ -17,6 +17,10 @@ import jakarta.validation.Valid;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -35,50 +39,74 @@ public class QuizController {
 
     @Operation(summary = "Create a new quiz", description = "Provide quiz details to create a new quiz")
     @PostMapping
-    public ResponseEntity<ApiResponse<Quiz>> createQuiz(@RequestBody @Valid QuizRequest request) {
+    public ResponseEntity<?> createQuiz(@RequestBody @Valid QuizRequest request) {
         try {
             Quiz quiz = quizService.createQuizFromRequest(request);
-            return ResponseEntity.ok(new ApiResponse<>(true, "Quiz created successfully", quiz,null));
+            return ResponseEntity.ok(new ApiResponse<>(quiz));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(new ApiResponse<>(false, e.getMessage(), null,null));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(e.getMessage(), 400));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("Internal server error", 500));
         }
     }
 
-    // PATCH method to update questionIds for a quiz
     @PatchMapping("/{quizId}/update-questions")
-    public ResponseEntity<ApiResponse<Quiz>> updateQuizQuestions(
+    public ResponseEntity<?> updateQuizQuestions(
             @PathVariable String quizId,
             @RequestBody UpdateQuizQuestionsRequest request) {
         try {
             Quiz updatedQuiz = quizService.updateQuizQuestions(quizId, request.getQuestionIds());
-            return ResponseEntity.ok(new ApiResponse<>(true, "Quiz questions updated successfully", updatedQuiz,null));
+            return ResponseEntity.ok(new ApiResponse<>(updatedQuiz));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(e.getMessage(), 400));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ApiResponse<>(false, e.getMessage(), null,null));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("Failed to update quiz questions", 500));
         }
     }
     
     @GetMapping("/{quizId}")
-    public ResponseEntity<ApiResponse<QuizResponse>> getQuizWithQuestions(@PathVariable String quizId) {
+    public ResponseEntity<?> getQuizWithQuestions(@PathVariable String quizId) {
         try {
             QuizResponse quizResponse = quizService.getQuizWithQuestions(quizId);
-            return ResponseEntity.ok(new ApiResponse<>(true, "Quiz fetched successfully", quizResponse, null));
+            return ResponseEntity.ok(new ApiResponse<>(quizResponse));
         } catch (ResourceNotFoundException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ApiResponse<>(false, ex.getMessage(), null, 404));
+                    .body(new ApiResponse<>(ex.getMessage(), 404));
         } catch (Exception ex) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(false, "An unexpected error occurred", null, 500));
+                    .body(new ApiResponse<>("Unexpected error occurred", 500));
+        }
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<Page<QuizResponse>>> getAllQuizzesWithQuestions(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<QuizResponse> quizPage = quizService.getAllQuizzesWithQuestions(pageable);
+            return ResponseEntity.ok(new ApiResponse<>( quizPage));
+        } catch (ResourceNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(ex.getMessage(), 404));
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(new ApiResponse<>("Unexpected error occurred", 500));
         }
     }
 
     @PostMapping("/submit-quiz")
-    public ResponseEntity<ApiResponse<String>> submitQuiz(@RequestBody QuizSubmissionRequest request) {
+    public ResponseEntity<?> submitQuiz(@RequestBody QuizSubmissionRequest request) {
         try {
             userQuizAnswerService.submitQuizAnswers(request);
-            return ResponseEntity.ok(new ApiResponse<>(true, "Quiz submitted successfully", null,null));
+            return ResponseEntity.ok(new ApiResponse<>("Quiz submitted successfully"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse<>(false, "Submission failed: " + e.getMessage(), null,null));
+                    .body(new ApiResponse<>("Submission failed: " + e.getMessage(), 500));
         }
     }
 
