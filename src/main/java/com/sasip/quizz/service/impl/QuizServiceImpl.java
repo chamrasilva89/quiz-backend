@@ -10,11 +10,13 @@ import com.sasip.quizz.repository.QuestionRepository;
 import com.sasip.quizz.repository.QuizRepository;
 import com.sasip.quizz.service.QuizService;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -88,12 +90,15 @@ public Quiz createQuizFromRequest(QuizRequest request) {
     
     @Override
     public Page<QuizResponse> getAllQuizzesWithQuestions(Pageable pageable) {
-        Page<Quiz> quizPage = quizRepository.findAll(pageable);
-
-        return quizPage.map(quiz -> {
-            List<Long> questionIds = quiz.getQuestionIds();
-            List<Question> questions = questionRepository.findAllById(questionIds);
-            return new QuizResponse(quiz, questions);
-        });
+        Page<Quiz> quizzes = quizRepository.findAll(pageable);
+        List<QuizResponse> quizResponses = quizzes.stream()
+            .map(quiz -> {
+                List<Long> questionIds = quiz.getQuestionIds();
+                List<Question> questions = questionRepository.findAllById(questionIds);
+                return new QuizResponse(quiz, questions);
+            })
+            .collect(Collectors.toList());
+        return new PageImpl<>(quizResponses, pageable, quizzes.getTotalElements());
     }
+
 }

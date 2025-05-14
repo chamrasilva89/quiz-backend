@@ -90,14 +90,12 @@ public class QuizController {
             Pageable pageable = PageRequest.of(page, size);
             Page<QuizResponse> quizPage = quizService.getAllQuizzesWithQuestions(pageable);
             return ResponseEntity.ok(new ApiResponse<>( quizPage));
-        } catch (ResourceNotFoundException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ApiResponse<>(ex.getMessage(), 404));
         } catch (Exception ex) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(new ApiResponse<>("Unexpected error occurred", 500));
+                    .body(new ApiResponse<>( "Unexpected error occurred", 500));
         }
     }
+    
 
     @PostMapping("/submit-quiz")
     public ResponseEntity<?> submitQuiz(@RequestBody QuizSubmissionRequest request) {
