@@ -68,24 +68,23 @@ CREATE TABLE question_attachments (
 );
 
 CREATE TABLE quiz (
-    quiz_id VARCHAR(255) PRIMARY KEY,
-    quiz_name VARCHAR(255) NOT NULL,
+    quiz_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    quiz_name VARCHAR(255),
     intro TEXT,
     modules JSON,
-    time_limit INT,
-    xp INT,
-    pass_accuracy INT,
-    al_year INT,
-    attempts_allowed INT,
-    scheduled_time DATETIME,
-    deadline DATETIME,
     reward_ids JSON,
     question_ids JSON,
-
-    quiz_type ENUM('sasip', 'dynamic', 'myquiz') NOT NULL,
-    user_id BIGINT NULL, -- NULL for sasip, set for dynamic and myquiz
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    attempts_allowed INT,
+    pass_accuracy INT,
+    time_limit INT,
+    xp INT,
+    scheduled_time DATETIME,
+    deadline DATETIME,
+    al_year VARCHAR(255),
+    quiz_type VARCHAR(255),
+    user_id BIGINT
 );
+
 
 
 CREATE TABLE user_quiz_answers (
