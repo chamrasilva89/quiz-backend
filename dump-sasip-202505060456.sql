@@ -95,3 +95,13 @@ CREATE TABLE user_quiz_answers (
     awarded_points INT NOT NULL,
     answered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+
+ALTER TABLE question
+ADD COLUMN status VARCHAR(1) DEFAULT 'A';
+
+ALTER TABLE question
+MODIFY COLUMN question_text TEXT;
+
+ALTER TABLE question
+MODIFY COLUMN explanation TEXT;
