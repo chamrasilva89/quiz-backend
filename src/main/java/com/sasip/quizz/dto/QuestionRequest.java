@@ -2,6 +2,8 @@ package com.sasip.quizz.dto;
 
 import java.util.List;
 
+import com.sasip.quizz.model.Option;
+
 import jakarta.validation.constraints.*;
 
 import lombok.Data;
@@ -12,7 +14,7 @@ public class QuestionRequest {
     private String questionText;
 
     @NotNull(message = "Options are required")
-    private List<String> options; 
+    private List<Option> options;
 
     private String explanation;
     private String subject;
@@ -27,5 +29,6 @@ public class QuestionRequest {
     private Long correctAnswerId;
     private String alYear;
     private List<String> attachmentPaths;
+    private String status;
 
 }

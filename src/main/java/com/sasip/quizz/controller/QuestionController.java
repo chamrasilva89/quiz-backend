@@ -1,6 +1,7 @@
 package com.sasip.quizz.controller;
 
 import com.sasip.quizz.dto.ApiResponse;
+import com.sasip.quizz.dto.QuestionPatchRequest;
 import com.sasip.quizz.dto.QuestionRequest;
 import com.sasip.quizz.exception.ResourceNotFoundException;
 import com.sasip.quizz.model.Question;
@@ -16,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/questions")
@@ -25,8 +27,8 @@ public class QuestionController {
 
     @Autowired
     private QuestionService questionService;
-
     
+
     @Operation(summary = "Add single question", description = "Add single question")
     @PostMapping("/add")
     public ResponseEntity<?> addQuestion(@Valid @RequestBody QuestionRequest request) {
@@ -64,6 +66,22 @@ public class QuestionController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiResponse<>("Unexpected error", 500));
+        }
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<?> updateQuestionPartial(
+            @PathVariable Long id,
+            @RequestBody QuestionPatchRequest updates) {
+        try {
+            Question updated = questionService.updateQuestionPartial(id, updates);
+            return ResponseEntity.ok(new ApiResponse<>(updated));
+        } catch (ResourceNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(ex.getMessage(), 404));
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("Failed to update question", 500));
         }
     }
 
