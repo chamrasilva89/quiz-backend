@@ -9,6 +9,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
@@ -23,9 +27,10 @@ import lombok.NoArgsConstructor;
 @Table(name = "quiz")
 public class Quiz {
     @Id
-    @Column(name = "quiz_id", nullable = false, updatable = false)
-    private String quizId;
-
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "quiz_id")
+    private Long quizId;
+    
     private String quizName;
     private String intro;
 
@@ -49,6 +54,13 @@ public class Quiz {
 
     @Transient
     private List<Long> questionIds;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "quiz_type")
+    private QuizType quizType;
+
+    @Column(name = "user_id")
+    private Long userId;
 
     public List<Long> getQuestionIds() {
         if (this.questionIds == null && this.questionIdsJson != null) {

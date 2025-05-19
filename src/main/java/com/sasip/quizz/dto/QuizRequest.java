@@ -23,4 +23,14 @@ public class QuizRequest {
     private String alYear;
 
     private List<Long> questionIds; // Just pass IDs, not full Question objects
+
+    private String quizType;
+    
+    public String getQuizType() {
+        return quizType;
+    }
+
+    public void setQuizType(String quizType) {
+        this.quizType = quizType;
+    }
 }

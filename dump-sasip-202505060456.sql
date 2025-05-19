@@ -80,7 +80,11 @@ CREATE TABLE quiz (
     scheduled_time DATETIME,
     deadline DATETIME,
     reward_ids JSON,
-    question_ids JSON
+    question_ids JSON,
+
+    quiz_type ENUM('sasip', 'dynamic', 'myquiz') NOT NULL,
+    user_id BIGINT NULL, -- NULL for sasip, set for dynamic and myquiz
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 

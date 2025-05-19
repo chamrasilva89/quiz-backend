@@ -10,11 +10,11 @@ import com.sasip.quizz.model.Quiz;
 
 public interface QuizService {
     //Quiz createQuiz(Quiz quiz);
-    Optional<Quiz> getQuizById(String id); 
+    Optional<Quiz> getQuizById(Long id); 
     Quiz save(Quiz quiz);
     Quiz createQuizFromRequest(QuizRequest request);
-    Quiz updateQuizQuestions(String quizId, List<Long> questionIds);
-    QuizResponse getQuizWithQuestions(String quizId);
+    Quiz updateQuizQuestions(Long quizId, List<Long> questionIds);
+    QuizResponse getQuizWithQuestions(Long quizId);
     Page<QuizResponse> getAllQuizzesWithQuestions(Pageable pageable);
 
 }

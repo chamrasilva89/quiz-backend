@@ -54,7 +54,7 @@ public class QuizController {
 
     @PatchMapping("/{quizId}/update-questions")
     public ResponseEntity<?> updateQuizQuestions(
-            @PathVariable String quizId,
+            @PathVariable Long quizId,
             @RequestBody UpdateQuizQuestionsRequest request) {
         try {
             Quiz updatedQuiz = quizService.updateQuizQuestions(quizId, request.getQuestionIds());
@@ -69,7 +69,7 @@ public class QuizController {
     }
     
     @GetMapping("/{quizId}")
-    public ResponseEntity<?> getQuizWithQuestions(@PathVariable String quizId) {
+    public ResponseEntity<?> getQuizWithQuestions(@PathVariable Long quizId) {
         try {
             QuizResponse quizResponse = quizService.getQuizWithQuestions(quizId);
             return ResponseEntity.ok(new ApiResponse<>(quizResponse));

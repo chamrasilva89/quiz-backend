@@ -7,7 +7,7 @@ import com.sasip.quizz.model.Question;
 import com.sasip.quizz.model.Quiz;
 
 public class QuizResponse {
-    private String quizId;
+    private Long quizId;
     private String quizName;
     private String intro;
     private List<String> modules;
@@ -43,11 +43,11 @@ public class QuizResponse {
     }
 
     // Getters and Setters
-    public String getQuizId() {
+    public Long getQuizId() {
         return quizId;
     }
 
-    public void setQuizId(String quizId) {
+    public void setQuizId(Long quizId) {
         this.quizId = quizId;
     }
 

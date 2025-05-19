@@ -6,6 +6,7 @@ import com.sasip.quizz.dto.QuizResponse;
 import com.sasip.quizz.exception.ResourceNotFoundException;
 import com.sasip.quizz.model.Question;
 import com.sasip.quizz.model.Quiz;
+import com.sasip.quizz.model.QuizType;
 import com.sasip.quizz.repository.QuestionRepository;
 import com.sasip.quizz.repository.QuizRepository;
 import com.sasip.quizz.service.QuizService;
@@ -29,13 +30,9 @@ public class QuizServiceImpl implements QuizService {
     private QuizRepository quizRepository;
     @Autowired
     private QuestionRepository questionRepository;
-
 @Override
 public Quiz createQuizFromRequest(QuizRequest request) {
     Quiz quiz = new Quiz();
-    if (quiz.getQuizId() == null || quiz.getQuizId().isEmpty()) {
-        quiz.setQuizId(UUID.randomUUID().toString());
-    }
     quiz.setQuizName(request.getQuizName());
     quiz.setIntro(request.getIntro());
     quiz.setModuleList(request.getModuleList());
@@ -47,14 +44,15 @@ public Quiz createQuizFromRequest(QuizRequest request) {
     quiz.setScheduledTime(request.getScheduledTime());
     quiz.setDeadline(request.getDeadline());
     quiz.setAlYear(request.getAlYear());
-    quiz.setQuestionIds(request.getQuestionIds()); // just IDs, no cascade problems
+    quiz.setQuestionIds(request.getQuestionIds());
+    quiz.setQuizType(QuizType.valueOf(request.getQuizType().toUpperCase()));
 
-    return quizRepository.save(quiz);
+    return quizRepository.save(quiz); // ID is auto-generated
 }
 
 
     @Override
-    public Optional<Quiz> getQuizById(String id) { 
+    public Optional<Quiz> getQuizById(Long id) { 
         return quizRepository.findById(id);
     }
 
@@ -63,22 +61,20 @@ public Quiz createQuizFromRequest(QuizRequest request) {
         return quizRepository.save(quiz);
     }
 
-        @Override
-    public Quiz updateQuizQuestions(String quizId, List<Long> questionIds) {
+    @Override
+    public Quiz updateQuizQuestions(Long quizId, List<Long> questionIds) {
         Optional<Quiz> quizOptional = quizRepository.findById(quizId);
         if (!quizOptional.isPresent()) {
             throw new RuntimeException("Quiz not found");
         }
 
         Quiz quiz = quizOptional.get();
-        quiz.setQuestionIds(questionIds);  // Set new question IDs
-        return quizRepository.save(quiz);  // Save the updated quiz
+        quiz.setQuestionIds(questionIds);
+        return quizRepository.save(quiz);
     }
 
-
-
     @Override
-    public QuizResponse getQuizWithQuestions(String quizId) {
+    public QuizResponse getQuizWithQuestions(Long quizId) {
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new ResourceNotFoundException("Quiz not found with ID: " + quizId));
 
@@ -88,7 +84,6 @@ public Quiz createQuizFromRequest(QuizRequest request) {
         return new QuizResponse(quiz, questions);
     }
 
-    
     @Override
     public Page<QuizResponse> getAllQuizzesWithQuestions(Pageable pageable) {
         Page<Quiz> quizzes = quizRepository.findAll(pageable);
