@@ -2,7 +2,6 @@ package com.sasip.quizz.model;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -30,12 +29,17 @@ public class Quiz {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "quiz_id")
     private Long quizId;
-    
+
     private String quizName;
     private String intro;
 
-    @Column(columnDefinition = "JSON")
+
+    // Store JSON string in DB
+    @Column(name = "modules", columnDefinition = "json")
     private String modules;
+
+    @Column(name = "reward_ids", columnDefinition = "json")
+    private String rewardIds;
 
     private int timeLimit;
     private int xp;
@@ -45,9 +49,6 @@ public class Quiz {
 
     private LocalDateTime scheduledTime;
     private LocalDateTime deadline;
-
-    @Column(columnDefinition = "JSON")
-    private String rewardIds;
 
     @Column(name = "question_ids", columnDefinition = "json")
     private String questionIdsJson;
@@ -61,6 +62,13 @@ public class Quiz {
 
     @Column(name = "user_id")
     private Long userId;
+
+        // Transient fields for convenience
+    @Transient
+    private List<String> moduleList;
+
+    @Transient
+    private List<Long> rewardIdList;
 
     public List<Long> getQuestionIds() {
         if (this.questionIds == null && this.questionIdsJson != null) {
@@ -84,9 +92,7 @@ public class Quiz {
         }
     }
 
-    @Transient
-    private List<String> moduleList;
-
+        // moduleList getter/setter with JSON parse/serialize
     public List<String> getModuleList() {
         if (this.moduleList == null && this.modules != null) {
             try {
@@ -100,17 +106,18 @@ public class Quiz {
     }
 
     public void setModuleList(List<String> moduleList) {
+        System.out.println("setModuleList called with: " + moduleList);
         this.moduleList = moduleList;
         try {
             ObjectMapper mapper = new ObjectMapper();
             this.modules = mapper.writeValueAsString(moduleList);
+            System.out.println("Serialized modules JSON: " + this.modules);
         } catch (Exception e) {
             throw new RuntimeException("Failed to serialize modules to JSON", e);
         }
     }
-    @Transient
-    private List<Long> rewardIdList;
-    
+
+    // rewardIdList getter/setter with JSON parse/serialize
     public List<Long> getRewardIdList() {
         if (this.rewardIdList == null && this.rewardIds != null) {
             try {
@@ -122,15 +129,16 @@ public class Quiz {
         }
         return this.rewardIdList;
     }
-    
+
     public void setRewardIdList(List<Long> rewardIdList) {
+        System.out.println("setRewardIdList called with: " + rewardIdList);
         this.rewardIdList = rewardIdList;
         try {
             ObjectMapper mapper = new ObjectMapper();
             this.rewardIds = mapper.writeValueAsString(rewardIdList);
+            System.out.println("Serialized rewardIds JSON: " + this.rewardIds);
         } catch (Exception e) {
             throw new RuntimeException("Failed to serialize reward IDs to JSON", e);
         }
     }
-    
 }
