@@ -1,5 +1,7 @@
 package com.sasip.quizz.service.impl;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.sasip.quizz.dto.QuestionPatchRequest;
@@ -12,8 +14,6 @@ import com.sasip.quizz.service.QuestionService;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 @Service
 public class QuestionServiceImpl implements QuestionService {
@@ -58,8 +58,8 @@ public Question addQuestion(QuestionRequest request) {
 }
 
     @Override
-    public List<Question> getAllQuestions() {
-        return questionRepository.findAll();
+    public Page<Question> getAllQuestions(Pageable pageable) {
+        return questionRepository.findAll(pageable);
     }
 
     @Override
