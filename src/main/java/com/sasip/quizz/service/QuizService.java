@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import com.sasip.quizz.dto.QuizRequest;
 import com.sasip.quizz.dto.QuizResponse;
+import com.sasip.quizz.dto.SasipQuizResponse;
 import com.sasip.quizz.model.Quiz;
 
 public interface QuizService {
@@ -16,6 +17,7 @@ public interface QuizService {
     Quiz updateQuizQuestions(Long quizId, List<Long> questionIds);
     QuizResponse getQuizWithQuestions(Long quizId);
     Page<QuizResponse> getAllQuizzesWithQuestions(Pageable pageable);
+    Page<SasipQuizResponse> getAllSasipQuizzesWithQuestions(Pageable pageable);
 
 }
 

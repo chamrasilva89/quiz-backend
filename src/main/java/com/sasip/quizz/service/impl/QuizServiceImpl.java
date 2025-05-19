@@ -1,8 +1,10 @@
 package com.sasip.quizz.service.impl;
 
 
+import com.sasip.quizz.dto.QuestionWithoutAnswerDTO;
 import com.sasip.quizz.dto.QuizRequest;
 import com.sasip.quizz.dto.QuizResponse;
+import com.sasip.quizz.dto.SasipQuizResponse;
 import com.sasip.quizz.exception.ResourceNotFoundException;
 import com.sasip.quizz.model.Question;
 import com.sasip.quizz.model.Quiz;
@@ -107,5 +109,41 @@ public Quiz createQuizFromRequest(QuizRequest request) {
         return new PageImpl<>(quizResponses, pageable, quizzes.getTotalElements());
     }
     
+    @Override
+    public Page<SasipQuizResponse> getAllSasipQuizzesWithQuestions(Pageable pageable) {
+        // Filter quizzes by SASIP type
+        Page<Quiz> quizzes = quizRepository.findByQuizType(QuizType.SASIP, pageable);
+
+        List<SasipQuizResponse> quizResponses = quizzes.stream()
+            .map(quiz -> {
+                List<Long> questionIds = quiz.getQuestionIds();
+                List<Question> questions = (questionIds == null || questionIds.isEmpty())
+                        ? Collections.emptyList()
+                        : questionRepository.findAllById(questionIds);
+
+                List<QuestionWithoutAnswerDTO> questionDTOs = questions.stream()
+                        .map(QuestionWithoutAnswerDTO::new)
+                        .collect(Collectors.toList());
+
+                SasipQuizResponse response = new SasipQuizResponse(quiz, questionDTOs);
+                response.setXp(quiz.getXp());
+                response.setPassAccuracy(quiz.getPassAccuracy());
+                try {
+                    response.setAlYear(Integer.parseInt(quiz.getAlYear()));
+                } catch (NumberFormatException e) {
+                    response.setAlYear(0); // Default or handle gracefully
+                }
+                response.setAttemptsAllowed(quiz.getAttemptsAllowed());
+                response.setScheduledTime(quiz.getScheduledTime());
+                response.setDeadline(quiz.getDeadline());
+                response.setRewardIds(quiz.getRewardIdList());
+
+                return response;
+            })
+            .collect(Collectors.toList());
+
+        return new PageImpl<>(quizResponses, pageable, quizzes.getTotalElements());
+    }
+
 
 }

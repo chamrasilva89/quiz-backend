@@ -2,11 +2,9 @@ package com.sasip.quizz.dto;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
-import com.sasip.quizz.model.Question;
 import com.sasip.quizz.model.Quiz;
 
-public class QuizResponse {
+public class SasipQuizResponse {
     private Long quizId;
     private String quizName;
     private String intro;
@@ -19,31 +17,18 @@ public class QuizResponse {
     private LocalDateTime scheduledTime;
     private LocalDateTime deadline;
     private List<Long> rewardIds;
-    private List<Question> questions;
+    private List<QuestionWithoutAnswerDTO> questions;
 
-    // Constructor to map Quiz and Questions to QuizResponse
-    public QuizResponse(Quiz quiz, List<Question> questions) {
+    public SasipQuizResponse(Quiz quiz, List<QuestionWithoutAnswerDTO> questions) {
         this.quizId = quiz.getQuizId();
         this.quizName = quiz.getQuizName();
         this.intro = quiz.getIntro();
         this.modules = quiz.getModuleList();
         this.timeLimit = quiz.getTimeLimit();
-        this.xp = quiz.getXp();
-        this.passAccuracy = quiz.getPassAccuracy();
-        try {
-            this.alYear = Integer.parseInt(quiz.getAlYear());
-        } catch (NumberFormatException e) {
-            this.alYear = 0; // default or throw custom exception if needed
-        }
-        this.attemptsAllowed = quiz.getAttemptsAllowed();
-        this.scheduledTime = quiz.getScheduledTime();
-        this.deadline = quiz.getDeadline();
-        this.rewardIds = quiz.getRewardIdList();
         this.questions = questions;
     }
 
     
-
     // Getters and Setters
     public Long getQuizId() {
         return quizId;
@@ -140,12 +125,11 @@ public class QuizResponse {
     public void setRewardIds(List<Long> rewardIds) {
         this.rewardIds = rewardIds;
     }
-
-    public List<Question> getQuestions() {
+    public List<QuestionWithoutAnswerDTO> getQuestions() {
         return questions;
     }
 
-    public void setQuestions(List<Question> questions) {
+    public void setQuestions(List<QuestionWithoutAnswerDTO> questions) {
         this.questions = questions;
     }
 }

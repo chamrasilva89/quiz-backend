@@ -4,6 +4,7 @@ import com.sasip.quizz.dto.ApiResponse;
 import com.sasip.quizz.dto.QuizRequest;
 import com.sasip.quizz.dto.QuizResponse;
 import com.sasip.quizz.dto.QuizSubmissionRequest;
+import com.sasip.quizz.dto.SasipQuizResponse;
 import com.sasip.quizz.dto.UpdateQuizQuestionsRequest;
 import com.sasip.quizz.exception.ResourceNotFoundException;
 import com.sasip.quizz.model.Quiz;
@@ -19,7 +20,9 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -111,5 +114,20 @@ public class QuizController {
                     .body(new ApiResponse<>("Submission failed: " + e.getMessage(), 500));
         }
     }
+
+    @GetMapping("/sasip")
+    public ResponseEntity<ApiResponse<Page<SasipQuizResponse>>> getAllSasipQuizzesWithQuestions(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<SasipQuizResponse> quizPage = quizService.getAllSasipQuizzesWithQuestions(pageable);
+            return ResponseEntity.ok(new ApiResponse<>(quizPage));
+        } catch (Exception e) {
+            e.printStackTrace(); // or use a logger
+            throw e; // to allow global exception handling or show stack trace during dev
+        }
+    }
+
 
 }
