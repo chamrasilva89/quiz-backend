@@ -1,24 +1,27 @@
 package com.sasip.quizz.service.impl;
 
-
 import com.sasip.quizz.dto.UserRegistrationRequest;
 import com.sasip.quizz.dto.UserUpdateRequest;
 import com.sasip.quizz.model.User;
 import com.sasip.quizz.repository.UserRepository;
 import com.sasip.quizz.service.UserService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.security.authentication.BadCredentialsException;
-
 import com.sasip.quizz.dto.LoginRequest;
 import com.sasip.quizz.dto.LoginResponse;
 import com.sasip.quizz.security.JwtUtil;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.security.authentication.BadCredentialsException;
+
 import java.time.LocalDateTime;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class UserServiceImpl implements UserService {
 
+    private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
@@ -34,12 +37,20 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User registerUser(UserRegistrationRequest request) {
+        logger.info("Registering user with username: {}", request.getUsername());
+
         if (userRepository.existsByEmail(request.getEmail())) {
+            logger.warn("Email already in use: {}", request.getEmail());
             throw new RuntimeException("Email already in use");
         }
+
         if (userRepository.existsByUsername(request.getUsername())) {
+            logger.warn("Username already exists: {}", request.getUsername());
             throw new RuntimeException("Username already exists");
         }
+
+        String hashedPassword = passwordEncoder.encode(request.getPassword());
+        logger.debug("Encoded password: {}", hashedPassword);
 
         User user = new User();
         user.setRole(request.getRole());
@@ -53,12 +64,13 @@ public class UserServiceImpl implements UserService {
         user.setPhone(request.getPhone());
         user.setEmail(request.getEmail());
         user.setUsername(request.getUsername());
-        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        user.setPasswordHash(hashedPassword);
         user.setParentName(request.getParentName());
         user.setParentContactNo(request.getParentContactNo());
         user.setCreatedDate(LocalDateTime.now());
         user.setUpdatedDate(LocalDateTime.now());
 
+        logger.info("User registered successfully: {}", user.getUsername());
         return userRepository.save(user);
     }
 
@@ -82,21 +94,34 @@ public class UserServiceImpl implements UserService {
 
         user.setUpdatedDate(LocalDateTime.now());
 
+        logger.info("User updated: {}", userId);
         return userRepository.save(user);
     }
 
     @Override
     public LoginResponse login(LoginRequest request) {
-        User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new BadCredentialsException("Invalid username or password"));
+        logger.info("Login attempt for username: {}", request.getUsername());
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> {
+                    logger.warn("Login failed: user not found for username {}", request.getUsername());
+                    return new BadCredentialsException("Invalid username or password");
+                });
+
+        logger.debug("Raw password: {}", request.getPassword());
+        logger.debug("Stored hash: {}", user.getPasswordHash());
+
+        boolean passwordMatches = passwordEncoder.matches(request.getPassword(), user.getPasswordHash());
+        logger.debug("Password match result: {}", passwordMatches);
+
+        if (!passwordMatches) {
+            logger.warn("Login failed: incorrect password for username {}", request.getUsername());
             throw new BadCredentialsException("Invalid username or password");
         }
 
         String token = jwtUtil.generateToken(user.getUsername());
+        logger.info("Login successful for username: {}", request.getUsername());
 
         return new LoginResponse(token);
     }
-
 }

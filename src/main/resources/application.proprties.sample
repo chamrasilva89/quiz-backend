@@ -16,3 +16,8 @@ springdoc.api-docs.path=/v3/api-docs
 
 # Optional: Customize the title/info (if using OpenAPI bean config)
 springdoc.default-produces-media-type=application/json
+
+# KEY
+app.jwt.secret={{KEY}}
+jwt.expiration=3600000
+jwt.issuer=sasip-quizz
