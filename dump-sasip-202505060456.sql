@@ -108,3 +108,19 @@ MODIFY COLUMN question_text TEXT;
 
 ALTER TABLE question
 MODIFY COLUMN explanation TEXT;
+
+CREATE TABLE modules (
+    module_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE submodules (
+    submodule_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    module_id BIGINT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (module_id) REFERENCES modules(module_id) ON DELETE CASCADE
+);
