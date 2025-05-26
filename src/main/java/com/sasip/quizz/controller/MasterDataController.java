@@ -1,10 +1,16 @@
 package com.sasip.quizz.controller;
 
+import com.sasip.quizz.dto.CreateDistrictRequest;
+import com.sasip.quizz.dto.DistrictResponse;
 import com.sasip.quizz.dto.ModuleDTO;
 import com.sasip.quizz.dto.SubmoduleDTO;
+import com.sasip.quizz.dto.UpdateDistrictRequest;
+import com.sasip.quizz.service.DistrictService;
 import com.sasip.quizz.service.ModuleService;
 import com.sasip.quizz.service.SubmoduleService;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,6 +22,7 @@ public class MasterDataController {
 
     private final ModuleService moduleService;
     private final SubmoduleService submoduleService;
+    private final DistrictService districtService;
 
     // ====== MODULE APIs ======
 
@@ -64,5 +71,22 @@ public class MasterDataController {
     @GetMapping("/modules/{moduleId}/submodules")
     public List<SubmoduleDTO> getSubmodulesByModule(@PathVariable Long moduleId) {
         return submoduleService.getSubmodulesByModuleId(moduleId);
+    }
+
+    // ===================== DISTRICTS =====================
+
+    @PostMapping("/districts")
+    public ResponseEntity<DistrictResponse> createDistrict(@RequestBody CreateDistrictRequest request) {
+        return ResponseEntity.ok(districtService.createDistrict(request));
+    }
+
+    @PatchMapping("/districts/{id}")
+    public ResponseEntity<DistrictResponse> updateDistrict(@PathVariable Long id, @RequestBody UpdateDistrictRequest request) {
+        return ResponseEntity.ok(districtService.updateDistrict(id, request));
+    }
+
+    @GetMapping("/districts")
+    public ResponseEntity<List<DistrictResponse>> getAllDistricts() {
+        return ResponseEntity.ok(districtService.getAllDistricts());
     }
 }

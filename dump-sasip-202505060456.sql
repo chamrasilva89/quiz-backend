@@ -124,3 +124,37 @@ CREATE TABLE submodules (
     created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (module_id) REFERENCES modules(module_id) ON DELETE CASCADE
 );
+
+CREATE TABLE districts (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  code VARCHAR(10) NOT NULL UNIQUE,
+  name VARCHAR(100) NOT NULL,
+  province VARCHAR(100) NOT NULL
+);
+
+INSERT INTO districts (code, name, province) VALUES 
+('COL', 'Colombo', 'Western'),
+('GAM', 'Gampaha', 'Western'),
+('KLT', 'Kalutara', 'Western'),
+('KDY', 'Kandy', 'Central'),
+('MTL', 'Matale', 'Central'),
+('NWL', 'Nuwara Eliya', 'Central'),
+('GAL', 'Galle', 'Southern'),
+('MAT', 'Matara', 'Southern'),
+('HMB', 'Hambantota', 'Southern'),
+('JAF', 'Jaffna', 'Northern'),
+('KIL', 'Kilinochchi', 'Northern'),
+('MAN', 'Mannar', 'Northern'),
+('VAV', 'Vavuniya', 'Northern'),
+('MUL', 'Mullaitivu', 'Northern'),
+('BTC', 'Batticaloa', 'Eastern'),
+('AMP', 'Ampara', 'Eastern'),
+('TRI', 'Trincomalee', 'Eastern'),
+('KUR', 'Kurunegala', 'North Western'),
+('PUT', 'Puttalam', 'North Western'),
+('ANA', 'Anuradhapura', 'North Central'),
+('POL', 'Polonnaruwa', 'North Central'),
+('BAD', 'Badulla', 'Uva'),
+('MON', 'Monaragala', 'Uva'),
+('RAT', 'Ratnapura', 'Sabaragamuwa'),
+('KEG', 'Kegalle', 'Sabaragamuwa');
