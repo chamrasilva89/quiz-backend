@@ -158,3 +158,13 @@ INSERT INTO districts (code, name, province) VALUES
 ('MON', 'Monaragala', 'Uva'),
 ('RAT', 'Ratnapura', 'Sabaragamuwa'),
 ('KEG', 'Kegalle', 'Sabaragamuwa');
+
+CREATE TABLE user_avatars (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    image_url VARCHAR(512) NOT NULL,
+    title VARCHAR(100),
+    gender VARCHAR(10),         -- e.g., 'male', 'female', 'neutral' (optional)
+    is_active BOOLEAN DEFAULT TRUE,
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);

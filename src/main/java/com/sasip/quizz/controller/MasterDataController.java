@@ -5,9 +5,13 @@ import com.sasip.quizz.dto.DistrictResponse;
 import com.sasip.quizz.dto.ModuleDTO;
 import com.sasip.quizz.dto.SubmoduleDTO;
 import com.sasip.quizz.dto.UpdateDistrictRequest;
+import com.sasip.quizz.dto.UserAvatarRequest;
+import com.sasip.quizz.dto.UserAvatarResponse;
 import com.sasip.quizz.service.DistrictService;
 import com.sasip.quizz.service.ModuleService;
 import com.sasip.quizz.service.SubmoduleService;
+import com.sasip.quizz.service.UserAvatarService;
+
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;
@@ -23,7 +27,7 @@ public class MasterDataController {
     private final ModuleService moduleService;
     private final SubmoduleService submoduleService;
     private final DistrictService districtService;
-
+    private final UserAvatarService userAvatarService;
     // ====== MODULE APIs ======
 
     @PostMapping("/modules")
@@ -88,5 +92,22 @@ public class MasterDataController {
     @GetMapping("/districts")
     public ResponseEntity<List<DistrictResponse>> getAllDistricts() {
         return ResponseEntity.ok(districtService.getAllDistricts());
+    }
+
+    // ===================== avatars =====================
+
+    @PostMapping("/avatars")
+    public ResponseEntity<UserAvatarResponse> addAvatar(@RequestBody UserAvatarRequest request) {
+        return ResponseEntity.ok(userAvatarService.addAvatar(request));
+    }
+
+    @PatchMapping("/avatars/{id}")
+    public ResponseEntity<UserAvatarResponse> updateAvatar(@PathVariable Long id, @RequestBody UserAvatarRequest request) {
+        return ResponseEntity.ok(userAvatarService.updateAvatar(id, request));
+    }
+
+    @GetMapping("/avatars")
+    public ResponseEntity<List<UserAvatarResponse>> getAllAvatars() {
+        return ResponseEntity.ok(userAvatarService.getAllAvatars());
     }
 }
