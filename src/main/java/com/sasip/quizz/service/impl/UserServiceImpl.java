@@ -8,18 +8,28 @@ import com.sasip.quizz.repository.UserRepository;
 import com.sasip.quizz.service.UserService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.security.authentication.BadCredentialsException;
+
+import com.sasip.quizz.dto.LoginRequest;
+import com.sasip.quizz.dto.LoginResponse;
+import com.sasip.quizz.security.JwtUtil;
 
 import java.time.LocalDateTime;
 
 @Service
 public class UserServiceImpl implements UserService {
 
+
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
-    public UserServiceImpl(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder) {
+    public UserServiceImpl(UserRepository userRepository,
+                           BCryptPasswordEncoder passwordEncoder,
+                           JwtUtil jwtUtil) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
     }
 
     @Override
@@ -73,6 +83,20 @@ public class UserServiceImpl implements UserService {
         user.setUpdatedDate(LocalDateTime.now());
 
         return userRepository.save(user);
+    }
+
+    @Override
+    public LoginResponse login(LoginRequest request) {
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new BadCredentialsException("Invalid username or password"));
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new BadCredentialsException("Invalid username or password");
+        }
+
+        String token = jwtUtil.generateToken(user.getUsername());
+
+        return new LoginResponse(token);
     }
 
 }
