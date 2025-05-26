@@ -15,14 +15,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
-
+import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -86,22 +85,28 @@ public class QuizController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<QuizResponse>>> getAllQuizzesWithQuestions(
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getAllQuizzesWithQuestions(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         try {
             Pageable pageable = PageRequest.of(page, size);
             Page<QuizResponse> quizPage = quizService.getAllQuizzesWithQuestions(pageable);
-            return ResponseEntity.ok(new ApiResponse<>(quizPage));
-        }catch (Exception e) {
-                e.printStackTrace(); // OR use a logger
-                throw e; // rethrow to see full stack trace
-            }
-       /* } catch (Exception ex) {
+
+            // Build a uniform response structure
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", quizPage.getContent());
+            response.put("currentPage", quizPage.getNumber());
+            response.put("totalItems", quizPage.getTotalElements());
+            response.put("totalPages", quizPage.getTotalPages());
+
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (Exception e) {
+            e.printStackTrace(); // you can also use logger here
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>( "Unexpected error occurred", 500));
-        }*/ 
+                    .body(new ApiResponse<>("Failed to fetch quizzes", 500));
+        }
     }
+
     
 
     @PostMapping("/submit-quiz")
@@ -116,18 +121,27 @@ public class QuizController {
     }
 
     @GetMapping("/sasip")
-    public ResponseEntity<ApiResponse<Page<SasipQuizResponse>>> getAllSasipQuizzesWithQuestions(
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getAllSasipQuizzesWithQuestions(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         try {
             Pageable pageable = PageRequest.of(page, size);
             Page<SasipQuizResponse> quizPage = quizService.getAllSasipQuizzesWithQuestions(pageable);
-            return ResponseEntity.ok(new ApiResponse<>(quizPage));
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", quizPage.getContent());
+            response.put("currentPage", quizPage.getNumber());
+            response.put("totalItems", quizPage.getTotalElements());
+            response.put("totalPages", quizPage.getTotalPages());
+
+            return ResponseEntity.ok(new ApiResponse<>(response));
         } catch (Exception e) {
-            e.printStackTrace(); // or use a logger
-            throw e; // to allow global exception handling or show stack trace during dev
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("Failed to fetch quizzes", 500));
         }
     }
+
 
 
 }

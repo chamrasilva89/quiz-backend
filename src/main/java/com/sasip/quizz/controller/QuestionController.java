@@ -54,7 +54,7 @@ public class QuestionController {
         try {
             Page<Question> questionPage = questionService.getAllQuestions(PageRequest.of(page, size));
             Map<String, Object> response = new HashMap<>();
-            response.put("questions", questionPage.getContent());
+            response.put("items", questionPage.getContent()); // unified key
             response.put("currentPage", questionPage.getNumber());
             response.put("totalItems", questionPage.getTotalElements());
             response.put("totalPages", questionPage.getTotalPages());
@@ -65,6 +65,7 @@ public class QuestionController {
                 .body(new ApiResponse<>("Failed to fetch questions", 500));
         }
     }
+
 
     
     @Operation(summary = "Get single question", description = "Get single question by question ID")
