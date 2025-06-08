@@ -171,3 +171,36 @@ CREATE TABLE user_avatars (
 
 
 ALTER TABLE quiz ADD COLUMN quiz_status VARCHAR(50) DEFAULT 'DRAFT';
+
+
+CREATE TABLE roles (
+    role_id INT PRIMARY KEY AUTO_INCREMENT,
+    role_name VARCHAR(50) UNIQUE NOT NULL
+);
+
+INSERT INTO roles (role_name) VALUES ('STUDENT'), ('STAFF'), ('SUPER_ADMIN');
+
+CREATE TABLE permissions (
+    permission_id INT PRIMARY KEY AUTO_INCREMENT,
+    permission_name VARCHAR(100) UNIQUE NOT NULL
+);
+
+INSERT INTO permissions (permission_name) VALUES 
+('LOGIN'),
+('CHANGE_PASSWORD'),
+('CREATE_QUESTION'),
+('UPDATE_QUESTION'),
+('CREATE_QUIZ'),
+('UPDATE_QUIZ'),
+('SUBMIT_SASIP_QUIZ'),
+('VIEW_SCOREBOARD'),
+('GENERATE_DYNAMIC_QUIZ');
+
+
+CREATE TABLE role_permissions (
+    role_id INT,
+    permission_id INT,
+    PRIMARY KEY (role_id, permission_id),
+    FOREIGN KEY (role_id) REFERENCES roles(role_id) ON DELETE CASCADE,
+    FOREIGN KEY (permission_id) REFERENCES permissions(permission_id) ON DELETE CASCADE
+);

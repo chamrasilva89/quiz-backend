@@ -1,7 +1,7 @@
 package com.sasip.quizz.controller.admin;
 
 import com.sasip.quizz.dto.*;
-import com.sasip.quizz.dto.ApiResponse;
+import com.sasip.quizz.model.Permission;
 import com.sasip.quizz.service.*;
 import lombok.RequiredArgsConstructor;
 
@@ -22,7 +22,9 @@ public class MasterDataController {
     private final SubmoduleService submoduleService;
     private final DistrictService districtService;
     private final UserAvatarService userAvatarService;
-
+    private final RoleService roleService;
+    private final PermissionService permissionService;
+    private final RolePermissionService rolePermissionService;
     // ====== MODULE APIs ======
 
     @PostMapping("/modules")
@@ -219,6 +221,125 @@ public class MasterDataController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiResponse<>("Failed to fetch avatars", 500));
+        }
+    }
+
+    // ========== ROLE MANAGEMENT ==========
+
+    @PostMapping("/roles")
+    public ResponseEntity<?> createRole(@RequestBody CreateRoleRequest request) {
+        try {
+            RoleDTO created = roleService.createRole(request);
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", List.of(created));
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(e.getMessage(), 500));
+        }
+    }
+
+    @PatchMapping("/roles/{id}")
+    public ResponseEntity<?> updateRole(@PathVariable Long id, @RequestBody UpdateRoleRequest request) {
+        try {
+            RoleDTO updated = roleService.updateRole(id, request);
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", List.of(updated));
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(e.getMessage(), 500));
+        }
+    }
+
+    @GetMapping("/roles")
+    public ResponseEntity<?> getAllRoles() {
+        try {
+            List<RoleDTO> list = roleService.getAllRoles();
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", list);
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>("Failed to fetch roles", 500));
+        }
+    }
+
+    // ========== PERMISSION MANAGEMENT ==========
+
+    @PostMapping("/permissions")
+    public ResponseEntity<?> createPermission(@RequestBody CreatePermissionRequest request) {
+        try {
+            Permission created = permissionService.createPermission(request);
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", List.of(created));
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(e.getMessage(), 500));
+        }
+    }
+
+    @PatchMapping("/permissions/{id}")
+    public ResponseEntity<?> updatePermission(@PathVariable Long id, @RequestBody UpdatePermissionRequest request) {
+        try {
+            Permission updated = permissionService.updatePermission(id, request);
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", List.of(updated));
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(e.getMessage(), 500));
+        }
+    }
+
+    @GetMapping("/permissions")
+    public ResponseEntity<?> getAllPermissions() {
+        try {
+            List<Permission> list = permissionService.getAllPermissions();
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", list);
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>("Failed to fetch permissions", 500));
+        }
+    }
+   // ========== role PERMISSION MANAGEMENT ==========
+    @PostMapping("/roles/{roleId}/permissions")
+    public ResponseEntity<?> assignPermissionsToRole(@PathVariable Long roleId, 
+                                                    @RequestBody AssignPermissionsRequest request) {
+        try {
+            rolePermissionService.assignPermissionsToRole(roleId, request.getPermissionIds());
+            return ResponseEntity.ok(new ApiResponse<>("Permissions assigned successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(e.getMessage(), 500));
+        }
+    }
+
+    @PatchMapping("/roles/{roleId}/permissions")
+    public ResponseEntity<?> updatePermissionsOfRole(@PathVariable Long roleId,
+                                                    @RequestBody AssignPermissionsRequest request) {
+        try {
+            rolePermissionService.updatePermissionsOfRole(roleId, request.getPermissionIds());
+            return ResponseEntity.ok(new ApiResponse<>("Permissions updated successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(e.getMessage(), 500));
+        }
+    }
+
+    @GetMapping("/roles/{roleId}/permissions")
+    public ResponseEntity<?> getPermissionsByRole(@PathVariable Long roleId) {
+        try {
+            List<PermissionDTO> permissions = rolePermissionService.getPermissionsByRole(roleId);
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", permissions);
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(e.getMessage(), 500));
         }
     }
 }
