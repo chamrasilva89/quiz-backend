@@ -1,11 +1,14 @@
 package com.sasip.quizz.controller;
 
 import com.sasip.quizz.dto.ApiResponse;
+import com.sasip.quizz.dto.DynamicQuizRequest;
 import com.sasip.quizz.dto.QuizRequest;
 import com.sasip.quizz.dto.QuizResponse;
 import com.sasip.quizz.dto.QuizSubmissionRequest;
 import com.sasip.quizz.dto.SasipQuizResponse;
 import com.sasip.quizz.dto.UpdateQuizQuestionsRequest;
+import com.sasip.quizz.dto.UpdateQuizRequest;
+import com.sasip.quizz.exception.NotEnoughQuestionsException;
 import com.sasip.quizz.exception.ResourceNotFoundException;
 import com.sasip.quizz.model.Quiz;
 import com.sasip.quizz.service.QuizService;
@@ -16,6 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +48,12 @@ public class QuizController {
     public ResponseEntity<?> createQuiz(@RequestBody @Valid QuizRequest request) {
         try {
             Quiz quiz = quizService.createQuizFromRequest(request);
-            return ResponseEntity.ok(new ApiResponse<>(quiz));
+
+            // Wrap single object in "data" with "items" list format (non-paginated)
+            Map<String, Object> data = new HashMap<>();
+            data.put("items", java.util.List.of(quiz));
+
+            return ResponseEntity.ok(new ApiResponse<>(data));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ApiResponse<>(e.getMessage(), 400));
@@ -60,7 +69,12 @@ public class QuizController {
             @RequestBody UpdateQuizQuestionsRequest request) {
         try {
             Quiz updatedQuiz = quizService.updateQuizQuestions(quizId, request.getQuestionIds());
-            return ResponseEntity.ok(new ApiResponse<>(updatedQuiz));
+
+            // Wrap single object in "data" with "items" list format (non-paginated)
+            Map<String, Object> data = new HashMap<>();
+            data.put("items", java.util.List.of(updatedQuiz));
+
+            return ResponseEntity.ok(new ApiResponse<>(data));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ApiResponse<>(e.getMessage(), 400));
@@ -74,7 +88,12 @@ public class QuizController {
     public ResponseEntity<?> getQuizWithQuestions(@PathVariable Long quizId) {
         try {
             QuizResponse quizResponse = quizService.getQuizWithQuestions(quizId);
-            return ResponseEntity.ok(new ApiResponse<>(quizResponse));
+
+            // Wrap single object in "data" with "items" list format (non-paginated)
+            Map<String, Object> data = new HashMap<>();
+            data.put("items", java.util.List.of(quizResponse));
+
+            return ResponseEntity.ok(new ApiResponse<>(data));
         } catch (ResourceNotFoundException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new ApiResponse<>(ex.getMessage(), 404));
@@ -139,6 +158,40 @@ public class QuizController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>("Failed to fetch quizzes", 500));
+        }
+    }
+
+    @PostMapping("/generate-dynamic")
+    public ResponseEntity<ApiResponse<Object>> generateDynamicQuiz(@RequestBody DynamicQuizRequest request) {
+        try {
+            // Now returns ResponseEntity<ApiResponse<Object>> directly
+            return quizService.generateDynamicQuiz(request);
+        } catch (NotEnoughQuestionsException e) {
+            return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse<>("Not enough questions to generate the quiz", HttpStatus.BAD_REQUEST.value()));
+        } catch (Exception e) {
+            return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>("Internal server error", HttpStatus.INTERNAL_SERVER_ERROR.value()));
+        }
+    }
+
+    @PatchMapping("/{quizId}/update-header")
+    public ResponseEntity<?> updateQuizHeader(
+            @PathVariable Long quizId,
+            @RequestBody UpdateQuizRequest request) {
+        try {
+            Quiz updatedQuiz = quizService.updateQuizHeaderDetails(quizId, request);
+            Map<String, Object> data = new HashMap<>();
+            data.put("items", List.of(updatedQuiz));
+            return ResponseEntity.ok(new ApiResponse<>(data));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(e.getMessage(), 404));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("Failed to update quiz header", 500));
         }
     }
 

@@ -40,4 +40,10 @@ public class GlobalExceptionHandler {
         ApiResponse<String> response = new ApiResponse<>("An unexpected error occurred", HttpStatus.INTERNAL_SERVER_ERROR.value());
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    @ExceptionHandler(NotEnoughQuestionsException.class)
+public ResponseEntity<ApiResponse<String>> handleNotEnoughQuestions(NotEnoughQuestionsException ex) {
+    ApiResponse<String> response = new ApiResponse<>(ex.getMessage(), HttpStatus.BAD_REQUEST.value());
+    return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+}
 }

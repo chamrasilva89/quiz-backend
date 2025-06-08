@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.sasip.quizz.dto.QuestionFilterRequest;
 import com.sasip.quizz.dto.QuestionPatchRequest;
 import com.sasip.quizz.dto.QuestionRequest;
 import com.sasip.quizz.exception.ResourceNotFoundException;
@@ -88,7 +89,11 @@ public Question addQuestion(QuestionRequest request) {
         return questionRepository.save(question);
     }
 
-
+    @Override
+    public Page<Question> getFilteredQuestions(QuestionFilterRequest request, Pageable pageable) {
+        return questionRepository.findFilteredQuestions(
+                request.getModules(), request.getSubmodules(), request.getDifficultyLevels(), pageable);
+    }
 
 
 }

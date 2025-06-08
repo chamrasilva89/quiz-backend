@@ -20,6 +20,7 @@ public class QuizResponse {
     private LocalDateTime deadline;
     private List<Long> rewardIds;
     private List<Question> questions;
+    private String quizStatus;
 
     // Constructor to map Quiz and Questions to QuizResponse
     public QuizResponse(Quiz quiz, List<Question> questions) {
@@ -40,6 +41,7 @@ public class QuizResponse {
         this.deadline = quiz.getDeadline();
         this.rewardIds = quiz.getRewardIdList();
         this.questions = questions;
+        this.quizStatus = quiz.getQuizStatus().name();
     }
 
     

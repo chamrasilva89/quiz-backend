@@ -1,6 +1,7 @@
 package com.sasip.quizz.controller;
 
 import com.sasip.quizz.dto.ApiResponse;
+import com.sasip.quizz.dto.QuestionFilterRequest;
 import com.sasip.quizz.dto.QuestionPatchRequest;
 import com.sasip.quizz.dto.QuestionRequest;
 import com.sasip.quizz.exception.ResourceNotFoundException;
@@ -37,7 +38,9 @@ public class QuestionController {
     public ResponseEntity<?> addQuestion(@Valid @RequestBody QuestionRequest request) {
         try {
             Question question = questionService.addQuestion(request);
-            return ResponseEntity.ok(new ApiResponse<>(question));
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", List.of(question)); // wrap single item inside list
+            return ResponseEntity.ok(new ApiResponse<>(response));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiResponse<>(e.getMessage(), 500));
@@ -73,7 +76,9 @@ public class QuestionController {
     public ResponseEntity<?> getQuestionById(@PathVariable Long questionId) {
         try {
             Question question = questionService.getQuestionById(questionId);
-            return ResponseEntity.ok(new ApiResponse<>(question));
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", List.of(question)); // wrap single question in list
+            return ResponseEntity.ok(new ApiResponse<>(response));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ApiResponse<>(e.getMessage(), 404));
@@ -89,7 +94,9 @@ public class QuestionController {
             @RequestBody QuestionPatchRequest updates) {
         try {
             Question updated = questionService.updateQuestionPartial(id, updates);
-            return ResponseEntity.ok(new ApiResponse<>(updated));
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", List.of(updated));  // wrap updated object in list
+            return ResponseEntity.ok(new ApiResponse<>(response));
         } catch (ResourceNotFoundException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new ApiResponse<>(ex.getMessage(), 404));
@@ -97,6 +104,24 @@ public class QuestionController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>("Failed to update question", 500));
         }
+    }
+
+    @Operation(summary = "Filter questions with pagination", description = "Filters questions by modules, submodules and difficulty levels")
+    @RequestMapping(value = "/filter", method = RequestMethod.POST)
+    public ResponseEntity<ApiResponse<Map<String, Object>>> filterQuestions(
+            @RequestBody QuestionFilterRequest request,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Page<Question> questionPage = questionService.getFilteredQuestions(request, PageRequest.of(page, size));
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("items", questionPage.getContent());
+        response.put("currentPage", questionPage.getNumber());
+        response.put("totalItems", questionPage.getTotalElements());
+        response.put("totalPages", questionPage.getTotalPages());
+
+        return ResponseEntity.ok(new ApiResponse<>(response));
     }
 
 }

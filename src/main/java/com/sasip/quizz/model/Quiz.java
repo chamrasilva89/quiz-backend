@@ -63,6 +63,10 @@ public class Quiz {
     @Column(name = "user_id")
     private Long userId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "quiz_status")
+    private QuizStatus quizStatus = QuizStatus.DRAFT;
+
         // Transient fields for convenience
     @Transient
     private List<String> moduleList;

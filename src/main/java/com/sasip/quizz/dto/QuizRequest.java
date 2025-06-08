@@ -21,6 +21,8 @@ public class QuizRequest {
     private LocalDateTime scheduledTime;
     private LocalDateTime deadline;
     private String alYear;
+    private String quizStatus; // Accepts DRAFT, PUBLISHED, etc.
+
 
     private List<Long> questionIds; // Just pass IDs, not full Question objects
 

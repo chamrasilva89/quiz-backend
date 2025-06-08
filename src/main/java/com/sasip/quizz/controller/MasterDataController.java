@@ -1,23 +1,17 @@
 package com.sasip.quizz.controller;
 
-import com.sasip.quizz.dto.CreateDistrictRequest;
-import com.sasip.quizz.dto.DistrictResponse;
-import com.sasip.quizz.dto.ModuleDTO;
-import com.sasip.quizz.dto.SubmoduleDTO;
-import com.sasip.quizz.dto.UpdateDistrictRequest;
-import com.sasip.quizz.dto.UserAvatarRequest;
-import com.sasip.quizz.dto.UserAvatarResponse;
-import com.sasip.quizz.service.DistrictService;
-import com.sasip.quizz.service.ModuleService;
-import com.sasip.quizz.service.SubmoduleService;
-import com.sasip.quizz.service.UserAvatarService;
-
+import com.sasip.quizz.dto.*;
+import com.sasip.quizz.dto.ApiResponse;
+import com.sasip.quizz.service.*;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/masterdata")
@@ -28,86 +22,203 @@ public class MasterDataController {
     private final SubmoduleService submoduleService;
     private final DistrictService districtService;
     private final UserAvatarService userAvatarService;
+
     // ====== MODULE APIs ======
 
     @PostMapping("/modules")
-    public ModuleDTO createModule(@RequestBody ModuleDTO dto) {
-        return moduleService.createModule(dto);
+    public ResponseEntity<?> createModule(@RequestBody ModuleDTO dto) {
+        try {
+            ModuleDTO created = moduleService.createModule(dto);
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", List.of(created));
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(e.getMessage(), 500));
+        }
     }
 
     @PatchMapping("/modules/{id}")
-    public ModuleDTO updateModule(@PathVariable Long id, @RequestBody ModuleDTO dto) {
-        return moduleService.updateModule(id, dto);
+    public ResponseEntity<?> updateModule(@PathVariable Long id, @RequestBody ModuleDTO dto) {
+        try {
+            ModuleDTO updated = moduleService.updateModule(id, dto);
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", List.of(updated));
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(e.getMessage(), 500));
+        }
     }
 
     @DeleteMapping("/modules/{id}")
-    public void deleteModule(@PathVariable Long id) {
-        moduleService.deleteModule(id);
+    public ResponseEntity<?> deleteModule(@PathVariable Long id) {
+        try {
+            moduleService.deleteModule(id);
+            return ResponseEntity.noContent().build(); // or send a message if preferred
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(e.getMessage(), 500));
+        }
     }
 
     @GetMapping("/modules")
-    public List<ModuleDTO> getAllModules() {
-        return moduleService.getAllModules();
+    public ResponseEntity<?> getAllModules() {
+        try {
+            List<ModuleDTO> list = moduleService.getAllModules();
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", list);
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>("Failed to fetch modules", 500));
+        }
     }
 
     // ====== SUBMODULE APIs ======
 
     @PostMapping("/submodules")
-    public SubmoduleDTO createSubmodule(@RequestBody SubmoduleDTO dto) {
-        return submoduleService.createSubmodule(dto);
+    public ResponseEntity<?> createSubmodule(@RequestBody SubmoduleDTO dto) {
+        try {
+            SubmoduleDTO created = submoduleService.createSubmodule(dto);
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", List.of(created));
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(e.getMessage(), 500));
+        }
     }
 
     @PatchMapping("/submodules/{id}")
-    public SubmoduleDTO updateSubmodule(@PathVariable Long id, @RequestBody SubmoduleDTO dto) {
-        return submoduleService.updateSubmodule(id, dto);
+    public ResponseEntity<?> updateSubmodule(@PathVariable Long id, @RequestBody SubmoduleDTO dto) {
+        try {
+            SubmoduleDTO updated = submoduleService.updateSubmodule(id, dto);
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", List.of(updated));
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(e.getMessage(), 500));
+        }
     }
 
     @DeleteMapping("/submodules/{id}")
-    public void deleteSubmodule(@PathVariable Long id) {
-        submoduleService.deleteSubmodule(id);
+    public ResponseEntity<?> deleteSubmodule(@PathVariable Long id) {
+        try {
+            submoduleService.deleteSubmodule(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(e.getMessage(), 500));
+        }
     }
 
     @GetMapping("/submodules")
-    public List<SubmoduleDTO> getAllSubmodules() {
-        return submoduleService.getAllSubmodules();
+    public ResponseEntity<?> getAllSubmodules() {
+        try {
+            List<SubmoduleDTO> list = submoduleService.getAllSubmodules();
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", list);
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>("Failed to fetch submodules", 500));
+        }
     }
 
     @GetMapping("/modules/{moduleId}/submodules")
-    public List<SubmoduleDTO> getSubmodulesByModule(@PathVariable Long moduleId) {
-        return submoduleService.getSubmodulesByModuleId(moduleId);
+    public ResponseEntity<?> getSubmodulesByModule(@PathVariable Long moduleId) {
+        try {
+            List<SubmoduleDTO> list = submoduleService.getSubmodulesByModuleId(moduleId);
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", list);
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>("Failed to fetch submodules by module", 500));
+        }
     }
 
     // ===================== DISTRICTS =====================
 
     @PostMapping("/districts")
-    public ResponseEntity<DistrictResponse> createDistrict(@RequestBody CreateDistrictRequest request) {
-        return ResponseEntity.ok(districtService.createDistrict(request));
+    public ResponseEntity<?> createDistrict(@RequestBody CreateDistrictRequest request) {
+        try {
+            DistrictResponse created = districtService.createDistrict(request);
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", List.of(created));
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(e.getMessage(), 500));
+        }
     }
 
     @PatchMapping("/districts/{id}")
-    public ResponseEntity<DistrictResponse> updateDistrict(@PathVariable Long id, @RequestBody UpdateDistrictRequest request) {
-        return ResponseEntity.ok(districtService.updateDistrict(id, request));
+    public ResponseEntity<?> updateDistrict(@PathVariable Long id, @RequestBody UpdateDistrictRequest request) {
+        try {
+            DistrictResponse updated = districtService.updateDistrict(id, request);
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", List.of(updated));
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(e.getMessage(), 500));
+        }
     }
 
     @GetMapping("/districts")
-    public ResponseEntity<List<DistrictResponse>> getAllDistricts() {
-        return ResponseEntity.ok(districtService.getAllDistricts());
+    public ResponseEntity<?> getAllDistricts() {
+        try {
+            List<DistrictResponse> list = districtService.getAllDistricts();
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", list);
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>("Failed to fetch districts", 500));
+        }
     }
 
     // ===================== avatars =====================
 
     @PostMapping("/avatars")
-    public ResponseEntity<UserAvatarResponse> addAvatar(@RequestBody UserAvatarRequest request) {
-        return ResponseEntity.ok(userAvatarService.addAvatar(request));
+    public ResponseEntity<?> addAvatar(@RequestBody UserAvatarRequest request) {
+        try {
+            UserAvatarResponse created = userAvatarService.addAvatar(request);
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", List.of(created));
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(e.getMessage(), 500));
+        }
     }
 
     @PatchMapping("/avatars/{id}")
-    public ResponseEntity<UserAvatarResponse> updateAvatar(@PathVariable Long id, @RequestBody UserAvatarRequest request) {
-        return ResponseEntity.ok(userAvatarService.updateAvatar(id, request));
+    public ResponseEntity<?> updateAvatar(@PathVariable Long id, @RequestBody UserAvatarRequest request) {
+        try {
+            UserAvatarResponse updated = userAvatarService.updateAvatar(id, request);
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", List.of(updated));
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(e.getMessage(), 500));
+        }
     }
 
     @GetMapping("/avatars")
-    public ResponseEntity<List<UserAvatarResponse>> getAllAvatars() {
-        return ResponseEntity.ok(userAvatarService.getAllAvatars());
+    public ResponseEntity<?> getAllAvatars() {
+        try {
+            List<UserAvatarResponse> list = userAvatarService.getAllAvatars();
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", list);
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>("Failed to fetch avatars", 500));
+        }
     }
 }
