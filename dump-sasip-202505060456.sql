@@ -204,3 +204,20 @@ CREATE TABLE role_permissions (
     FOREIGN KEY (role_id) REFERENCES roles(role_id) ON DELETE CASCADE,
     FOREIGN KEY (permission_id) REFERENCES permissions(permission_id) ON DELETE CASCADE
 );
+
+CREATE TABLE leaderboard (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    username VARCHAR(100),
+    school VARCHAR(150),
+    district VARCHAR(100),
+    al_year YEAR,
+    total_points INT DEFAULT 0,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_leaderboard_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+CREATE INDEX idx_leaderboard_al_year ON leaderboard(al_year);
+CREATE INDEX idx_leaderboard_district_al_year ON leaderboard(district, al_year);
+CREATE INDEX idx_leaderboard_school_al_year ON leaderboard(school, al_year);
