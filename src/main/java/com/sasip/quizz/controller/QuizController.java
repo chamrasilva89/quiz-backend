@@ -5,9 +5,11 @@ import com.sasip.quizz.dto.DynamicQuizRequest;
 import com.sasip.quizz.dto.QuizRequest;
 import com.sasip.quizz.dto.QuizResponse;
 import com.sasip.quizz.dto.QuizSubmissionRequest;
+import com.sasip.quizz.dto.QuizSubmissionResult;
 import com.sasip.quizz.dto.SasipQuizResponse;
 import com.sasip.quizz.dto.UpdateQuizQuestionsRequest;
 import com.sasip.quizz.dto.UpdateQuizRequest;
+import com.sasip.quizz.exception.DuplicateSubmissionException;
 import com.sasip.quizz.exception.NotEnoughQuestionsException;
 import com.sasip.quizz.exception.ResourceNotFoundException;
 import com.sasip.quizz.model.Quiz;
@@ -126,13 +128,19 @@ public class QuizController {
         }
     }
 
-    
-
     @PostMapping("/submit-quiz")
     public ResponseEntity<?> submitQuiz(@RequestBody QuizSubmissionRequest request) {
         try {
-            userQuizAnswerService.submitQuizAnswers(request);
-            return ResponseEntity.ok(new ApiResponse<>("Quiz submitted successfully"));
+            QuizSubmissionResult result = userQuizAnswerService.submitQuizAnswers(request);
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("items", List.of(result));  // wrap result in a list
+
+            return ResponseEntity.ok(new ApiResponse<>(data));
+
+        } catch (DuplicateSubmissionException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(new ApiResponse<>(e.getMessage(), 409));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>("Submission failed: " + e.getMessage(), 500));

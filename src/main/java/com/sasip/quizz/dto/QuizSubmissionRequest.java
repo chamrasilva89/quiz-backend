@@ -9,7 +9,8 @@ public class QuizSubmissionRequest {
     private String userId;
     private String quizId;
     private List<AnswerSubmission> answers;
-
+    private int timeTakenSeconds;
+    
     @Data
     public static class AnswerSubmission {
         private Long questionId;

@@ -13,5 +13,7 @@ public interface LeaderboardRepository extends JpaRepository<Leaderboard, Long> 
     Page<Leaderboard> findByAlYearAndDistrictOrderByTotalPointsDesc(int alYear, String district, Pageable pageable);
     Page<Leaderboard> findByAlYearAndSchoolOrderByTotalPointsDesc(int alYear, String school, Pageable pageable);
     Page<Leaderboard> findByAlYearAndDistrictAndSchoolOrderByTotalPointsDesc(int alYear, String district, String school, Pageable pageable);
+    Page<Leaderboard> findByUserIdAndAlYear(Long  userId, int alYear, Pageable pageable);
+
 
 }
