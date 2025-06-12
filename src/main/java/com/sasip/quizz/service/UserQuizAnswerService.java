@@ -5,4 +5,6 @@ import com.sasip.quizz.dto.QuizSubmissionResult;
 
 public interface UserQuizAnswerService {
     QuizSubmissionResult submitQuizAnswers(QuizSubmissionRequest request);
-}
+      QuizSubmissionResult getQuizSubmissionResult(String userId, String quizId);
+    void startQuizSession(String userId, String quizId);
+    }

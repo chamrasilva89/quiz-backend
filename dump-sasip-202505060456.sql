@@ -221,3 +221,31 @@ CREATE TABLE leaderboard (
 CREATE INDEX idx_leaderboard_al_year ON leaderboard(al_year);
 CREATE INDEX idx_leaderboard_district_al_year ON leaderboard(district, al_year);
 CREATE INDEX idx_leaderboard_school_al_year ON leaderboard(school, al_year);
+
+CREATE TABLE user_quiz_submission (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT     NOT NULL,
+    quiz_id VARCHAR(50) NOT NULL,
+    start_time DATETIME NOT NULL,
+    end_time   DATETIME NOT NULL,
+    time_taken_seconds INT NOT NULL,
+    total_questions   INT NOT NULL,
+    correct_count     INT NOT NULL,
+    wrong_count       INT NOT NULL,
+    raw_score         INT NOT NULL,
+    speed_bonus       DECIMAL(8,2) NOT NULL,
+    total_score       DECIMAL(8,2) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+ALTER TABLE user_quiz_submission
+  MODIFY COLUMN end_time DATETIME     NULL,
+  MODIFY COLUMN time_taken_seconds INT NULL,
+  MODIFY COLUMN total_questions   INT NULL,
+  MODIFY COLUMN correct_count     INT NULL,
+  MODIFY COLUMN wrong_count       INT NULL,
+  MODIFY COLUMN raw_score         INT NULL,
+  MODIFY COLUMN speed_bonus       DECIMAL(8,2) NULL,
+  MODIFY COLUMN total_score       DECIMAL(8,2) NULL;

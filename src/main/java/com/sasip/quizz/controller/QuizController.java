@@ -45,6 +45,8 @@ public class QuizController {
     @Autowired
     private UserQuizAnswerService userQuizAnswerService;
 
+
+
     @Operation(summary = "Create a new quiz", description = "Provide quiz details to create a new quiz")
     @PostMapping
     public ResponseEntity<?> createQuiz(@RequestBody @Valid QuizRequest request) {
@@ -203,6 +205,47 @@ public class QuizController {
         }
     }
 
+    // QuizController.java
+    @GetMapping("/{quizId}/submissions/{userId}")
+    public ResponseEntity<?> getSubmission(
+            @PathVariable String quizId,
+            @PathVariable String userId
+    ) {
+        try {
+            QuizSubmissionResult result =
+                userQuizAnswerService.getQuizSubmissionResult(userId, quizId);
+
+            Map<String,Object> data = new HashMap<>();
+            data.put("items", List.of(result));
+            return ResponseEntity.ok(new ApiResponse<>(data));
+
+        } catch (ResourceNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(ex.getMessage(), 404));
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("Error retrieving submission", 500));
+        }
+    }
+
+
+@PostMapping("/{quizId}/start")
+public ResponseEntity<ApiResponse<Map<String,Object>>> startQuiz(
+        @PathVariable String quizId,
+        @RequestParam("userId") String userId  // <-- match the query parameter name
+) {
+    try {
+        // create or update a submission record with start time
+        userQuizAnswerService.startQuizSession(userId, quizId);
+
+        Map<String,Object> data = new HashMap<>();
+        data.put("items", List.of());  // empty items
+        return ResponseEntity.ok(new ApiResponse<>(data));
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(e.getMessage(), 500));
+    }
+}
 
 
 }
