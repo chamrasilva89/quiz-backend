@@ -1,17 +1,24 @@
 package com.sasip.quizz.controller;
 
 import com.sasip.quizz.dto.ApiResponse;
+import com.sasip.quizz.dto.UserFilterRequest;
 import com.sasip.quizz.dto.UserRegistrationRequest;
 import com.sasip.quizz.dto.UserUpdateRequest;
 import com.sasip.quizz.model.User;
 import com.sasip.quizz.service.UserService;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 
 @RestController
 @RequestMapping("/api/users")
@@ -51,6 +58,30 @@ public class UserController {
                     .body(new ApiResponse<>("Failed to update user", 500));
         }
     }
+
+    @PostMapping("/filter")
+    public ResponseEntity<ApiResponse<?>> filterUsers(
+            @RequestBody UserFilterRequest filterRequest,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<User> userPage = userService.filterUsers(filterRequest, pageable);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", userPage.getContent());
+            response.put("currentPage", userPage.getNumber());
+            response.put("totalItems", userPage.getTotalElements());
+            response.put("totalPages", userPage.getTotalPages());
+
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("Failed to filter users", 500));
+        }
+    }
+
 
     // Example of paginated user listing with consistent response format
     // You can add this if you have user listing with pagination

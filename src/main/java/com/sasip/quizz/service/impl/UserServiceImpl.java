@@ -7,7 +7,10 @@ import com.sasip.quizz.repository.UserRepository;
 import com.sasip.quizz.service.UserService;
 import com.sasip.quizz.dto.LoginRequest;
 import com.sasip.quizz.dto.LoginResponse;
+import com.sasip.quizz.dto.UserFilterRequest;
 import com.sasip.quizz.security.JwtUtil;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -124,4 +127,17 @@ public class UserServiceImpl implements UserService {
 
         return new LoginResponse(token);
     }
+
+    @Override
+    public Page<User> filterUsers(UserFilterRequest filterRequest, Pageable pageable) {
+        return userRepository.filterUsersWithPagination(
+                filterRequest.getRole(),
+                filterRequest.getName(),
+                filterRequest.getSchool(),
+                filterRequest.getAlYear(),
+                filterRequest.getDistrict(),
+                pageable
+        );
+    }
+
 }
