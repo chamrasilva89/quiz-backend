@@ -9,4 +9,5 @@ public class UserFilterRequest {
     private String school;
     private Integer alYear;
     private String district;
+    private String userStatus;
 }

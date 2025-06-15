@@ -18,4 +18,5 @@ public class UserRegistrationRequest {
     private String password;  // Plaintext input
     private String parentName;
     private String parentContactNo;
+    private String userStatus = "active";
 }

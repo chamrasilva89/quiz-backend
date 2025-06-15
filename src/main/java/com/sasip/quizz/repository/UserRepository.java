@@ -18,13 +18,16 @@ public interface UserRepository extends JpaRepository<User, Long> {
         "(:name IS NULL OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', :name, '%')) OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :name, '%'))) AND " +
         "(:school IS NULL OR u.school = :school) AND " +
         "(:alYear IS NULL OR u.alYear = :alYear) AND " +
-        "(:district IS NULL OR u.district = :district)")
-    Page<User> filterUsersWithPagination(@Param("role") String role,
-                                        @Param("name") String name,
-                                        @Param("school") String school,
-                                        @Param("alYear") Integer alYear,
-                                        @Param("district") String district,
-                                        Pageable pageable);
-
+        "(:district IS NULL OR u.district = :district) AND " +
+        "(:userStatus IS NULL OR u.userStatus = :userStatus)")
+        Page<User> filterUsersWithPagination(
+                @Param("role") String role,
+                @Param("name") String name,
+                @Param("school") String school,
+                @Param("alYear") Integer alYear,
+                @Param("district") String district,
+                @Param("userStatus") String userStatus,
+                Pageable pageable
+        );
 
 }

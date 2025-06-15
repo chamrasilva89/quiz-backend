@@ -152,6 +152,7 @@ public Quiz createQuizFromRequest(QuizRequest request) {
                 response.setScheduledTime(quiz.getScheduledTime());
                 response.setDeadline(quiz.getDeadline());
                 response.setRewardIds(quiz.getRewardIdList());
+                response.setQuizStatus(quiz.getQuizStatus());
 
                 return response;
             })

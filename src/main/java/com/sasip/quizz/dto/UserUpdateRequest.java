@@ -16,4 +16,5 @@ public class UserUpdateRequest {
     private String username;
     private String parentName;
     private String parentContactNo;
+    private String userStatus;
 }

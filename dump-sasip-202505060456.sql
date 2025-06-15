@@ -249,3 +249,6 @@ ALTER TABLE user_quiz_submission
   MODIFY COLUMN raw_score         INT NULL,
   MODIFY COLUMN speed_bonus       DECIMAL(8,2) NULL,
   MODIFY COLUMN total_score       DECIMAL(8,2) NULL;
+
+ALTER TABLE users
+ADD COLUMN user_status VARCHAR(20) NOT NULL DEFAULT 'active';

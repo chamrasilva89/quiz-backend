@@ -28,21 +28,22 @@ public class User {
     @Column(columnDefinition = "TEXT")
     private String avatarUrl;
 
+    @Column(nullable = false)
     private String school;
 
+    @Column(nullable = false)
     private Integer alYear;
 
+    @Column(nullable = false)
     private String district;
 
     private String medium;
 
-    @Column(length = 15)
+    @Column(length = 15,nullable = false )
     private String phone;
 
-    @Column(unique = true, nullable = false)
     private String email;
 
-    @Column(unique = true, nullable = false)
     private String username;
 
     @Column(nullable = false)
@@ -68,6 +69,9 @@ public class User {
     private LocalDateTime createdDate;
 
     private LocalDateTime updatedDate;
+
+    @Column(nullable = false)
+    private String userStatus = "active";
 
     // If using Spring JPA auditing, consider:
     // @CreatedDate

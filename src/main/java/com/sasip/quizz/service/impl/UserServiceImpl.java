@@ -72,7 +72,7 @@ public class UserServiceImpl implements UserService {
         user.setParentContactNo(request.getParentContactNo());
         user.setCreatedDate(LocalDateTime.now());
         user.setUpdatedDate(LocalDateTime.now());
-
+        user.setUserStatus(request.getUserStatus() != null ? request.getUserStatus() : "active");
         logger.info("User registered successfully: {}", user.getUsername());
         return userRepository.save(user);
     }
@@ -94,7 +94,7 @@ public class UserServiceImpl implements UserService {
         if (updateRequest.getUsername() != null) user.setUsername(updateRequest.getUsername());
         if (updateRequest.getParentName() != null) user.setParentName(updateRequest.getParentName());
         if (updateRequest.getParentContactNo() != null) user.setParentContactNo(updateRequest.getParentContactNo());
-
+        if (updateRequest.getUserStatus() != null) user.setUserStatus(updateRequest.getUserStatus());
         user.setUpdatedDate(LocalDateTime.now());
 
         logger.info("User updated: {}", userId);
@@ -136,6 +136,7 @@ public class UserServiceImpl implements UserService {
                 filterRequest.getSchool(),
                 filterRequest.getAlYear(),
                 filterRequest.getDistrict(),
+                filterRequest.getUserStatus(),
                 pageable
         );
     }

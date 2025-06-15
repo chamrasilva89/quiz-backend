@@ -3,6 +3,7 @@ package com.sasip.quizz.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 import com.sasip.quizz.model.Quiz;
+import com.sasip.quizz.model.QuizStatus;
 
 public class SasipQuizResponse {
     private Long quizId;
@@ -18,6 +19,8 @@ public class SasipQuizResponse {
     private LocalDateTime deadline;
     private List<Long> rewardIds;
     private List<QuestionWithoutAnswerDTO> questions;
+    private QuizStatus quizStatus;
+    
 
     public SasipQuizResponse(Quiz quiz, List<QuestionWithoutAnswerDTO> questions) {
         this.quizId = quiz.getQuizId();
@@ -26,6 +29,7 @@ public class SasipQuizResponse {
         this.modules = quiz.getModuleList();
         this.timeLimit = quiz.getTimeLimit();
         this.questions = questions;
+        this.quizStatus = quiz.getQuizStatus();
     }
 
     
@@ -131,5 +135,13 @@ public class SasipQuizResponse {
 
     public void setQuestions(List<QuestionWithoutAnswerDTO> questions) {
         this.questions = questions;
+    }
+
+        public QuizStatus getQuizStatus() {
+        return quizStatus;
+    }
+
+    public void setQuizStatus(QuizStatus quizStatus) {
+        this.quizStatus = quizStatus;
     }
 }

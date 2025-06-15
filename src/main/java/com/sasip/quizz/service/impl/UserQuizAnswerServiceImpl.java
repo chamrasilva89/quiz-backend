@@ -130,9 +130,14 @@ public class UserQuizAnswerServiceImpl implements UserQuizAnswerService {
         // 6) Build and return final DTO
         QuizSubmissionResult submissionResult = new QuizSubmissionResult();
         submissionResult.setResults(results);
+        submissionResult.setTotalQuestions(request.getAnswers().size());
+        submissionResult.setCorrectCount(correctCount);
+        submissionResult.setWrongCount(request.getAnswers().size() - correctCount);
         submissionResult.setRawScore(rawScore);
+        submissionResult.setTimeTakenSeconds(request.getTimeTakenSeconds());
         submissionResult.setSpeedBonus(Math.round(speedBonus * 100.0) / 100.0);
         submissionResult.setTotalScore(Math.round(totalScore * 100.0) / 100.0);
+
 
         return submissionResult;
     }
@@ -192,6 +197,10 @@ public class UserQuizAnswerServiceImpl implements UserQuizAnswerService {
         resp.setRawScore(summary.getRawScore());
         resp.setSpeedBonus(summary.getSpeedBonus());
         resp.setTotalScore(summary.getTotalScore());
+        resp.setTotalQuestions(summary.getTotalQuestions());
+        resp.setCorrectCount(summary.getCorrectCount());
+        resp.setWrongCount(summary.getWrongCount());
+        resp.setTimeTakenSeconds(summary.getTimeTakenSeconds());
         // (Optional: if you’ve extended QuizSubmissionResult, set timeTakenSeconds, correctCount, etc.)
 
         return resp;
