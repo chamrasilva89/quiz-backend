@@ -5,6 +5,7 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -46,15 +47,30 @@ public class JwtUtil {
                 .getSubject();
     }
 
-    public boolean validateToken(String token) {
-        try {
-            Jwts.parserBuilder()
-                    .setSigningKey(secretKey)
-                    .build()
-                    .parseClaimsJws(token);
-            return true;
-        } catch (JwtException | IllegalArgumentException e) {
-            return false;
-        }
-    }
+public String extractUsername(String token) {
+    return extractClaim(token, Claims::getSubject);
+}
+
+public boolean validateToken(String token, UserDetails userDetails) {
+    final String username = extractUsername(token);
+    return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+}
+
+public boolean isTokenExpired(String token) {
+    final Date expiration = extractClaim(token, Claims::getExpiration);
+    return expiration.before(new Date());
+}
+
+public <T> T extractClaim(String token, java.util.function.Function<Claims, T> claimsResolver) {
+    final Claims claims = extractAllClaims(token);
+    return claimsResolver.apply(claims);
+}
+
+private Claims extractAllClaims(String token) {
+    return Jwts.parserBuilder()
+            .setSigningKey(secretKey)
+            .build()
+            .parseClaimsJws(token)
+            .getBody();
+}
 }
