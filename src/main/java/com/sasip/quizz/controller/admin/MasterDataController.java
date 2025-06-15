@@ -5,9 +5,13 @@ import com.sasip.quizz.model.Permission;
 import com.sasip.quizz.service.*;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -25,6 +29,8 @@ public class MasterDataController {
     private final RoleService roleService;
     private final PermissionService permissionService;
     private final RolePermissionService rolePermissionService;
+    private final BadgeService badgeService;
+    private final RewardService rewardService;
     // ====== MODULE APIs ======
 
     @PostMapping("/modules")
@@ -342,4 +348,118 @@ public class MasterDataController {
                 .body(new ApiResponse<>(e.getMessage(), 500));
         }
     }
+    //------------Badges--------------//
+    @PostMapping("/badges")
+    public ResponseEntity<?> createBadge(@RequestBody BadgeDTO dto) {
+        try {
+            BadgeDTO created = badgeService.createBadge(dto);
+            return ResponseEntity.ok(new ApiResponse<>(Map.of("items", List.of(created))));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(new ApiResponse<>(e.getMessage(), 500));
+        }
+    }
+
+    @GetMapping("/badges")
+    public ResponseEntity<?> getAllBadges(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        try {
+            Map<String, Object> response = new HashMap<>();
+
+            if (page != null && size != null) {
+                Pageable pageable = PageRequest.of(page, size);
+                Page<BadgeDTO> badgePage = badgeService.getPaginatedBadges(pageable);
+                response.put("items", badgePage.getContent());
+                response.put("currentPage", badgePage.getNumber());
+                response.put("totalItems", badgePage.getTotalElements());
+                response.put("totalPages", badgePage.getTotalPages());
+            } else {
+                List<BadgeDTO> list = badgeService.getAllBadges();
+                response.put("items", list);
+            }
+
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(new ApiResponse<>(e.getMessage(), 500));
+        }
+    }
+
+    @PatchMapping("/badges/{id}")
+    public ResponseEntity<?> updateBadge(@PathVariable Long id, @RequestBody BadgeDTO dto) {
+        try {
+            BadgeDTO updated = badgeService.updateBadge(id, dto);
+            return ResponseEntity.ok(new ApiResponse<>(Map.of("items", List.of(updated))));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(new ApiResponse<>(e.getMessage(), 500));
+        }
+    }
+
+    @DeleteMapping("/badges/{id}")
+    public ResponseEntity<?> deleteBadge(@PathVariable Long id) {
+        try {
+            badgeService.deleteBadge(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(new ApiResponse<>(e.getMessage(), 500));
+        }
+    }
+
+    //------------rewards---------------------------------------
+    @PostMapping("/rewards")
+    public ResponseEntity<?> createReward(@RequestBody RewardDTO dto) {
+        try {
+            RewardDTO created = rewardService.createReward(dto);
+            return ResponseEntity.ok(new ApiResponse<>(Map.of("items", List.of(created))));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(new ApiResponse<>(e.getMessage(), 500));
+        }
+    }
+
+    @GetMapping("/rewards")
+    public ResponseEntity<?> getAllRewards(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        try {
+            Map<String, Object> response = new HashMap<>();
+
+            if (page != null && size != null) {
+                Pageable pageable = PageRequest.of(page, size);
+                Page<RewardDTO> rewardPage = rewardService.getPaginatedRewards(pageable);
+                response.put("items", rewardPage.getContent());
+                response.put("currentPage", rewardPage.getNumber());
+                response.put("totalItems", rewardPage.getTotalElements());
+                response.put("totalPages", rewardPage.getTotalPages());
+            } else {
+                List<RewardDTO> list = rewardService.getAllRewards();
+                response.put("items", list);
+            }
+
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(new ApiResponse<>(e.getMessage(), 500));
+        }
+    }
+
+    @PatchMapping("/rewards/{id}")
+    public ResponseEntity<?> updateReward(@PathVariable Long id, @RequestBody RewardDTO dto) {
+        try {
+            RewardDTO updated = rewardService.updateReward(id, dto);
+            return ResponseEntity.ok(new ApiResponse<>(Map.of("items", List.of(updated))));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(new ApiResponse<>(e.getMessage(), 500));
+        }
+    }
+
+    @DeleteMapping("/rewards/{id}")
+    public ResponseEntity<?> deleteReward(@PathVariable Long id) {
+        try {
+            rewardService.deleteReward(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(new ApiResponse<>(e.getMessage(), 500));
+        }
+    }
+
+
+
 }

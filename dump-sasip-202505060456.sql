@@ -267,3 +267,20 @@ CREATE TABLE monthly_leaderboard (
 
     UNIQUE KEY uq_user_month (user_id, month)
 );
+
+CREATE TABLE badge (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    icon_url VARCHAR(255),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE reward (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    points INT NOT NULL DEFAULT 0,
+    icon_url VARCHAR(255),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
