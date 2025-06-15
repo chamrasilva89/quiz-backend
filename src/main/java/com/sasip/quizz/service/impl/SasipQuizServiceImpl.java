@@ -14,6 +14,7 @@ import com.sasip.quizz.spec.QuizSpecifications;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
@@ -82,5 +83,13 @@ public Page<SasipQuizSummary> findFiltered(SasipQuizFilterRequest filter) {
         return new PageImpl<>(quizDTOs, pageable, quizzes.getTotalElements());
     }
 
+    public SasipQuizStatsDTO getUserSasipStats(Long userId) {
+        double best = Optional.ofNullable(userQuizSubmissionRepository.findMaxSasipScore(userId)).orElse(0.0);
+        double avg = Optional.ofNullable(userQuizSubmissionRepository.findAvgSasipScore(userId)).orElse(0.0);
+        long completed = userQuizSubmissionRepository.countCompletedSasipQuizzes(userId);
+        long total = quizRepository.countAllSasipQuizzes();
+
+        return new SasipQuizStatsDTO(best, avg, completed, total);
+    }
 
 }

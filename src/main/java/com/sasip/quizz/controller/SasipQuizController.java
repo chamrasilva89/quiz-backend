@@ -87,6 +87,20 @@ public class SasipQuizController {
         return ResponseEntity.ok(new ApiResponse<>(data));
     }
 
+    @GetMapping("/sasip/stats")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getSasipStats(
+            @RequestHeader("Authorization") String token) {
+        
+        String username = jwtUtil.getUsernameFromToken(token.replace("Bearer ", ""));
+        User user = userRepository.findByUsername(username)
+            .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
+        SasipQuizStatsDTO stats = quizService.getUserSasipStats(user.getUserId());
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("items", List.of(stats)); // ✅ Wrap single result in list
+
+        return ResponseEntity.ok(new ApiResponse<>(data));
+    }
 
 }

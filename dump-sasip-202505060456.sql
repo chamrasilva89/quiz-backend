@@ -252,3 +252,18 @@ ALTER TABLE user_quiz_submission
 
 ALTER TABLE users
 ADD COLUMN user_status VARCHAR(20) NOT NULL DEFAULT 'active';
+
+
+CREATE TABLE monthly_leaderboard (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    username VARCHAR(255),
+    school VARCHAR(255),
+    district VARCHAR(255),
+    al_year INT,
+    month VARCHAR(7) NOT NULL, -- Format: YYYY-MM
+    total_points INT DEFAULT 0,
+    updated_at DATETIME,
+
+    UNIQUE KEY uq_user_month (user_id, month)
+);

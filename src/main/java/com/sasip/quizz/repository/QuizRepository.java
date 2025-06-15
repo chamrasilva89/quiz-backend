@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -19,4 +20,7 @@ public interface QuizRepository
     List<Quiz> findAllByQuizType(QuizType quizType);
     // Custom query to fetch all question IDs from quizzes of certain types
     List<Quiz> findByQuizTypeIn(List<QuizType> quizTypes);
+    @Query("SELECT COUNT(q) FROM Quiz q WHERE q.quizType = 'SASIP'")
+    Long countAllSasipQuizzes();
+
 }

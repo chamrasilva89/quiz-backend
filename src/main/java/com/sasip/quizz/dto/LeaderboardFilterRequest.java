@@ -4,6 +4,7 @@ public class LeaderboardFilterRequest {
     private Integer alYear;
     private String district;
     private String school;
+    private String month;
 
     // Getters and Setters
     public Integer getAlYear() {
@@ -28,5 +29,14 @@ public class LeaderboardFilterRequest {
 
     public void setSchool(String school) {
         this.school = school;
+    }
+
+    
+    public String getMonth() {
+        return month;
+    }
+
+    public void setMonth(String month) {
+        this.month = month;
     }
 }

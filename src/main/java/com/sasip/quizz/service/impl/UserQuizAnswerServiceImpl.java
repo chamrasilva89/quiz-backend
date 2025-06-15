@@ -5,11 +5,13 @@ import com.sasip.quizz.dto.QuizSubmissionResult;
 import com.sasip.quizz.exception.DuplicateSubmissionException;
 import com.sasip.quizz.exception.ResourceNotFoundException;
 import com.sasip.quizz.model.Leaderboard;
+import com.sasip.quizz.model.MonthlyLeaderboard;
 import com.sasip.quizz.model.Question;
 import com.sasip.quizz.model.User;
 import com.sasip.quizz.model.UserQuizAnswer;
 import com.sasip.quizz.model.UserQuizSubmission;
 import com.sasip.quizz.repository.LeaderboardRepository;
+import com.sasip.quizz.repository.MonthlyLeaderboardRepository;
 import com.sasip.quizz.repository.QuestionRepository;
 import com.sasip.quizz.repository.UserQuizAnswerRepository;
 import com.sasip.quizz.repository.UserQuizSubmissionRepository;
@@ -33,6 +35,8 @@ public class UserQuizAnswerServiceImpl implements UserQuizAnswerService {
     @Autowired private UserRepository userRepository;
     @Autowired
     private UserQuizSubmissionRepository submissionRepo;
+    @Autowired
+    private MonthlyLeaderboardRepository monthlyLeaderboardRepository;
 
     private static final int MAX_TIME_SECONDS = 600;
     private static final double SPEED_FACTOR = 0.3;
@@ -90,6 +94,17 @@ public class UserQuizAnswerServiceImpl implements UserQuizAnswerService {
                 user.getAlYear(),
                 points
             );
+            //4b1) update monthly leaderboard
+            // inside the answer loop
+            upsertMonthlyLeaderboard(
+                userIdLong,
+                user.getUsername(),
+                user.getSchool(),
+                user.getDistrict(),
+                user.getAlYear(),
+                points
+            );
+
 
             // 4c) Build per‐question result
             QuizSubmissionResult.QuestionResult qr =
@@ -165,6 +180,30 @@ public class UserQuizAnswerServiceImpl implements UserQuizAnswerService {
         lb.setUpdatedAt(LocalDateTime.now());
         leaderboardRepository.save(lb);
     }
+
+    private void upsertMonthlyLeaderboard(Long userId, String username,
+                                      String school, String district,
+                                      int alYear, int earnedPoints) {
+    String currentMonth = LocalDateTime.now().withDayOfMonth(1).toLocalDate().toString().substring(0, 7);
+    MonthlyLeaderboard lb = monthlyLeaderboardRepository
+            .findByUserIdAndMonth(userId, currentMonth)
+            .orElseGet(() -> {
+                MonthlyLeaderboard ml = new MonthlyLeaderboard();
+                ml.setUserId(userId);
+                ml.setUsername(username);
+                ml.setSchool(school);
+                ml.setDistrict(district);
+                ml.setAlYear(alYear);
+                ml.setMonth(currentMonth);
+                ml.setTotalPoints(0);
+                return ml;
+            });
+
+    lb.setTotalPoints(lb.getTotalPoints() + earnedPoints);
+    lb.setUpdatedAt(LocalDateTime.now());
+
+    monthlyLeaderboardRepository.save(lb);
+}
 
     @Override
     public QuizSubmissionResult getQuizSubmissionResult(String userId, String quizId) {
