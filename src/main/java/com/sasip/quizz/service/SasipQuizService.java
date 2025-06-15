@@ -15,4 +15,6 @@ public interface SasipQuizService {
     public Page<SasipQuizListItem> listSasipQuizzesWithCompletion(
             Long userId, Pageable pageable, String alYear, QuizStatus status);
     public SasipQuizStatsDTO getUserSasipStats(Long userId);
+    Page<SasipQuizListItem> listCompletedQuizzesOnly(Long userId, Pageable pageable, String alYear, QuizStatus status);
+
 }

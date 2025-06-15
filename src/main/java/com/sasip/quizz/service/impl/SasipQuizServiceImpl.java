@@ -92,4 +92,49 @@ public Page<SasipQuizSummary> findFiltered(SasipQuizFilterRequest filter) {
         return new SasipQuizStatsDTO(best, avg, completed, total);
     }
 
+    @Override
+    public Page<SasipQuizListItem> listCompletedQuizzesOnly(Long userId, Pageable pageable, String alYear, QuizStatus status) {
+
+        Specification<Quiz> spec = Specification
+            .where((root, query, cb) -> cb.equal(root.get("quizType"), QuizType.SASIP));
+
+        if (alYear != null && !alYear.isBlank()) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("alYear"), alYear));
+        }
+
+        if (status != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("quizStatus"), status));
+        }
+
+        Page<Quiz> quizzes = quizRepository.findAll(spec, Pageable.unpaged()); // We'll filter by user after fetch
+
+        // Filter for quizzes the user has completed
+        List<SasipQuizListItem> completedQuizzes = quizzes.getContent().stream()
+            .filter(quiz -> userQuizSubmissionRepository
+                .findByUserIdAndQuizId(userId, String.valueOf(quiz.getQuizId()))
+                .isPresent())
+            .map(quiz -> new SasipQuizListItem(
+                quiz.getQuizId(),
+                quiz.getQuizName(),
+                quiz.getIntro(),
+                quiz.getXp(),
+                quiz.getPassAccuracy(),
+                quiz.getTimeLimit(),
+                quiz.getAlYear(),
+                quiz.getAttemptsAllowed(),
+                quiz.getQuizStatus(),
+                quiz.getScheduledTime(),
+                quiz.getDeadline(),
+                true // completed is always true for this API
+            ))
+            .toList();
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), completedQuizzes.size());
+        List<SasipQuizListItem> paginated = completedQuizzes.subList(start, end);
+
+        return new PageImpl<>(paginated, pageable, completedQuizzes.size());
+    }
+
+
 }

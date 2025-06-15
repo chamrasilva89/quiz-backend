@@ -103,4 +103,32 @@ public class SasipQuizController {
         return ResponseEntity.ok(new ApiResponse<>(data));
     }
 
+    @GetMapping("/sasip/quizhistory")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getCompletedQuizHistory(
+            @RequestHeader("Authorization") String token,
+            @RequestParam(required = false) String alYear,
+            @RequestParam(required = false) QuizStatus quizStatus,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        String username = jwtUtil.getUsernameFromToken(token.replace("Bearer ", ""));
+        User user = userRepository.findByUsername(username)
+            .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<SasipQuizListItem> resultPage = quizService.listCompletedQuizzesOnly(
+            user.getUserId(), pageable, alYear, quizStatus
+        );
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("items", resultPage.getContent());
+        data.put("currentPage", resultPage.getNumber());
+        data.put("totalItems", resultPage.getTotalElements());
+        data.put("totalPages", resultPage.getTotalPages());
+
+        return ResponseEntity.ok(new ApiResponse<>(data));
+    }
+
+
 }
