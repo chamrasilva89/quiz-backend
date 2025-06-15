@@ -6,5 +6,6 @@ public enum QuizStatus {
     ACTIVE,
     INACTIVE,
     CLOSED,
-    ARCHIVED
+    ARCHIVED,
+    EXPIRED
 }
