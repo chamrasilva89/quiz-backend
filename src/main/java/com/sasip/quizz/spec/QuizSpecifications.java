@@ -4,10 +4,11 @@ import com.sasip.quizz.model.Quiz;
 import com.sasip.quizz.model.QuizStatus;
 import com.sasip.quizz.model.QuizType;
 
-import java.util.List;
+import jakarta.persistence.criteria.Expression;
 
 import org.springframework.data.jpa.domain.Specification;
-import jakarta.persistence.criteria.*;
+
+import java.util.List;
 
 public class QuizSpecifications {
 
@@ -16,32 +17,25 @@ public class QuizSpecifications {
     }
 
     public static Specification<Quiz> hasStatus(QuizStatus status) {
-        return (root, query, cb) -> cb.equal(root.get("quizStatus"), status);
+        return (root, query, cb) -> {
+            if (status == null) return cb.conjunction();
+            return cb.equal(root.get("quizStatus"), status);
+        };
+    }
+
+    public static Specification<Quiz> hasAlYear(String alYear) {
+        return (root, query, cb) -> {
+            if (alYear == null || alYear.trim().isEmpty()) {
+                return cb.conjunction();
+            }
+            return cb.equal(root.get("alYear"), alYear);
+        };
     }
 
 public static Specification<Quiz> hasAnyModule(List<String> modules) {
-    return (root, query, cb) -> {
-        if (modules == null || modules.isEmpty()) {
-            return cb.conjunction();
-        }
-
-        // Convert list to JSON array string e.g., ["Math","Science"]
-        String jsonArray = "[" + modules.stream()
-                .map(m -> "\"" + m + "\"")
-                .reduce((m1, m2) -> m1 + "," + m2)
-                .orElse("") + "]";
-
-        // JSON_OVERLAPS(modules, '["Math", "Science"]')
-        return cb.isTrue(cb.function(
-            "JSON_OVERLAPS",
-            Boolean.class,
-            root.get("modules"), // not moduleList
-            cb.literal(jsonArray)
-        ));
-    };
+    // Filtering will be done in-memory in Java
+    return (root, query, cb) -> cb.conjunction();
 }
-
-
 
 
 

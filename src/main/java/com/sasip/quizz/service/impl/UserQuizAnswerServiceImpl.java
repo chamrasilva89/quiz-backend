@@ -305,31 +305,31 @@ public QuizSubmissionResult getQuizSubmissionResult(String userId, String quizId
 @Override
 public Page<QuestionResultWithDetails> getSubmissionWithQuestionDetails(String userId, String quizId, Pageable pageable) {
     Long uid = Long.valueOf(userId);
-    System.out.println("📥 Received request for userId = " + userId + ", quizId = " + quizId + ", page = " + pageable.getPageNumber());
+    //System.out.println("📥 Received request for userId = " + userId + ", quizId = " + quizId + ", page = " + pageable.getPageNumber());
 
     // ✅ 1. Check submission existence
     UserQuizSubmission submission = submissionRepo.findByUserIdAndQuizId(uid, quizId)
         .orElseThrow(() -> new ResourceNotFoundException("No submission found for user " + userId + " and quiz " + quizId));
-    System.out.println("✅ Submission found with ID: " + submission.getId());
+    //System.out.println("✅ Submission found with ID: " + submission.getId());
 
     // ✅ 2. Get quiz and question list
     Quiz quiz = quizRepository.findById(Long.valueOf(quizId))
         .orElseThrow(() -> new ResourceNotFoundException("Quiz not found"));
-    System.out.println("✅ Quiz found: " + quiz.getQuizName());
+    //System.out.println("✅ Quiz found: " + quiz.getQuizName());
 
     List<Long> questionIds = quiz.getQuestionIds();
-    System.out.println("📋 Parsed questionIds from quiz: " + questionIds);
+    //System.out.println("📋 Parsed questionIds from quiz: " + questionIds);
 
     if (questionIds == null || questionIds.isEmpty()) {
         throw new ResourceNotFoundException("Quiz contains no questions.");
     }
 
     List<Question> allQuestions = questionRepository.findAllById(questionIds);
-    System.out.println("📦 Loaded " + allQuestions.size() + " question(s) from DB.");
+    //System.out.println("📦 Loaded " + allQuestions.size() + " question(s) from DB.");
 
     // ✅ 3. Get user's answer map for lookup
     List<UserQuizAnswer> answers = answerRepository.findByUserIdAndQuizId(userId, quizId);
-    System.out.println("📊 Found " + answers.size() + " user answers.");
+    //System.out.println("📊 Found " + answers.size() + " user answers.");
     Map<Long, UserQuizAnswer> answerMap = new HashMap<>();
     for (UserQuizAnswer ans : answers) {
         answerMap.put(ans.getQuestionId(), ans);
@@ -370,12 +370,12 @@ public Page<QuestionResultWithDetails> getSubmissionWithQuestionDetails(String u
     int start = (int) pageable.getOffset();
     int end = Math.min(start + pageable.getPageSize(), allResults.size());
 
-    System.out.println("📊 Total questions to return = " + allResults.size() + ", start = " + start + ", end = " + end);
+    //System.out.println("📊 Total questions to return = " + allResults.size() + ", start = " + start + ", end = " + end);
 
     List<QuestionResultWithDetails> paginated =
         start >= allResults.size() ? new ArrayList<>() : allResults.subList(start, end);
 
-    System.out.println("✅ Returning paginated response with " + paginated.size() + " items.");
+   // System.out.println("✅ Returning paginated response with " + paginated.size() + " items.");
     return new PageImpl<>(paginated, pageable, allResults.size());
 }
 

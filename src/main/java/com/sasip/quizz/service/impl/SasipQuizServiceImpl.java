@@ -134,4 +134,50 @@ public class SasipQuizServiceImpl implements SasipQuizService {
 
         return new PageImpl<>(paginated, pageable, completedQuizzes.size());
     }
+
+    @Override
+    public Page<QuizWithQuestionsDTO> filterQuizzesWithQuestions(QuizFilterRequest filter) {
+        // Step 1: Build specification excluding module filtering
+        Specification<Quiz> spec = Specification
+            .where(QuizSpecifications.hasStatus(filter.getStatus()))
+            .and(QuizSpecifications.hasAlYear(filter.getAlYear()))
+            .and(QuizSpecifications.isSasip());
+
+        // Step 2: Fetch unpaged result (all filtered quizzes except modules)
+        List<Quiz> quizzes = quizRepository.findAll(spec);
+
+        // Step 3: Apply module filtering in Java
+        List<Quiz> filtered = quizzes.stream()
+            .filter(quiz -> {
+                if (filter.getModules() == null || filter.getModules().isEmpty()) return true;
+                List<String> quizModules = quiz.getModuleList();
+                return quizModules != null && quizModules.stream().anyMatch(filter.getModules()::contains);
+            })
+            .toList();
+
+        // Step 4: Apply pagination manually
+        Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize());
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), filtered.size());
+
+        List<QuizWithQuestionsDTO> paginated = filtered.subList(start, end).stream().map(quiz -> {
+            QuizWithQuestionsDTO dto = new QuizWithQuestionsDTO();
+            dto.setQuizId(quiz.getQuizId());
+            dto.setQuizName(quiz.getQuizName());
+            dto.setIntro(quiz.getIntro());
+            dto.setQuizStatus(quiz.getQuizStatus());
+            dto.setXp(quiz.getXp());
+            dto.setTimeLimit(quiz.getTimeLimit());
+            dto.setAlYear(quiz.getAlYear());
+            dto.setQuestionCount(quiz.getQuestionIds() != null ? quiz.getQuestionIds().size() : 0);
+            dto.setModuleList(quiz.getModuleList());
+            dto.setScheduledTime(quiz.getScheduledTime());
+            dto.setDeadline(quiz.getDeadline());
+            return dto;
+        }).toList();
+
+        return new PageImpl<>(paginated, pageable, filtered.size());
+    }
+
+
 } 

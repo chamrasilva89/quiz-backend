@@ -1,6 +1,8 @@
 // com.sasip.quizz.service.SasipQuizService.java
 package com.sasip.quizz.service;
 
+import com.sasip.quizz.dto.QuizFilterRequest;
+import com.sasip.quizz.dto.QuizWithQuestionsDTO;
 import com.sasip.quizz.dto.SasipQuizFilterRequest;
 import com.sasip.quizz.dto.SasipQuizListItem;
 import com.sasip.quizz.dto.SasipQuizStatsDTO;
@@ -16,5 +18,6 @@ public interface SasipQuizService {
             Long userId, Pageable pageable, String alYear, QuizStatus status);
     public SasipQuizStatsDTO getUserSasipStats(Long userId);
     Page<SasipQuizListItem> listCompletedQuizzesOnly(Long userId, Pageable pageable, String alYear, QuizStatus status);
+    Page<QuizWithQuestionsDTO> filterQuizzesWithQuestions(QuizFilterRequest filter);
 
 }

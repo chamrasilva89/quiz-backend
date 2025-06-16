@@ -130,5 +130,19 @@ public class SasipQuizController {
         return ResponseEntity.ok(new ApiResponse<>(data));
     }
 
+    @PostMapping("/filter")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> filterQuizzes(@RequestBody QuizFilterRequest filter) {
+        Page<QuizWithQuestionsDTO> resultPage = quizService.filterQuizzesWithQuestions(filter);
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("items", resultPage.getContent());
+        data.put("currentPage", resultPage.getNumber());
+        data.put("totalItems", resultPage.getTotalElements());
+        data.put("totalPages", resultPage.getTotalPages());
+
+        return ResponseEntity.ok(new ApiResponse<>(data));
+    }
+
+
 
 }
