@@ -6,6 +6,8 @@ import com.sasip.quizz.dto.UserFilterRequest;
 import com.sasip.quizz.dto.UserRegistrationRequest;
 import com.sasip.quizz.dto.UserUpdateRequest;
 import com.sasip.quizz.model.User;
+import com.sasip.quizz.security.JwtUtil;
+import com.sasip.quizz.service.TokenBlacklistService;
 import com.sasip.quizz.service.UserService;
 
 import java.util.HashMap;
@@ -28,6 +30,11 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+    @Autowired
+    private TokenBlacklistService tokenBlacklistService;
+
+    @Autowired
+    private JwtUtil jwtUtil;
 
     // User Registration with consistent ApiResponse wrapper
     @PostMapping("/register")
@@ -93,6 +100,27 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse<>(e.getMessage(), 400));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>("Failed to update password", 500));
+        }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<String>> logout(@RequestHeader("Authorization") String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.badRequest()
+                .body(new ApiResponse<>("Missing or malformed Authorization header", 400));
+        }
+
+        String token = authHeader.substring(7);
+
+        try {
+            String username = jwtUtil.extractUsername(token); // validate token format
+            long remaining = jwtUtil.getRemainingValidityMillis(token);
+            tokenBlacklistService.blacklistToken(token, remaining);
+
+            return ResponseEntity.ok(new ApiResponse<>("Logout successful"));
+        } catch (Exception e) {
+            return ResponseEntity.status(401)
+                .body(new ApiResponse<>("Invalid or expired token", 401));
         }
     }
 

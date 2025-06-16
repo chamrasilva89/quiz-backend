@@ -47,30 +47,37 @@ public class JwtUtil {
                 .getSubject();
     }
 
-public String extractUsername(String token) {
-    return extractClaim(token, Claims::getSubject);
-}
+    public String extractUsername(String token) {
+        return extractClaim(token, Claims::getSubject);
+    }
 
-public boolean validateToken(String token, UserDetails userDetails) {
-    final String username = extractUsername(token);
-    return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
-}
+    public boolean validateToken(String token, UserDetails userDetails) {
+        final String username = extractUsername(token);
+        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    }
 
-public boolean isTokenExpired(String token) {
-    final Date expiration = extractClaim(token, Claims::getExpiration);
-    return expiration.before(new Date());
-}
+    public boolean isTokenExpired(String token) {
+        final Date expiration = extractClaim(token, Claims::getExpiration);
+        return expiration.before(new Date());
+    }
 
-public <T> T extractClaim(String token, java.util.function.Function<Claims, T> claimsResolver) {
-    final Claims claims = extractAllClaims(token);
-    return claimsResolver.apply(claims);
-}
+    public <T> T extractClaim(String token, java.util.function.Function<Claims, T> claimsResolver) {
+        final Claims claims = extractAllClaims(token);
+        return claimsResolver.apply(claims);
+    }
 
-private Claims extractAllClaims(String token) {
-    return Jwts.parserBuilder()
-            .setSigningKey(secretKey)
-            .build()
-            .parseClaimsJws(token)
-            .getBody();
-}
+    private Claims extractAllClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(secretKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
+    public long getRemainingValidityMillis(String token) {
+        Date expiration = extractClaim(token, Claims::getExpiration);
+        long now = System.currentTimeMillis();
+        long remaining = expiration.getTime() - now;
+        return Math.max(remaining, 0); // never return negative
+    }
+
 }

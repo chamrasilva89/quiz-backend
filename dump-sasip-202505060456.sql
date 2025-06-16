@@ -284,3 +284,10 @@ CREATE TABLE reward (
     icon_url VARCHAR(255),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE token_blacklist (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    token VARCHAR(1000) NOT NULL,
+    blacklisted_at DATETIME NOT NULL,
+    expires_at DATETIME NOT NULL
+);
