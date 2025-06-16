@@ -31,18 +31,17 @@ public class SecurityConfig {
             .csrf().disable()
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                    "/api/auth/**",
-                    "/api/user/auth/**",     // ✅ allow login and public auth routes
-                    "/v3/api-docs/**",       // ✅ optional: allow Swagger if used
-                    "/swagger-ui/**"
-                ).permitAll()
-                .anyRequest().authenticated()
+                    "/api/user/auth/login",
+                    "/api/admin/auth/login"
+                ).permitAll() // ✅ Allow ONLY login endpoints without token
+                .anyRequest().authenticated() // 🔐 All other endpoints require token
             )
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .build();
     }
+
 
     @Bean
     public AuthenticationProvider authenticationProvider() {

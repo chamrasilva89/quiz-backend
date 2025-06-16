@@ -1,6 +1,7 @@
 package com.sasip.quizz.controller;
 
 import com.sasip.quizz.dto.ApiResponse;
+import com.sasip.quizz.dto.ChangePasswordRequest;
 import com.sasip.quizz.dto.UserFilterRequest;
 import com.sasip.quizz.dto.UserRegistrationRequest;
 import com.sasip.quizz.dto.UserUpdateRequest;
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -82,27 +84,16 @@ public class UserController {
         }
     }
 
-
-    // Example of paginated user listing with consistent response format
-    // You can add this if you have user listing with pagination
-    /*
-    @GetMapping
-    public ResponseEntity<ApiResponse<?>> getUsers(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+    @PatchMapping("/{id}/change-password")
+    public ResponseEntity<ApiResponse<?>> changePassword(@PathVariable Long id, @RequestBody ChangePasswordRequest request) {
         try {
-            Pageable pageable = PageRequest.of(page, size);
-            Page<User> userPage = userService.getUsers(pageable);
-            Map<String, Object> response = new HashMap<>();
-            response.put("items", userPage.getContent());
-            response.put("currentPage", userPage.getNumber());
-            response.put("totalItems", userPage.getTotalElements());
-            response.put("totalPages", userPage.getTotalPages());
-            return ResponseEntity.ok(new ApiResponse<>(response));
+            userService.changePassword(id, request);
+            return ResponseEntity.ok(new ApiResponse<>("Password updated successfully"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse<>(e.getMessage(), 400));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>("Failed to fetch users", 500));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>("Failed to update password", 500));
         }
     }
-    */
+
 }

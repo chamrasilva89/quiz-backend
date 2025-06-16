@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import com.sasip.quizz.dto.ChangePasswordRequest;
 import com.sasip.quizz.dto.LoginRequest;
 import com.sasip.quizz.dto.LoginResponse;
 import com.sasip.quizz.dto.UserFilterRequest;
@@ -17,4 +18,5 @@ public interface UserService {
     User patchUser(Long userId, UserUpdateRequest updateRequest);
     LoginResponse login(LoginRequest request);
     public Page<User> filterUsers(UserFilterRequest filterRequest, Pageable pageable);
+    void changePassword(Long userId, ChangePasswordRequest request);
 }

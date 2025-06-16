@@ -1,8 +1,5 @@
 package com.sasip.quizz.service.impl;
 
-// com.sasip.quizz.service.impl.SasipQuizServiceImpl.java
-
-
 import com.sasip.quizz.dto.*;
 import com.sasip.quizz.model.Quiz;
 import com.sasip.quizz.model.QuizStatus;
@@ -11,38 +8,35 @@ import com.sasip.quizz.repository.QuizRepository;
 import com.sasip.quizz.repository.UserQuizSubmissionRepository;
 import com.sasip.quizz.service.SasipQuizService;
 import com.sasip.quizz.spec.QuizSpecifications;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class SasipQuizServiceImpl implements SasipQuizService {
 
     @Autowired private QuizRepository quizRepository;
     @Autowired private UserQuizSubmissionRepository userQuizSubmissionRepository;
-@Override
-public Page<SasipQuizSummary> findFiltered(SasipQuizFilterRequest filter) {
-    // Build dynamic spec using filter object
-    Specification<Quiz> spec = Specification
-        .where(QuizSpecifications.isSasip())
-        .and(QuizSpecifications.hasStatus(filter.getStatus()))
-        .and(QuizSpecifications.hasAnyModule(filter.getModule()))
-        .and(QuizSpecifications.timeLimitBetween(filter.getMinTimeLimit(), filter.getMaxTimeLimit()));
 
-    Pageable pg = PageRequest.of(filter.getPage(), filter.getSize());
+    @Override
+    public Page<SasipQuizSummary> findFiltered(SasipQuizFilterRequest filter) {
+        Specification<Quiz> spec = Specification
+            .where(QuizSpecifications.isSasip())
+            .and(QuizSpecifications.hasStatus(filter.getStatus()))
+            .and(QuizSpecifications.hasAnyModule(filter.getModule()))
+            .and(QuizSpecifications.timeLimitBetween(filter.getMinTimeLimit(), filter.getMaxTimeLimit()));
 
-    Page<Quiz> quizPage = quizRepository.findAll(spec, pg);
+        Pageable pg = PageRequest.of(filter.getPage(), filter.getSize());
+        Page<Quiz> quizPage = quizRepository.findAll(spec, pg);
 
-    // Map to DTO
-    return quizPage.map(SasipQuizSummary::new);
-}
+        return quizPage.map(SasipQuizSummary::new);
+    }
 
+    @Override
     public Page<SasipQuizListItem> listSasipQuizzesWithCompletion(
             Long userId, Pageable pageable, String alYear, QuizStatus status) {
 
@@ -76,13 +70,18 @@ public Page<SasipQuizSummary> findFiltered(SasipQuizFilterRequest filter) {
                 quiz.getQuizStatus(),
                 quiz.getScheduledTime(),
                 quiz.getDeadline(),
-                completed
+                completed,
+                quiz.getModuleList(),
+                quiz.getRewardIdList(),
+                quiz.getQuestionIds() != null ? quiz.getQuestionIds().size() : 0
             );
         }).toList();
 
         return new PageImpl<>(quizDTOs, pageable, quizzes.getTotalElements());
     }
 
+
+    @Override
     public SasipQuizStatsDTO getUserSasipStats(Long userId) {
         double best = Optional.ofNullable(userQuizSubmissionRepository.findMaxSasipScore(userId)).orElse(0.0);
         double avg = Optional.ofNullable(userQuizSubmissionRepository.findAvgSasipScore(userId)).orElse(0.0);
@@ -94,7 +93,6 @@ public Page<SasipQuizSummary> findFiltered(SasipQuizFilterRequest filter) {
 
     @Override
     public Page<SasipQuizListItem> listCompletedQuizzesOnly(Long userId, Pageable pageable, String alYear, QuizStatus status) {
-
         Specification<Quiz> spec = Specification
             .where((root, query, cb) -> cb.equal(root.get("quizType"), QuizType.SASIP));
 
@@ -106,9 +104,8 @@ public Page<SasipQuizSummary> findFiltered(SasipQuizFilterRequest filter) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("quizStatus"), status));
         }
 
-        Page<Quiz> quizzes = quizRepository.findAll(spec, Pageable.unpaged()); // We'll filter by user after fetch
+        Page<Quiz> quizzes = quizRepository.findAll(spec, Pageable.unpaged());
 
-        // Filter for quizzes the user has completed
         List<SasipQuizListItem> completedQuizzes = quizzes.getContent().stream()
             .filter(quiz -> userQuizSubmissionRepository
                 .findByUserIdAndQuizId(userId, String.valueOf(quiz.getQuizId()))
@@ -125,9 +122,11 @@ public Page<SasipQuizSummary> findFiltered(SasipQuizFilterRequest filter) {
                 quiz.getQuizStatus(),
                 quiz.getScheduledTime(),
                 quiz.getDeadline(),
-                true // completed is always true for this API
-            ))
-            .toList();
+                true,
+                quiz.getModuleList(),
+                quiz.getRewardIdList(),
+                quiz.getQuestionIds() != null ? quiz.getQuestionIds().size() : 0
+            )).toList();
 
         int start = (int) pageable.getOffset();
         int end = Math.min(start + pageable.getPageSize(), completedQuizzes.size());
@@ -135,6 +134,4 @@ public Page<SasipQuizSummary> findFiltered(SasipQuizFilterRequest filter) {
 
         return new PageImpl<>(paginated, pageable, completedQuizzes.size());
     }
-
-
-}
+} 

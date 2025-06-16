@@ -2,6 +2,7 @@ package com.sasip.quizz.dto;
 
 import com.sasip.quizz.model.QuizStatus;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,4 +23,9 @@ public class SasipQuizListItem {
     private LocalDateTime scheduledTime;
     private LocalDateTime deadline;
     private boolean completed;
+
+    // Newly added fields
+    private List<String> modules;
+    private List<Long> rewardIds;
+    private int totalQuestions;
 }

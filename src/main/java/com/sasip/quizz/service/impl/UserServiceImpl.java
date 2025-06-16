@@ -5,6 +5,7 @@ import com.sasip.quizz.dto.UserUpdateRequest;
 import com.sasip.quizz.model.User;
 import com.sasip.quizz.repository.UserRepository;
 import com.sasip.quizz.service.UserService;
+import com.sasip.quizz.dto.ChangePasswordRequest;
 import com.sasip.quizz.dto.LoginRequest;
 import com.sasip.quizz.dto.LoginResponse;
 import com.sasip.quizz.dto.UserFilterRequest;
@@ -139,6 +140,22 @@ public class UserServiceImpl implements UserService {
                 filterRequest.getUserStatus(),
                 pageable
         );
+    }
+
+    @Override
+    public void changePassword(Long userId, ChangePasswordRequest request) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        boolean matches = passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash());
+        if (!matches) {
+            throw new IllegalArgumentException("Old password is incorrect");
+        }
+
+        String hashed = passwordEncoder.encode(request.getNewPassword());
+        user.setPasswordHash(hashed);
+        user.setUpdatedDate(LocalDateTime.now());
+        userRepository.save(user);
     }
 
 }
