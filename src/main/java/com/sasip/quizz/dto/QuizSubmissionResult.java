@@ -13,6 +13,8 @@ public class QuizSubmissionResult {
     private double speedBonus;
     private double totalScore;
     private int timeTakenSeconds;
+    private String grade;
+    private int earnedXp; 
 
     @Data
     public static class QuestionResult {
@@ -21,6 +23,5 @@ public class QuizSubmissionResult {
         private Long correctAnswerId;
         private boolean isCorrect;
         private int awardedPoints;
-        private int timeTakenSeconds;
     }
 }

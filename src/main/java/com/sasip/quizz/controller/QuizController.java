@@ -2,6 +2,7 @@ package com.sasip.quizz.controller;
 
 import com.sasip.quizz.dto.ApiResponse;
 import com.sasip.quizz.dto.DynamicQuizRequest;
+import com.sasip.quizz.dto.QuestionResultWithDetails;
 import com.sasip.quizz.dto.QuizRequest;
 import com.sasip.quizz.dto.QuizResponse;
 import com.sasip.quizz.dto.QuizSubmissionRequest;
@@ -246,6 +247,34 @@ public ResponseEntity<ApiResponse<Map<String,Object>>> startQuiz(
                 .body(new ApiResponse<>(e.getMessage(), 500));
     }
 }
+
+    @GetMapping("/{quizId}/submissions/{userId}/detailed")
+    public ResponseEntity<?> getSubmissionWithQuestionDetails(
+            @PathVariable String quizId,
+            @PathVariable String userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<QuestionResultWithDetails> detailsPage =
+                    userQuizAnswerService.getSubmissionWithQuestionDetails(userId, quizId, pageable);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", detailsPage.getContent());
+            response.put("currentPage", detailsPage.getNumber());
+            response.put("totalItems", detailsPage.getTotalElements());
+            response.put("totalPages", detailsPage.getTotalPages());
+
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (ResourceNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(ex.getMessage(), 404));
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("Error retrieving submission details", 500));
+        }
+    }
 
 
 }
