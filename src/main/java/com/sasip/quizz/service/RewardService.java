@@ -13,5 +13,7 @@ public interface RewardService {
     void deleteReward(Long id);
     Page<RewardDTO> getPaginatedRewards(Pageable pageable);
        List<RewardDTO> getAllRewards();
+    Page<RewardDTO> getRewardsByFilters(String type, String status, String name, Pageable pageable);
+    public RewardDTO updateRewardStatus(Long id, String status);
 }
 

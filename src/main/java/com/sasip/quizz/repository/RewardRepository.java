@@ -1,7 +1,22 @@
 package com.sasip.quizz.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import com.sasip.quizz.model.Reward;
+import com.sasip.quizz.model.RewardType;
+import com.sasip.quizz.model.RewardStatus;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
-public interface RewardRepository extends JpaRepository<Reward, Long> {}
+import java.util.List;
+
+public interface RewardRepository extends JpaRepository<Reward, Long> {
+
+    @Query("SELECT r FROM Reward r " +
+           "WHERE (:type IS NULL OR r.type = :type) " +
+           "AND (:status IS NULL OR r.status = :status) " +
+           "AND (:name IS NULL OR LOWER(r.name) LIKE LOWER(CONCAT('%', :name, '%')))")
+    List<Reward> findByFilters(
+            @Param("type") RewardType type,
+            @Param("status") RewardStatus status,
+            @Param("name") String name);
+}

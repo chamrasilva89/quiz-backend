@@ -4,6 +4,7 @@ import com.sasip.quizz.dto.*;
 import com.sasip.quizz.model.Quiz;
 import com.sasip.quizz.model.QuizStatus;
 import com.sasip.quizz.model.QuizType;
+import com.sasip.quizz.repository.QuestionRepository;
 import com.sasip.quizz.repository.QuizRepository;
 import com.sasip.quizz.repository.UserQuizSubmissionRepository;
 import com.sasip.quizz.service.SasipQuizService;
@@ -21,7 +22,7 @@ public class SasipQuizServiceImpl implements SasipQuizService {
 
     @Autowired private QuizRepository quizRepository;
     @Autowired private UserQuizSubmissionRepository userQuizSubmissionRepository;
-
+    @Autowired private QuestionRepository questionRepository;
     @Override
     public Page<SasipQuizSummary> findFiltered(SasipQuizFilterRequest filter) {
         Specification<Quiz> spec = Specification
@@ -137,30 +138,16 @@ public class SasipQuizServiceImpl implements SasipQuizService {
 
     @Override
     public Page<QuizWithQuestionsDTO> filterQuizzesWithQuestions(QuizFilterRequest filter) {
-        // Step 1: Build specification excluding module filtering
         Specification<Quiz> spec = Specification
             .where(QuizSpecifications.hasStatus(filter.getStatus()))
+            .and(QuizSpecifications.hasAnyModule(filter.getModules()))
             .and(QuizSpecifications.hasAlYear(filter.getAlYear()))
             .and(QuizSpecifications.isSasip());
 
-        // Step 2: Fetch unpaged result (all filtered quizzes except modules)
-        List<Quiz> quizzes = quizRepository.findAll(spec);
-
-        // Step 3: Apply module filtering in Java
-        List<Quiz> filtered = quizzes.stream()
-            .filter(quiz -> {
-                if (filter.getModules() == null || filter.getModules().isEmpty()) return true;
-                List<String> quizModules = quiz.getModuleList();
-                return quizModules != null && quizModules.stream().anyMatch(filter.getModules()::contains);
-            })
-            .toList();
-
-        // Step 4: Apply pagination manually
         Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize());
-        int start = (int) pageable.getOffset();
-        int end = Math.min(start + pageable.getPageSize(), filtered.size());
+        Page<Quiz> quizPage = quizRepository.findAll(spec, pageable);
 
-        List<QuizWithQuestionsDTO> paginated = filtered.subList(start, end).stream().map(quiz -> {
+        List<QuizWithQuestionsDTO> dtoList = quizPage.getContent().stream().map(quiz -> {
             QuizWithQuestionsDTO dto = new QuizWithQuestionsDTO();
             dto.setQuizId(quiz.getQuizId());
             dto.setQuizName(quiz.getQuizName());
@@ -169,15 +156,41 @@ public class SasipQuizServiceImpl implements SasipQuizService {
             dto.setXp(quiz.getXp());
             dto.setTimeLimit(quiz.getTimeLimit());
             dto.setAlYear(quiz.getAlYear());
-            dto.setQuestionCount(quiz.getQuestionIds() != null ? quiz.getQuestionIds().size() : 0);
             dto.setModuleList(quiz.getModuleList());
             dto.setScheduledTime(quiz.getScheduledTime());
             dto.setDeadline(quiz.getDeadline());
+
+            List<Long> questionIds = quiz.getQuestionIds();
+            List<QuestionDTO> questions = questionRepository.findAllById(questionIds).stream().map(q -> {
+                QuestionDTO qDto = new QuestionDTO();
+                qDto.setQuestionId(q.getQuestionId());
+                qDto.setAlYear(q.getAlYear());
+                qDto.setQuestionText(q.getQuestionText());
+                qDto.setOptions(q.getOptions());
+                qDto.setStatus(q.getStatus());
+                qDto.setCorrectAnswerId(q.getCorrectAnswerId());
+                qDto.setExplanation(q.getExplanation());
+                qDto.setSubject(q.getSubject());
+                qDto.setType(q.getType());
+                qDto.setSubType(q.getSubType());
+                qDto.setPoints(q.getPoints());
+                qDto.setDifficultyLevel(q.getDifficultyLevel());
+                qDto.setMaxTimeSec(q.getMaxTimeSec());
+                qDto.setHasAttachment(q.isHasAttachment());
+                qDto.setModule(q.getModule());
+                qDto.setSubmodule(q.getSubmodule());
+                return qDto;
+            }).toList();
+
+            dto.setQuestions(questions);
+            dto.setTotalQuestions(questions.size());
+
             return dto;
         }).toList();
 
-        return new PageImpl<>(paginated, pageable, filtered.size());
+        return new PageImpl<>(dtoList, pageable, quizPage.getTotalElements());
     }
+
 
 
 } 

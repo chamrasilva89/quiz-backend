@@ -460,6 +460,38 @@ public class MasterDataController {
         }
     }
 
+    @GetMapping("/rewards/search")
+    public ResponseEntity<?> searchRewards(
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String name,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<RewardDTO> rewardPage = rewardService.getRewardsByFilters(type, status, name, pageable);
 
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", rewardPage.getContent());
+            response.put("currentPage", rewardPage.getNumber());
+            response.put("totalItems", rewardPage.getTotalElements());
+            response.put("totalPages", rewardPage.getTotalPages());
+
+            return ResponseEntity.ok(new ApiResponse<>(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(new ApiResponse<>(e.getMessage(), 400));
+        }
+    }
+
+    @PatchMapping("/rewards/{id}/status")
+    public ResponseEntity<?> updateRewardStatus(@PathVariable Long id, @RequestParam String status) {
+        try {
+            RewardDTO reward = rewardService.updateRewardStatus(id, status);
+            return ResponseEntity.ok(new ApiResponse<>(Map.of("items", List.of(reward))));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(new ApiResponse<>(e.getMessage(), 400));
+        }
+    }
 
 }
