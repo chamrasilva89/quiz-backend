@@ -1,5 +1,6 @@
 package com.sasip.quizz.controller;
 
+import org.springframework.security.core.Authentication;
 import com.sasip.quizz.dto.*;
 import com.sasip.quizz.model.QuizStatus;
 import com.sasip.quizz.model.User;
@@ -133,15 +134,33 @@ public class SasipQuizController {
     @PostMapping("/filter")
     public ResponseEntity<ApiResponse<Map<String, Object>>> filterQuizzes(@RequestBody QuizFilterRequest filter) {
         Page<QuizWithQuestionsDTO> resultPage = quizService.filterQuizzesWithQuestions(filter);
-
         Map<String, Object> data = new HashMap<>();
         data.put("items", resultPage.getContent());
         data.put("currentPage", resultPage.getNumber());
         data.put("totalItems", resultPage.getTotalElements());
         data.put("totalPages", resultPage.getTotalPages());
-
         return ResponseEntity.ok(new ApiResponse<>(data));
     }
+
+    @PostMapping("/filter-with-user")
+        public ResponseEntity<Map<String, Object>> filterWithUser(
+                @RequestBody QuizFilterRequest filter,
+                Authentication authentication) {
+
+            String username = authentication.getName();
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            Page<QuizWithQuestionsDTO> page = quizService.filterSasipQuizzesWithUser(filter, user.getUserId());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", page.getContent());
+            response.put("total", page.getTotalElements());
+            response.put("page", filter.getPage());
+            response.put("size", filter.getSize());
+
+            return ResponseEntity.ok(response);
+        }
 
 
 

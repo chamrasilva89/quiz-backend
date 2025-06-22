@@ -2,6 +2,9 @@ package com.sasip.quizz.model;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
+import org.hibernate.annotations.CreationTimestamp;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -66,6 +69,10 @@ public class Quiz {
     @Enumerated(EnumType.STRING)
     @Column(name = "quiz_status")
     private QuizStatus quizStatus = QuizStatus.DRAFT;
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
 
         // Transient fields for convenience
     @Transient

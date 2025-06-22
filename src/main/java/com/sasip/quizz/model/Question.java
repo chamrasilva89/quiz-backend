@@ -1,6 +1,9 @@
 package com.sasip.quizz.model;
 
+import java.time.LocalDateTime;
 import java.util.List;
+
+import org.hibernate.annotations.CreationTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.sasip.quizz.util.OptionListJsonConverter;
@@ -60,6 +63,10 @@ public class Question {
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<QuestionAttachment> attachments;
+
+    @CreationTimestamp
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
 
 
 }

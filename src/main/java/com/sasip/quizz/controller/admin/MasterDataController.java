@@ -494,4 +494,12 @@ public class MasterDataController {
         }
     }
 
+    @GetMapping("/rewards/{id}")
+    public ResponseEntity<Map<String, Object>> getRewardById(@PathVariable Long id) {
+        RewardDTO reward = rewardService.getRewardById(id);
+        Map<String, Object> response = new HashMap<>();
+        response.put("item", reward);
+        return ResponseEntity.ok(response);
+    }
+
 }

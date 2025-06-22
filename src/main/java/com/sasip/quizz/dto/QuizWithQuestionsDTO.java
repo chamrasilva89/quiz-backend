@@ -19,6 +19,11 @@ public class QuizWithQuestionsDTO {
     private LocalDateTime scheduledTime;
     private LocalDateTime deadline;
     private int totalQuestions;
+    private Integer attemptsAllowed;
+    private int passAccuracy;
+    private List<Long> rewardIds;
+    private boolean completed;
+    private List<Long> questions;        // <- add this if needed
 
-    private List<QuestionDTO> questions; // ⬅️ Add this
+    //private List<QuestionDTO> questions; // ⬅️ Add this
 }

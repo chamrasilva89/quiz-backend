@@ -151,4 +151,11 @@ public class RewardServiceImpl implements RewardService {
     }
 
 
+    @Override
+    public RewardDTO getRewardById(Long id) {
+        Reward reward = rewardRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Reward not found with ID: " + id));
+        return toDto(reward);
+    }
+
 }

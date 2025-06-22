@@ -10,6 +10,9 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -44,7 +47,8 @@ public class AdminQuestionController {
     public ResponseEntity<?> getAllQuestions(@RequestParam(defaultValue = "0") int page,
                                              @RequestParam(defaultValue = "10") int size) {
         try {
-            Page<Question> questionPage = questionService.getAllQuestions(PageRequest.of(page, size));
+            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+            Page<Question> questionPage = questionService.getAllQuestions(pageable);
             Map<String, Object> response = new HashMap<>();
             response.put("items", questionPage.getContent());
             response.put("currentPage", questionPage.getNumber());
@@ -99,8 +103,8 @@ public class AdminQuestionController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        Page<Question> questionPage = questionService.getFilteredQuestions(request, PageRequest.of(page, size));
-
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Question> questionPage = questionService.getFilteredQuestions(request, pageable);
         Map<String, Object> response = new HashMap<>();
         response.put("items", questionPage.getContent());
         response.put("currentPage", questionPage.getNumber());

@@ -15,5 +15,7 @@ public interface RewardService {
        List<RewardDTO> getAllRewards();
     Page<RewardDTO> getRewardsByFilters(String type, String status, String name, Pageable pageable);
     public RewardDTO updateRewardStatus(Long id, String status);
+    RewardDTO getRewardById(Long id);
+
 }
 

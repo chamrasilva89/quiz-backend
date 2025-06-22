@@ -19,5 +19,8 @@ public interface SasipQuizService {
     public SasipQuizStatsDTO getUserSasipStats(Long userId);
     Page<SasipQuizListItem> listCompletedQuizzesOnly(Long userId, Pageable pageable, String alYear, QuizStatus status);
     Page<QuizWithQuestionsDTO> filterQuizzesWithQuestions(QuizFilterRequest filter);
+    Page<QuizWithQuestionsDTO> filterSasipQuizzesWithUser(QuizFilterRequest filter, Long userId);
+
+
 
 }

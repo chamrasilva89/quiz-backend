@@ -58,7 +58,7 @@ public class SasipQuizServiceImpl implements SasipQuizService {
             boolean completed = userQuizSubmissionRepository
                 .findByUserIdAndQuizId(userId, String.valueOf(quiz.getQuizId()))
                 .isPresent();
-
+            
             return new SasipQuizListItem(
                 quiz.getQuizId(),
                 quiz.getQuizName(),
@@ -144,7 +144,15 @@ public class SasipQuizServiceImpl implements SasipQuizService {
             .and(QuizSpecifications.hasAlYear(filter.getAlYear()))
             .and(QuizSpecifications.isSasip());
 
-        Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize());
+        // Sorting direction logic
+        Sort.Direction direction = filter.getSortDir().equalsIgnoreCase("asc")
+                ? Sort.Direction.ASC : Sort.Direction.DESC;
+
+        // Fallback field validation (optional)
+        List<String> validSortFields = List.of("createdAt", "quizName", "xp");
+        String sortBy = validSortFields.contains(filter.getSortBy()) ? filter.getSortBy() : "createdAt";
+
+        Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize(), Sort.by(direction, sortBy));
         Page<Quiz> quizPage = quizRepository.findAll(spec, pageable);
 
         List<QuizWithQuestionsDTO> dtoList = quizPage.getContent().stream().map(quiz -> {
@@ -159,38 +167,60 @@ public class SasipQuizServiceImpl implements SasipQuizService {
             dto.setModuleList(quiz.getModuleList());
             dto.setScheduledTime(quiz.getScheduledTime());
             dto.setDeadline(quiz.getDeadline());
-
-            List<Long> questionIds = quiz.getQuestionIds();
-            List<QuestionDTO> questions = questionRepository.findAllById(questionIds).stream().map(q -> {
-                QuestionDTO qDto = new QuestionDTO();
-                qDto.setQuestionId(q.getQuestionId());
-                qDto.setAlYear(q.getAlYear());
-                qDto.setQuestionText(q.getQuestionText());
-                qDto.setOptions(q.getOptions());
-                qDto.setStatus(q.getStatus());
-                qDto.setCorrectAnswerId(q.getCorrectAnswerId());
-                qDto.setExplanation(q.getExplanation());
-                qDto.setSubject(q.getSubject());
-                qDto.setType(q.getType());
-                qDto.setSubType(q.getSubType());
-                qDto.setPoints(q.getPoints());
-                qDto.setDifficultyLevel(q.getDifficultyLevel());
-                qDto.setMaxTimeSec(q.getMaxTimeSec());
-                qDto.setHasAttachment(q.isHasAttachment());
-                qDto.setModule(q.getModule());
-                qDto.setSubmodule(q.getSubmodule());
-                return qDto;
-            }).toList();
-
-            dto.setQuestions(questions);
-            dto.setTotalQuestions(questions.size());
-
+            dto.setTotalQuestions(quiz.getQuestionIds() != null ? quiz.getQuestionIds().size() : 0);
             return dto;
         }).toList();
 
         return new PageImpl<>(dtoList, pageable, quizPage.getTotalElements());
     }
 
+    @Override
+    public Page<QuizWithQuestionsDTO> filterSasipQuizzesWithUser(QuizFilterRequest filter, Long userId) {
+        Specification<Quiz> spec = Specification
+                .where(QuizSpecifications.hasStatus(filter.getStatus()))
+                .and(QuizSpecifications.hasAnyModule(filter.getModules()))
+                .and(QuizSpecifications.hasAlYear(filter.getAlYear()))
+                .and(QuizSpecifications.isSasip());
+
+        Sort.Direction direction = filter.getSortDir().equalsIgnoreCase("asc")
+                ? Sort.Direction.ASC : Sort.Direction.DESC;
+
+        List<String> validSortFields = List.of("createdAt", "quizName", "xp");
+        String sortBy = validSortFields.contains(filter.getSortBy()) ? filter.getSortBy() : "createdAt";
+
+        Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize(), Sort.by(direction, sortBy));
+        Page<Quiz> quizPage = quizRepository.findAll(spec, pageable);
+
+        List<QuizWithQuestionsDTO> dtoList = quizPage.getContent().stream().map(quiz -> {
+            QuizWithQuestionsDTO dto = new QuizWithQuestionsDTO();
+            dto.setQuizId(quiz.getQuizId());
+            dto.setQuizName(quiz.getQuizName());
+            dto.setIntro(quiz.getIntro());
+            dto.setQuizStatus(quiz.getQuizStatus());
+            dto.setXp(quiz.getXp());
+            dto.setTimeLimit(quiz.getTimeLimit());
+            dto.setAlYear(quiz.getAlYear());
+            dto.setModuleList(quiz.getModuleList());
+            dto.setScheduledTime(quiz.getScheduledTime());
+            dto.setDeadline(quiz.getDeadline());
+            dto.setTotalQuestions(quiz.getQuestionIds() != null ? quiz.getQuestionIds().size() : 0);
+            dto.setQuestions(quiz.getQuestionIds()); // Optional: expose actual IDs
+
+            // ✅ Additional fields
+            dto.setAttemptsAllowed(quiz.getAttemptsAllowed());
+            dto.setPassAccuracy(quiz.getPassAccuracy());
+            dto.setRewardIds(quiz.getRewardIdList());
+
+            boolean completed = userQuizSubmissionRepository
+                .findByUserIdAndQuizId(userId, String.valueOf(quiz.getQuizId()))
+                .isPresent();
+            dto.setCompleted(completed);
+
+            return dto;
+        }).toList();
+
+        return new PageImpl<>(dtoList, pageable, quizPage.getTotalElements());
+    }
 
 
 } 

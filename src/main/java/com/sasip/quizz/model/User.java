@@ -42,7 +42,9 @@ public class User {
     @Column(length = 15,nullable = false )
     private String phone;
 
+   @Column(nullable = true) // or just omit nullable
     private String email;
+
 
     private String username;
 

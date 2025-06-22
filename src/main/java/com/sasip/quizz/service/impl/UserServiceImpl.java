@@ -43,7 +43,8 @@ public class UserServiceImpl implements UserService {
     public User registerUser(UserRegistrationRequest request) {
         logger.info("Registering user with username: {}", request.getUsername());
 
-        if (userRepository.existsByEmail(request.getEmail())) {
+        // ✅ Skip email check if it's null
+        if (request.getEmail() != null && userRepository.existsByEmail(request.getEmail())) {
             logger.warn("Email already in use: {}", request.getEmail());
             throw new RuntimeException("Email already in use");
         }
@@ -60,23 +61,25 @@ public class UserServiceImpl implements UserService {
         user.setRole(request.getRole());
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
-        user.setAvatarUrl(request.getAvatarUrl());
+        user.setAvatarUrl(request.getAvatarUrl());             // optional
         user.setSchool(request.getSchool());
         user.setAlYear(request.getAlYear());
         user.setDistrict(request.getDistrict());
-        user.setMedium(request.getMedium());
+        user.setMedium(request.getMedium());                   // optional
         user.setPhone(request.getPhone());
-        user.setEmail(request.getEmail());
+        user.setEmail(request.getEmail());                     // optional
         user.setUsername(request.getUsername());
         user.setPasswordHash(hashedPassword);
-        user.setParentName(request.getParentName());
-        user.setParentContactNo(request.getParentContactNo());
+        user.setParentName(request.getParentName());           // optional
+        user.setParentContactNo(request.getParentContactNo()); // optional
         user.setCreatedDate(LocalDateTime.now());
         user.setUpdatedDate(LocalDateTime.now());
-        user.setUserStatus(request.getUserStatus() != null ? request.getUserStatus() : "active");
+        user.setUserStatus(request.getUserStatus() != null ? request.getUserStatus() : "active"); // optional with default
+
         logger.info("User registered successfully: {}", user.getUsername());
         return userRepository.save(user);
     }
+
 
     @Override
     public User patchUser(Long userId, UserUpdateRequest updateRequest) {
