@@ -3,6 +3,7 @@ package com.sasip.quizz.service.impl;
 
 import com.sasip.quizz.dto.ApiResponse;
 import com.sasip.quizz.dto.DynamicQuizRequest;
+import com.sasip.quizz.dto.MyQuizRequest;
 import com.sasip.quizz.dto.QuestionWithoutAnswerDTO;
 import com.sasip.quizz.dto.QuizRequest;
 import com.sasip.quizz.dto.QuizResponse;
@@ -244,5 +245,60 @@ public ResponseEntity<ApiResponse<Object>> generateDynamicQuiz(DynamicQuizReques
         return quizRepository.save(quiz);
     }
 
+    @Override
+    public ResponseEntity<ApiResponse<Object>> generateMyQuiz(MyQuizRequest request) {
+        Long userId = request.getUserId();
+        int numQuestions = request.getQuestionCount();
+        String difficulty = request.getDifficultyLevel();
+        List<String> modules = request.getModules();
+        String quizName = request.getQuizName();
+
+        // Step 1: Get all SASIP quiz questions
+        List<Quiz> sasipQuizzes = quizRepository.findAllByQuizType(QuizType.SASIP);
+        Set<Long> sasipQuestions = sasipQuizzes.stream()
+            .flatMap(q -> q.getQuestionIds().stream())
+            .collect(Collectors.toSet());
+
+        // Step 2: Get all previously answered questions
+        Set<Long> answeredQuestions = userQuizAnswerRepository.findByUserId(userId.toString())
+            .stream()
+            .map(UserQuizAnswer::getQuestionId)
+            .collect(Collectors.toSet());
+
+        // Step 3: Combine exclusions
+        Set<Long> excludeSet = new HashSet<>(sasipQuestions);
+        excludeSet.addAll(answeredQuestions);
+
+        // Step 4: Fetch available questions filtered by difficulty and module
+        List<Question> pool = excludeSet.isEmpty()
+            ? questionRepository.findByDifficultyLevelAndModuleIn(difficulty, modules)
+            : questionRepository.findByDifficultyLevelAndModuleInAndQuestionIdNotIn(difficulty, modules, new ArrayList<>(excludeSet));
+
+        if (pool.size() < numQuestions) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse<>("Not enough questions available for the selected criteria.", HttpStatus.BAD_REQUEST.value()));
+        }
+
+        Collections.shuffle(pool);
+        List<Question> selected = pool.subList(0, numQuestions);
+
+        // Step 5: Create and save quiz
+        Quiz quiz = new Quiz();
+        quiz.setQuizName(quizName + " - " + LocalDateTime.now());
+        quiz.setIntro("Auto generated module-based quiz.");
+        quiz.setQuestionIds(selected.stream().map(Question::getQuestionId).collect(Collectors.toList()));
+        quiz.setQuizType(QuizType.MYQUIZ);
+        quiz.setUserId(userId);
+        quiz.setAttemptsAllowed(1);
+        quiz.setTimeLimit(15);
+        quiz.setPassAccuracy(60);
+        quiz.setXp(50);
+
+        Quiz savedQuiz = quizRepository.save(quiz);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("items", List.of(savedQuiz));
+        return ResponseEntity.ok(new ApiResponse<>(response));
+    }
 
 }

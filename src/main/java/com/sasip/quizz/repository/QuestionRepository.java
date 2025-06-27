@@ -30,4 +30,11 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
         Pageable pageable
     );
 
+    // 1. Fetch questions by difficulty level and module
+    List<Question> findByDifficultyLevelAndModuleIn(String difficultyLevel, List<String> modules);
+
+    // 2. Fetch questions by difficulty level and module, excluding question IDs
+    List<Question> findByDifficultyLevelAndModuleInAndQuestionIdNotIn(String difficultyLevel, List<String> modules, List<Long> excludedIds);
+
+
 }

@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 
 import com.sasip.quizz.dto.ApiResponse;
 import com.sasip.quizz.dto.DynamicQuizRequest;
+import com.sasip.quizz.dto.MyQuizRequest;
 import com.sasip.quizz.dto.QuizRequest;
 import com.sasip.quizz.dto.QuizResponse;
 import com.sasip.quizz.dto.SasipQuizResponse;
@@ -25,6 +26,7 @@ public interface QuizService {
     Page<SasipQuizResponse> getAllSasipQuizzesWithQuestions(Pageable pageable);
     public ResponseEntity<ApiResponse<Object>> generateDynamicQuiz(DynamicQuizRequest request);
     public Quiz updateQuizHeaderDetails(Long quizId, UpdateQuizRequest request);
+    public ResponseEntity<ApiResponse<Object>> generateMyQuiz(MyQuizRequest request);
 }
 
 

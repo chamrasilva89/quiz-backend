@@ -2,6 +2,7 @@ package com.sasip.quizz.controller;
 
 import com.sasip.quizz.dto.ApiResponse;
 import com.sasip.quizz.dto.DynamicQuizRequest;
+import com.sasip.quizz.dto.MyQuizRequest;
 import com.sasip.quizz.dto.QuestionResultWithDetails;
 import com.sasip.quizz.dto.QuizRequest;
 import com.sasip.quizz.dto.QuizResponse;
@@ -184,6 +185,19 @@ public class QuizController {
         } catch (Exception e) {
             return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>("Internal server error", HttpStatus.INTERNAL_SERVER_ERROR.value()));
+        }
+    }
+
+    @PostMapping("/generate-myquiz")
+    public ResponseEntity<ApiResponse<Object>> generateModuleQuiz(@RequestBody MyQuizRequest request) {
+        try {
+            return quizService.generateMyQuiz(request);
+        } catch (NotEnoughQuestionsException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse<>("Not enough questions to generate the quiz", HttpStatus.BAD_REQUEST.value()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiResponse<>("Internal server error", HttpStatus.INTERNAL_SERVER_ERROR.value()));
         }
     }
