@@ -9,6 +9,7 @@ import com.sasip.quizz.dto.UpdatePermissionRequest;
 import com.sasip.quizz.model.Permission;
 import com.sasip.quizz.repository.PermissionRepository;
 import com.sasip.quizz.service.PermissionService;
+import com.sasip.quizz.service.LogService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 public class PermissionServiceImpl implements PermissionService {
 
     private final PermissionRepository permissionRepository;
+    private final LogService logService;
 
     @Override
     public Permission createPermission(CreatePermissionRequest request) {
@@ -25,7 +27,9 @@ public class PermissionServiceImpl implements PermissionService {
         }
         Permission permission = new Permission();
         permission.setPermissionName(request.getPermissionName());
-        return permissionRepository.save(permission);
+        Permission saved = permissionRepository.save(permission);
+        logService.log("INFO", "PermissionServiceImpl", "Create Permission", "Created permission: " + saved.getPermissionName(), "system");
+        return saved;
     }
 
     @Override
@@ -33,7 +37,9 @@ public class PermissionServiceImpl implements PermissionService {
         Permission existing = permissionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Permission not found"));
         existing.setPermissionName(request.getPermissionName());
-        return permissionRepository.save(existing);
+        Permission updated = permissionRepository.save(existing);
+        logService.log("INFO", "PermissionServiceImpl", "Update Permission", "Updated permission: " + updated.getPermissionName(), "system");
+        return updated;
     }
 
     @Override

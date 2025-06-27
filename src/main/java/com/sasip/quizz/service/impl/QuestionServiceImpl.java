@@ -12,6 +12,7 @@ import com.sasip.quizz.model.Question;
 import com.sasip.quizz.model.QuestionAttachment;
 import com.sasip.quizz.repository.QuestionRepository;
 import com.sasip.quizz.service.QuestionService;
+import com.sasip.quizz.service.LogService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,43 +21,46 @@ import java.util.List;
 public class QuestionServiceImpl implements QuestionService {
 
     private final QuestionRepository questionRepository;
+    private final LogService logService;
 
-    public QuestionServiceImpl(QuestionRepository questionRepository) {
+    public QuestionServiceImpl(QuestionRepository questionRepository, LogService logService) {
         this.questionRepository = questionRepository;
+        this.logService = logService;
     }
 
+    @Override
+    public Question addQuestion(QuestionRequest request) {
+        Question question = new Question();
+        question.setQuestionText(request.getQuestionText());
+        question.setOptions(request.getOptions());
+        question.setCorrectAnswerId(request.getCorrectAnswerId());
+        question.setExplanation(request.getExplanation());
+        question.setSubject(request.getSubject());
+        question.setType(request.getType());
+        question.setSubType(request.getSubType());
+        question.setPoints(request.getPoints());
+        question.setDifficultyLevel(request.getDifficultyLevel());
+        question.setMaxTimeSec(request.getMaxTimeSec());
+        question.setAlYear(request.getAlYear());
+        question.setHasAttachment(request.isHasAttachment());
+        question.setModule(request.getModule());
+        question.setSubmodule(request.getSubmodule());
 
-@Override
-public Question addQuestion(QuestionRequest request) {
-    Question question = new Question();
-    question.setQuestionText(request.getQuestionText());
-    question.setOptions(request.getOptions());
-    question.setCorrectAnswerId(request.getCorrectAnswerId());
-    question.setExplanation(request.getExplanation());
-    question.setSubject(request.getSubject());
-    question.setType(request.getType());
-    question.setSubType(request.getSubType());
-    question.setPoints(request.getPoints());
-    question.setDifficultyLevel(request.getDifficultyLevel());
-    question.setMaxTimeSec(request.getMaxTimeSec());
-    question.setAlYear(request.getAlYear());
-    question.setHasAttachment(request.isHasAttachment());
-    question.setModule(request.getModule());
-    question.setSubmodule(request.getSubmodule());
-    // 🟡 Attachment handling (put this here)
-    if (request.isHasAttachment()) {
-        List<QuestionAttachment> attachments = new ArrayList<>();
-        for (String path : request.getAttachmentPaths()) {
-            QuestionAttachment attachment = new QuestionAttachment();
-            attachment.setFilePath(path);
-            attachment.setQuestion(question); // Set relationship
-            attachments.add(attachment);
+        if (request.isHasAttachment()) {
+            List<QuestionAttachment> attachments = new ArrayList<>();
+            for (String path : request.getAttachmentPaths()) {
+                QuestionAttachment attachment = new QuestionAttachment();
+                attachment.setFilePath(path);
+                attachment.setQuestion(question);
+                attachments.add(attachment);
+            }
+            question.setAttachments(attachments);
         }
-        question.setAttachments(attachments); // Attach to question
-    }
 
-    return questionRepository.save(question);
-}
+        Question saved = questionRepository.save(question);
+        logService.log("INFO", "QuestionServiceImpl", "Add Question", "Created question ID: " + saved.getQuestionId(), "system");
+        return saved;
+    }
 
     @Override
     public Page<Question> getAllQuestions(Pageable pageable) {
@@ -86,7 +90,9 @@ public Question addQuestion(QuestionRequest request) {
         if (request.getCorrectAnswerId() != null)
             question.setCorrectAnswerId(request.getCorrectAnswerId());
 
-        return questionRepository.save(question);
+        Question updated = questionRepository.save(question);
+        logService.log("INFO", "QuestionServiceImpl", "Update Question", "Updated question ID: " + updated.getQuestionId(), "system");
+        return updated;
     }
 
     @Override
@@ -94,6 +100,5 @@ public Question addQuestion(QuestionRequest request) {
         return questionRepository.findFilteredQuestions(
                 request.getModules(), request.getSubmodules(), request.getDifficultyLevels(), pageable);
     }
-
 
 }

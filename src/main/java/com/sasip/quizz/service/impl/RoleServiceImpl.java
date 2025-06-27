@@ -4,6 +4,7 @@ import com.sasip.quizz.dto.*;
 import com.sasip.quizz.model.Role;
 import com.sasip.quizz.repository.RoleRepository;
 import com.sasip.quizz.service.RoleService;
+import com.sasip.quizz.service.LogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 public class RoleServiceImpl implements RoleService {
 
     private final RoleRepository roleRepository;
+    private final LogService logService;
 
     @Override
     public RoleDTO createRole(CreateRoleRequest request) {
@@ -22,14 +24,18 @@ public class RoleServiceImpl implements RoleService {
             throw new RuntimeException("Role already exists");
         }
         Role role = Role.builder().name(request.getName()).build();
-        return toDTO(roleRepository.save(role));
+        Role saved = roleRepository.save(role);
+        logService.log("INFO", "RoleServiceImpl", "Create Role", "Created role: " + saved.getName(), "system");
+        return toDTO(saved);
     }
 
     @Override
     public RoleDTO updateRole(Long id, UpdateRoleRequest request) {
         Role role = roleRepository.findById(id).orElseThrow(() -> new RuntimeException("Role not found"));
         role.setName(request.getName());
-        return toDTO(roleRepository.save(role));
+        Role updated = roleRepository.save(role);
+        logService.log("INFO", "RoleServiceImpl", "Update Role", "Updated role: " + updated.getName(), "system");
+        return toDTO(updated);
     }
 
     @Override

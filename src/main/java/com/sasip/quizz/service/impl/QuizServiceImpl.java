@@ -1,43 +1,22 @@
 package com.sasip.quizz.service.impl;
 
-
-import com.sasip.quizz.dto.ApiResponse;
-import com.sasip.quizz.dto.DynamicQuizRequest;
-import com.sasip.quizz.dto.MyQuizRequest;
-import com.sasip.quizz.dto.QuestionWithoutAnswerDTO;
-import com.sasip.quizz.dto.QuizRequest;
-import com.sasip.quizz.dto.QuizResponse;
-import com.sasip.quizz.dto.SasipQuizResponse;
-import com.sasip.quizz.dto.UpdateQuizRequest;
+import com.sasip.quizz.dto.*;
 import com.sasip.quizz.exception.ResourceNotFoundException;
-import com.sasip.quizz.model.Question;
-import com.sasip.quizz.model.Quiz;
-import com.sasip.quizz.model.QuizStatus;
-import com.sasip.quizz.model.QuizType;
-import com.sasip.quizz.model.UserQuizAnswer;
-import com.sasip.quizz.repository.QuestionRepository;
-import com.sasip.quizz.repository.QuizRepository;
-import com.sasip.quizz.repository.UserQuizAnswerRepository;
+import com.sasip.quizz.model.*;
+import com.sasip.quizz.repository.*;
 import com.sasip.quizz.service.QuizService;
+import com.sasip.quizz.service.LogService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 @Service
 public class QuizServiceImpl implements QuizService {
@@ -48,177 +27,143 @@ public class QuizServiceImpl implements QuizService {
     private QuestionRepository questionRepository;
     @Autowired
     private UserQuizAnswerRepository userQuizAnswerRepository;
-@Override
-public Quiz createQuizFromRequest(QuizRequest request) {
-    Quiz quiz = new Quiz();
-    quiz.setQuizName(request.getQuizName());
-    quiz.setIntro(request.getIntro());
-    quiz.setModuleList(request.getModuleList());
-    quiz.setRewardIdList(request.getRewardIdList());
-    quiz.setAttemptsAllowed(request.getAttemptsAllowed());
-    quiz.setPassAccuracy(request.getPassAccuracy());
-    quiz.setTimeLimit(request.getTimeLimit());
-    quiz.setXp(request.getXp());
-    quiz.setScheduledTime(request.getScheduledTime());
-    quiz.setDeadline(request.getDeadline());
-    quiz.setAlYear(request.getAlYear());
-    quiz.setQuestionIds(request.getQuestionIds());
-    quiz.setQuizType(QuizType.valueOf(request.getQuizType().toUpperCase()));
-    quiz.setQuizStatus(QuizStatus.valueOf(request.getQuizStatus().toUpperCase()));
-    return quizRepository.save(quiz); // ID is auto-generated
-}
-
+    @Autowired
+    private LogService logService;
 
     @Override
-    public Optional<Quiz> getQuizById(Long id) { 
+    public Quiz createQuizFromRequest(QuizRequest request) {
+        Quiz quiz = new Quiz();
+        quiz.setQuizName(request.getQuizName());
+        quiz.setIntro(request.getIntro());
+        quiz.setModuleList(request.getModuleList());
+        quiz.setRewardIdList(request.getRewardIdList());
+        quiz.setAttemptsAllowed(request.getAttemptsAllowed());
+        quiz.setPassAccuracy(request.getPassAccuracy());
+        quiz.setTimeLimit(request.getTimeLimit());
+        quiz.setXp(request.getXp());
+        quiz.setScheduledTime(request.getScheduledTime());
+        quiz.setDeadline(request.getDeadline());
+        quiz.setAlYear(request.getAlYear());
+        quiz.setQuestionIds(request.getQuestionIds());
+        quiz.setQuizType(QuizType.valueOf(request.getQuizType().toUpperCase()));
+        quiz.setQuizStatus(QuizStatus.valueOf(request.getQuizStatus().toUpperCase()));
+        Quiz saved = quizRepository.save(quiz);
+        logService.log("INFO", "QuizServiceImpl", "Create Quiz", "Quiz created: " + saved.getQuizName(), null);
+        return saved;
+    }
+
+    @Override
+    public Optional<Quiz> getQuizById(Long id) {
         return quizRepository.findById(id);
     }
 
     @Override
     public Quiz save(Quiz quiz) {
-        return quizRepository.save(quiz);
+        Quiz saved = quizRepository.save(quiz);
+        logService.log("INFO", "QuizServiceImpl", "Save Quiz", "Quiz saved: " + saved.getQuizName(), null);
+        return saved;
     }
 
     @Override
     public Quiz updateQuizQuestions(Long quizId, List<Long> questionIds) {
-        Optional<Quiz> quizOptional = quizRepository.findById(quizId);
-        if (!quizOptional.isPresent()) {
-            throw new RuntimeException("Quiz not found");
-        }
-
-        Quiz quiz = quizOptional.get();
+        Quiz quiz = quizRepository.findById(quizId)
+                .orElseThrow(() -> new RuntimeException("Quiz not found"));
         quiz.setQuestionIds(questionIds);
-        return quizRepository.save(quiz);
+        Quiz updated = quizRepository.save(quiz);
+        logService.log("INFO", "QuizServiceImpl", "Update Quiz Questions", "Quiz questions updated for: " + updated.getQuizName(), null);
+        return updated;
     }
 
     @Override
     public QuizResponse getQuizWithQuestions(Long quizId) {
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new ResourceNotFoundException("Quiz not found with ID: " + quizId));
-
         List<Long> questionIds = quiz.getQuestionIds();
         List<Question> questions = questionRepository.findAllById(questionIds);
-
         return new QuizResponse(quiz, questions);
     }
 
     @Override
     public Page<QuizResponse> getAllQuizzesWithQuestions(Pageable pageable) {
         Page<Quiz> quizzes = quizRepository.findAll(pageable);
-    
-        List<QuizResponse> quizResponses = quizzes.stream()
-            .map(quiz -> {
-                List<Long> questionIds = quiz.getQuestionIds();
-                List<Question> questions;
-    
-                // If questionIds is null or empty, set questions as an empty list
-                if (questionIds == null || questionIds.isEmpty()) {
-                    questions = Collections.emptyList();
-                } else {
-                    questions = questionRepository.findAllById(questionIds);
-                }
-    
-                return new QuizResponse(quiz, questions);
-            })
-            .collect(Collectors.toList());
-    
+        List<QuizResponse> quizResponses = quizzes.stream().map(quiz -> {
+            List<Question> questions = Optional.ofNullable(quiz.getQuestionIds())
+                    .map(questionRepository::findAllById)
+                    .orElse(Collections.emptyList());
+            return new QuizResponse(quiz, questions);
+        }).collect(Collectors.toList());
         return new PageImpl<>(quizResponses, pageable, quizzes.getTotalElements());
     }
-    
+
     @Override
     public Page<SasipQuizResponse> getAllSasipQuizzesWithQuestions(Pageable pageable) {
-        // Filter quizzes by SASIP type
         Page<Quiz> quizzes = quizRepository.findByQuizType(QuizType.SASIP, pageable);
-
-        List<SasipQuizResponse> quizResponses = quizzes.stream()
-            .map(quiz -> {
-                List<Long> questionIds = quiz.getQuestionIds();
-                List<Question> questions = (questionIds == null || questionIds.isEmpty())
-                        ? Collections.emptyList()
-                        : questionRepository.findAllById(questionIds);
-
-                List<QuestionWithoutAnswerDTO> questionDTOs = questions.stream()
-                        .map(QuestionWithoutAnswerDTO::new)
-                        .collect(Collectors.toList());
-
-                SasipQuizResponse response = new SasipQuizResponse(quiz, questionDTOs);
-                response.setXp(quiz.getXp());
-                response.setPassAccuracy(quiz.getPassAccuracy());
-                try {
-                    response.setAlYear(Integer.parseInt(quiz.getAlYear()));
-                } catch (NumberFormatException e) {
-                    response.setAlYear(0); // Default or handle gracefully
-                }
-                response.setAttemptsAllowed(quiz.getAttemptsAllowed());
-                response.setScheduledTime(quiz.getScheduledTime());
-                response.setDeadline(quiz.getDeadline());
-                response.setRewardIds(quiz.getRewardIdList());
-                response.setQuizStatus(quiz.getQuizStatus());
-
-                return response;
-            })
-            .collect(Collectors.toList());
-
-        return new PageImpl<>(quizResponses, pageable, quizzes.getTotalElements());
+        List<SasipQuizResponse> responses = quizzes.stream().map(quiz -> {
+            List<Question> questions = Optional.ofNullable(quiz.getQuestionIds())
+                    .map(questionRepository::findAllById)
+                    .orElse(Collections.emptyList());
+            List<QuestionWithoutAnswerDTO> questionDTOs = questions.stream()
+                    .map(QuestionWithoutAnswerDTO::new)
+                    .collect(Collectors.toList());
+            SasipQuizResponse response = new SasipQuizResponse(quiz, questionDTOs);
+            response.setXp(quiz.getXp());
+            response.setPassAccuracy(quiz.getPassAccuracy());
+            try {
+                response.setAlYear(Integer.parseInt(quiz.getAlYear()));
+            } catch (NumberFormatException e) {
+                response.setAlYear(0);
+            }
+            response.setAttemptsAllowed(quiz.getAttemptsAllowed());
+            response.setScheduledTime(quiz.getScheduledTime());
+            response.setDeadline(quiz.getDeadline());
+            response.setRewardIds(quiz.getRewardIdList());
+            response.setQuizStatus(quiz.getQuizStatus());
+            return response;
+        }).collect(Collectors.toList());
+        return new PageImpl<>(responses, pageable, quizzes.getTotalElements());
     }
 
-@Override
-public ResponseEntity<ApiResponse<Object>> generateDynamicQuiz(DynamicQuizRequest request) {
-    Long userId = request.getUserId();
-    int numQuestions = request.getQuestionCount();
-    String difficulty = request.getDifficultyLevel();
-    List<String> modules = request.getModuleList(); // optional
-    String quizName = request.getQuizName();
-    // Step 1: Get all sasip quiz questions
-    List<Quiz> sasipQuizzes = quizRepository.findAllByQuizType(QuizType.SASIP);
-    Set<Long> sasipQuestions = sasipQuizzes.stream()
-        .flatMap(q -> q.getQuestionIds().stream())
-        .collect(Collectors.toSet());
+    @Override
+    public ResponseEntity<ApiResponse<Object>> generateDynamicQuiz(DynamicQuizRequest request) {
+        Long userId = request.getUserId();
+        int numQuestions = request.getQuestionCount();
+        String difficulty = request.getDifficultyLevel();
+        List<String> modules = request.getModuleList();
 
-    // Step 2: Get all previously answered questions
-    Set<Long> answeredQuestions = userQuizAnswerRepository.findByUserId(userId.toString())
-        .stream()
-        .map(UserQuizAnswer::getQuestionId)
-        .collect(Collectors.toSet());
+        Set<Long> excludeSet = new HashSet<>();
+        quizRepository.findAllByQuizType(QuizType.SASIP).forEach(q -> excludeSet.addAll(q.getQuestionIds()));
+        userQuizAnswerRepository.findByUserId(userId.toString())
+                .forEach(ans -> excludeSet.add(ans.getQuestionId()));
 
-    // Step 3: Combine exclusions
-    Set<Long> excludeSet = new HashSet<>();
-    excludeSet.addAll(sasipQuestions);
-    excludeSet.addAll(answeredQuestions);
+        List<Question> pool = excludeSet.isEmpty()
+                ? questionRepository.findByDifficultyLevel(difficulty)
+                : questionRepository.findByDifficultyLevelAndQuestionIdNotIn(difficulty, new ArrayList<>(excludeSet));
 
-    // Step 4: Fetch available questions
-    List<Question> pool = excludeSet.isEmpty()
-    ? questionRepository.findByDifficultyLevel(difficulty)
-    : questionRepository.findByDifficultyLevelAndQuestionIdNotIn(difficulty, new ArrayList<>(excludeSet));
+        if (pool.size() < numQuestions) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>("Not enough questions available for the selected difficulty level.", 400));
+        }
 
-    if (pool.size() < numQuestions) {
-        String errorMsg = "Not enough questions available for the selected difficulty level.";
-        return ResponseEntity
-            .status(HttpStatus.BAD_REQUEST)
-            .body(new ApiResponse<>(errorMsg, HttpStatus.BAD_REQUEST.value()));
-    }
+        Collections.shuffle(pool);
+        List<Question> selected = pool.subList(0, numQuestions);
 
+        Quiz quiz = new Quiz();
+        quiz.setQuizName("Dynamic Quiz - " + LocalDateTime.now());
+        quiz.setIntro("Auto generated dynamic quiz.");
+        quiz.setQuestionIds(selected.stream().map(Question::getQuestionId).collect(Collectors.toList()));
+        quiz.setQuizType(QuizType.DYNAMIC);
+        quiz.setUserId(userId);
+        quiz.setAttemptsAllowed(1);
+        quiz.setTimeLimit(15);
+        quiz.setPassAccuracy(60);
+        quiz.setXp(50);
 
-    Collections.shuffle(pool);
-    List<Question> selected = pool.subList(0, numQuestions);
+        Quiz saved = quizRepository.save(quiz);
+        logService.log("INFO", "QuizServiceImpl", "Generate Dynamic Quiz", "Dynamic quiz generated: " + saved.getQuizName(), String.valueOf(userId));
 
-    // Step 5: Create and save quiz
-    Quiz quiz = new Quiz();
-    quiz.setQuizName("Dynamic Quiz - " + LocalDateTime.now());
-    quiz.setIntro("Auto generated dynamic quiz.");
-    quiz.setQuestionIds(selected.stream().map(Question::getQuestionId).collect(Collectors.toList()));
-    quiz.setQuizType(QuizType.DYNAMIC);
-    quiz.setUserId(Long.valueOf(userId));
-    quiz.setAttemptsAllowed(1);
-    quiz.setTimeLimit(15);
-    quiz.setPassAccuracy(60);
-    quiz.setXp(50);
-
-    Quiz savedQuiz = quizRepository.save(quiz);
-    // Step 6: Build consistent response format (no pagination here)
-    Map<String, Object> response = new HashMap<>();
-    response.put("items", List.of(quiz)); // Wrapped inside items array
-    return ResponseEntity.ok(new ApiResponse<>(response));
+        Map<String, Object> response = new HashMap<>();
+        response.put("items", List.of(saved));
+        return ResponseEntity.ok(new ApiResponse<>(response));
     }
 
     @Override
@@ -242,7 +187,9 @@ public ResponseEntity<ApiResponse<Object>> generateDynamicQuiz(DynamicQuizReques
         if (request.getUserId() != null) quiz.setUserId(request.getUserId());
         if (request.getQuizStatus() != null) quiz.setQuizStatus(request.getQuizStatus());
 
-        return quizRepository.save(quiz);
+        Quiz updated = quizRepository.save(quiz);
+        logService.log("INFO", "QuizServiceImpl", "Update Quiz Header", "Quiz header updated: " + updated.getQuizName(), updated.getUserId() != null ? String.valueOf(updated.getUserId()) : null);
+        return updated;
     }
 
     @Override
@@ -253,36 +200,23 @@ public ResponseEntity<ApiResponse<Object>> generateDynamicQuiz(DynamicQuizReques
         List<String> modules = request.getModules();
         String quizName = request.getQuizName();
 
-        // Step 1: Get all SASIP quiz questions
-        List<Quiz> sasipQuizzes = quizRepository.findAllByQuizType(QuizType.SASIP);
-        Set<Long> sasipQuestions = sasipQuizzes.stream()
-            .flatMap(q -> q.getQuestionIds().stream())
-            .collect(Collectors.toSet());
+        Set<Long> excludeSet = new HashSet<>();
+        quizRepository.findAllByQuizType(QuizType.SASIP).forEach(q -> excludeSet.addAll(q.getQuestionIds()));
+        userQuizAnswerRepository.findByUserId(userId.toString())
+                .forEach(ans -> excludeSet.add(ans.getQuestionId()));
 
-        // Step 2: Get all previously answered questions
-        Set<Long> answeredQuestions = userQuizAnswerRepository.findByUserId(userId.toString())
-            .stream()
-            .map(UserQuizAnswer::getQuestionId)
-            .collect(Collectors.toSet());
-
-        // Step 3: Combine exclusions
-        Set<Long> excludeSet = new HashSet<>(sasipQuestions);
-        excludeSet.addAll(answeredQuestions);
-
-        // Step 4: Fetch available questions filtered by difficulty and module
         List<Question> pool = excludeSet.isEmpty()
-            ? questionRepository.findByDifficultyLevelAndModuleIn(difficulty, modules)
-            : questionRepository.findByDifficultyLevelAndModuleInAndQuestionIdNotIn(difficulty, modules, new ArrayList<>(excludeSet));
+                ? questionRepository.findByDifficultyLevelAndModuleIn(difficulty, modules)
+                : questionRepository.findByDifficultyLevelAndModuleInAndQuestionIdNotIn(difficulty, modules, new ArrayList<>(excludeSet));
 
         if (pool.size() < numQuestions) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponse<>("Not enough questions available for the selected criteria.", HttpStatus.BAD_REQUEST.value()));
+                    .body(new ApiResponse<>("Not enough questions available for the selected criteria.", 400));
         }
 
         Collections.shuffle(pool);
         List<Question> selected = pool.subList(0, numQuestions);
 
-        // Step 5: Create and save quiz
         Quiz quiz = new Quiz();
         quiz.setQuizName(quizName + " - " + LocalDateTime.now());
         quiz.setIntro("Auto generated module-based quiz.");
@@ -294,11 +228,11 @@ public ResponseEntity<ApiResponse<Object>> generateDynamicQuiz(DynamicQuizReques
         quiz.setPassAccuracy(60);
         quiz.setXp(50);
 
-        Quiz savedQuiz = quizRepository.save(quiz);
+        Quiz saved = quizRepository.save(quiz);
+        logService.log("INFO", "QuizServiceImpl", "Generate My Quiz", "My quiz generated: " + saved.getQuizName(), String.valueOf(userId));
 
         Map<String, Object> response = new HashMap<>();
-        response.put("items", List.of(savedQuiz));
+        response.put("items", List.of(saved));
         return ResponseEntity.ok(new ApiResponse<>(response));
     }
-
 }

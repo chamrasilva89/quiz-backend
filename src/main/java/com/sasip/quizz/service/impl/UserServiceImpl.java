@@ -1,10 +1,10 @@
 package com.sasip.quizz.service.impl;
 
-import com.sasip.quizz.dto.UserRegistrationRequest;
-import com.sasip.quizz.dto.UserUpdateRequest;
+import com.sasip.quizz.dto.*;
 import com.sasip.quizz.model.User;
 import com.sasip.quizz.repository.UserRepository;
 import com.sasip.quizz.service.UserService;
+import com.sasip.quizz.service.LogService;
 import com.sasip.quizz.dto.ChangePasswordRequest;
 import com.sasip.quizz.dto.LoginRequest;
 import com.sasip.quizz.dto.LoginResponse;
@@ -30,20 +30,22 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final LogService logService;
 
     public UserServiceImpl(UserRepository userRepository,
                            BCryptPasswordEncoder passwordEncoder,
-                           JwtUtil jwtUtil) {
+                           JwtUtil jwtUtil,
+                           LogService logService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.logService = logService;
     }
 
     @Override
     public User registerUser(UserRegistrationRequest request) {
         logger.info("Registering user with username: {}", request.getUsername());
 
-        // ✅ Skip email check if it's null
         if (request.getEmail() != null && userRepository.existsByEmail(request.getEmail())) {
             logger.warn("Email already in use: {}", request.getEmail());
             throw new RuntimeException("Email already in use");
@@ -55,31 +57,31 @@ public class UserServiceImpl implements UserService {
         }
 
         String hashedPassword = passwordEncoder.encode(request.getPassword());
-        logger.debug("Encoded password: {}", hashedPassword);
 
         User user = new User();
         user.setRole(request.getRole());
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
-        user.setAvatarUrl(request.getAvatarUrl());             // optional
+        user.setAvatarUrl(request.getAvatarUrl());
         user.setSchool(request.getSchool());
         user.setAlYear(request.getAlYear());
         user.setDistrict(request.getDistrict());
-        user.setMedium(request.getMedium());                   // optional
+        user.setMedium(request.getMedium());
         user.setPhone(request.getPhone());
-        user.setEmail(request.getEmail());                     // optional
+        user.setEmail(request.getEmail());
         user.setUsername(request.getUsername());
         user.setPasswordHash(hashedPassword);
-        user.setParentName(request.getParentName());           // optional
-        user.setParentContactNo(request.getParentContactNo()); // optional
+        user.setParentName(request.getParentName());
+        user.setParentContactNo(request.getParentContactNo());
         user.setCreatedDate(LocalDateTime.now());
         user.setUpdatedDate(LocalDateTime.now());
-        user.setUserStatus(request.getUserStatus() != null ? request.getUserStatus() : "active"); // optional with default
+        user.setUserStatus(request.getUserStatus() != null ? request.getUserStatus() : "active");
 
+        User saved = userRepository.save(user);
         logger.info("User registered successfully: {}", user.getUsername());
-        return userRepository.save(user);
+        logService.log("INFO", "UserServiceImpl", "Register User", "User registered: " + saved.getUsername(), saved.getUsername());
+        return saved;
     }
-
 
     @Override
     public User patchUser(Long userId, UserUpdateRequest updateRequest) {
@@ -101,8 +103,10 @@ public class UserServiceImpl implements UserService {
         if (updateRequest.getUserStatus() != null) user.setUserStatus(updateRequest.getUserStatus());
         user.setUpdatedDate(LocalDateTime.now());
 
+        User updated = userRepository.save(user);
         logger.info("User updated: {}", userId);
-        return userRepository.save(user);
+        logService.log("INFO", "UserServiceImpl", "Update User", "User updated: " + updated.getUsername(), updated.getUsername());
+        return updated;
     }
 
     @Override
@@ -115,11 +119,7 @@ public class UserServiceImpl implements UserService {
                     return new BadCredentialsException("Invalid username or password");
                 });
 
-        logger.debug("Raw password: {}", request.getPassword());
-        logger.debug("Stored hash: {}", user.getPasswordHash());
-
         boolean passwordMatches = passwordEncoder.matches(request.getPassword(), user.getPasswordHash());
-        logger.debug("Password match result: {}", passwordMatches);
 
         if (!passwordMatches) {
             logger.warn("Login failed: incorrect password for username {}", request.getUsername());
@@ -128,6 +128,7 @@ public class UserServiceImpl implements UserService {
 
         String token = jwtUtil.generateToken(user.getUsername());
         logger.info("Login successful for username: {}", request.getUsername());
+        logService.log("INFO", "UserServiceImpl", "Login", "User logged in: " + user.getUsername(), user.getUsername());
 
         return new LoginResponse(token);
     }
@@ -159,6 +160,8 @@ public class UserServiceImpl implements UserService {
         user.setPasswordHash(hashed);
         user.setUpdatedDate(LocalDateTime.now());
         userRepository.save(user);
+
+        logService.log("INFO", "UserServiceImpl", "Change Password", "Password changed for user: " + user.getUsername(), user.getUsername());
     }
 
     @Override

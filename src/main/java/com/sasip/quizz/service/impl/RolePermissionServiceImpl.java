@@ -8,6 +8,7 @@ import com.sasip.quizz.repository.PermissionRepository;
 import com.sasip.quizz.repository.RolePermissionRepository;
 import com.sasip.quizz.repository.RoleRepository;
 import com.sasip.quizz.service.RolePermissionService;
+import com.sasip.quizz.service.LogService;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -20,13 +21,16 @@ public class RolePermissionServiceImpl implements RolePermissionService {
     private final RolePermissionRepository rolePermissionRepository;
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
+    private final LogService logService;
 
     public RolePermissionServiceImpl(RolePermissionRepository rolePermissionRepository,
                                      RoleRepository roleRepository,
-                                     PermissionRepository permissionRepository) {
+                                     PermissionRepository permissionRepository,
+                                     LogService logService) {
         this.rolePermissionRepository = rolePermissionRepository;
         this.roleRepository = roleRepository;
         this.permissionRepository = permissionRepository;
+        this.logService = logService;
     }
 
     @Override
@@ -49,15 +53,15 @@ public class RolePermissionServiceImpl implements RolePermissionService {
             RolePermission rolePermission = new RolePermission(role, permission);
             rolePermissionRepository.save(rolePermission);
         }
+
+        logService.log("INFO", "RolePermissionServiceImpl", "Assign Permissions", "Assigned permissions to role ID: " + roleId, "system");
     }
 
     @Override
     @Transactional
     public void updatePermissionsOfRole(Long roleId, List<Long> permissionIds) {
-        // First delete existing
         rolePermissionRepository.deleteByRole_Id(roleId);
-
-        // Assign new permissions
         assignPermissionsToRole(roleId, permissionIds);
+        logService.log("INFO", "RolePermissionServiceImpl", "Update Permissions", "Updated permissions for role ID: " + roleId, "system");
     }
 }

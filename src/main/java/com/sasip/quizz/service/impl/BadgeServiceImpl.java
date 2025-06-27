@@ -4,11 +4,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
-
 import com.sasip.quizz.dto.BadgeDTO;
 import com.sasip.quizz.model.Badge;
 import com.sasip.quizz.repository.BadgeRepository;
 import com.sasip.quizz.service.BadgeService;
+import com.sasip.quizz.service.LogService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import lombok.RequiredArgsConstructor;
@@ -17,11 +17,15 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class BadgeServiceImpl implements BadgeService {
     private final BadgeRepository badgeRepo;
+    private final LogService logService;
 
     @Override
     public BadgeDTO createBadge(BadgeDTO dto) {
         Badge badge = new Badge(null, dto.getName(), dto.getDescription(), dto.getIconUrl(), LocalDateTime.now());
-        return toDto(badgeRepo.save(badge));
+        Badge saved = badgeRepo.save(badge);
+
+        logService.log("INFO", "BadgeServiceImpl", "Create Badge", "Created badge: " + saved.getName(), "system");
+        return toDto(saved);
     }
 
     @Override
@@ -30,12 +34,16 @@ public class BadgeServiceImpl implements BadgeService {
         badge.setName(dto.getName());
         badge.setDescription(dto.getDescription());
         badge.setIconUrl(dto.getIconUrl());
-        return toDto(badgeRepo.save(badge));
+        Badge updated = badgeRepo.save(badge);
+
+        logService.log("INFO", "BadgeServiceImpl", "Update Badge", "Updated badge: " + updated.getName(), "system");
+        return toDto(updated);
     }
 
     @Override
     public void deleteBadge(Long id) {
         badgeRepo.deleteById(id);
+        logService.log("WARN", "BadgeServiceImpl", "Delete Badge", "Deleted badge with ID: " + id, "system");
     }
 
     @Override

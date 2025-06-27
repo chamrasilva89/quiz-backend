@@ -6,6 +6,7 @@ import com.sasip.quizz.model.RewardType;
 import com.sasip.quizz.model.RewardStatus;
 import com.sasip.quizz.repository.RewardRepository;
 import com.sasip.quizz.service.RewardService;
+import com.sasip.quizz.service.LogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 public class RewardServiceImpl implements RewardService {
 
     private final RewardRepository rewardRepository;
+    private final LogService logService;
 
     @Override
     public RewardDTO createReward(RewardDTO dto) {
@@ -30,23 +32,20 @@ public class RewardServiceImpl implements RewardService {
         reward.setPoints(dto.getPoints());
         reward.setIconUrl(dto.getIconUrl());
         reward.setCreatedAt(LocalDateTime.now());
-
         reward.setMaxQuantity(dto.getMaxQuantity());
-
         if (dto.getType() != null) {
             reward.setType(RewardType.valueOf(dto.getType()));
         }
-
         if (dto.getStatus() != null) {
             reward.setStatus(RewardStatus.valueOf(dto.getStatus()));
         }
-
         reward.setValidFrom(dto.getValidFrom());
         reward.setValidTo(dto.getValidTo());
-
         reward.setClaimable(dto.isClaimable());
 
-        return toDto(rewardRepository.save(reward));
+        Reward saved = rewardRepository.save(reward);
+        logService.log("INFO", "RewardServiceImpl", "Create Reward", "Created reward: " + saved.getName(), "system");
+        return toDto(saved);
     }
 
     @Override
@@ -58,23 +57,20 @@ public class RewardServiceImpl implements RewardService {
         reward.setDescription(dto.getDescription());
         reward.setPoints(dto.getPoints());
         reward.setIconUrl(dto.getIconUrl());
-
         reward.setMaxQuantity(dto.getMaxQuantity());
-
         if (dto.getType() != null) {
             reward.setType(RewardType.valueOf(dto.getType()));
         }
-
         if (dto.getStatus() != null) {
             reward.setStatus(RewardStatus.valueOf(dto.getStatus()));
         }
-
         reward.setValidFrom(dto.getValidFrom());
         reward.setValidTo(dto.getValidTo());
-
         reward.setClaimable(dto.isClaimable());
 
-        return toDto(rewardRepository.save(reward));
+        Reward updated = rewardRepository.save(reward);
+        logService.log("INFO", "RewardServiceImpl", "Update Reward", "Updated reward: " + updated.getName(), "system");
+        return toDto(updated);
     }
 
     @Override
@@ -83,6 +79,7 @@ public class RewardServiceImpl implements RewardService {
             throw new RuntimeException("Reward not found with ID: " + id);
         }
         rewardRepository.deleteById(id);
+        logService.log("WARN", "RewardServiceImpl", "Delete Reward", "Deleted reward with ID: " + id, "system");
     }
 
     @Override
@@ -113,6 +110,7 @@ public class RewardServiceImpl implements RewardService {
                 reward.isClaimable()
         );
     }
+
     @Override
     public Page<RewardDTO> getRewardsByFilters(String type, String status, String name, Pageable pageable) {
         RewardType rewardType = null;
@@ -125,10 +123,8 @@ public class RewardServiceImpl implements RewardService {
             throw new RuntimeException("Invalid reward type or status");
         }
 
-        // Manual filtering with pagination using repository + Java filtering (alternative: QueryDSL or Spec)
         List<Reward> filtered = rewardRepository.findByFilters(rewardType, rewardStatus, name);
-        
-        // Apply pagination manually (since JPQL doesn't support Pageable with dynamic filtering)
+
         int start = Math.toIntExact(pageable.getOffset());
         int end = Math.min((start + pageable.getPageSize()), filtered.size());
         List<RewardDTO> content = filtered.subList(start, end).stream().map(this::toDto).collect(Collectors.toList());
@@ -147,9 +143,10 @@ public class RewardServiceImpl implements RewardService {
             throw new RuntimeException("Invalid status value: " + status);
         }
 
-        return toDto(rewardRepository.save(reward));
+        Reward updated = rewardRepository.save(reward);
+        logService.log("INFO", "RewardServiceImpl", "Update Reward Status", "Updated reward status for ID: " + updated.getId(), "system");
+        return toDto(updated);
     }
-
 
     @Override
     public RewardDTO getRewardById(Long id) {
@@ -157,5 +154,4 @@ public class RewardServiceImpl implements RewardService {
                 .orElseThrow(() -> new RuntimeException("Reward not found with ID: " + id));
         return toDto(reward);
     }
-
 }

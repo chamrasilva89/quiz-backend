@@ -6,6 +6,7 @@ import com.sasip.quizz.model.Module;
 import com.sasip.quizz.model.Submodule;
 import com.sasip.quizz.repository.ModuleRepository;
 import com.sasip.quizz.service.ModuleService;
+import com.sasip.quizz.service.LogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 public class ModuleServiceImpl implements ModuleService {
 
     private final ModuleRepository moduleRepo;
+    private final LogService logService;
 
     @Override
     public ModuleDTO createModule(ModuleDTO dto) {
@@ -24,6 +26,7 @@ public class ModuleServiceImpl implements ModuleService {
         module.setName(dto.getName());
         module.setDescription(dto.getDescription());
         Module saved = moduleRepo.save(module);
+        logService.log("INFO", "ModuleServiceImpl", "Create Module", "Created module: " + saved.getName(), "system");
         return convertToDTO(saved);
     }
 
@@ -32,12 +35,15 @@ public class ModuleServiceImpl implements ModuleService {
         Module module = moduleRepo.findById(id).orElseThrow();
         module.setName(dto.getName());
         module.setDescription(dto.getDescription());
-        return convertToDTO(moduleRepo.save(module));
+        Module updated = moduleRepo.save(module);
+        logService.log("INFO", "ModuleServiceImpl", "Update Module", "Updated module: " + updated.getName(), "system");
+        return convertToDTO(updated);
     }
 
     @Override
     public void deleteModule(Long id) {
         moduleRepo.deleteById(id);
+        logService.log("WARN", "ModuleServiceImpl", "Delete Module", "Deleted module with ID: " + id, "system");
     }
 
     @Override

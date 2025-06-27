@@ -1,13 +1,10 @@
 package com.sasip.quizz.service.impl;
 
 import com.sasip.quizz.dto.*;
-import com.sasip.quizz.model.Quiz;
-import com.sasip.quizz.model.QuizStatus;
-import com.sasip.quizz.model.QuizType;
-import com.sasip.quizz.repository.QuestionRepository;
-import com.sasip.quizz.repository.QuizRepository;
-import com.sasip.quizz.repository.UserQuizSubmissionRepository;
+import com.sasip.quizz.model.*;
+import com.sasip.quizz.repository.*;
 import com.sasip.quizz.service.SasipQuizService;
+import com.sasip.quizz.service.LogService;
 import com.sasip.quizz.spec.QuizSpecifications;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
@@ -23,6 +20,8 @@ public class SasipQuizServiceImpl implements SasipQuizService {
     @Autowired private QuizRepository quizRepository;
     @Autowired private UserQuizSubmissionRepository userQuizSubmissionRepository;
     @Autowired private QuestionRepository questionRepository;
+    @Autowired private LogService logService;
+
     @Override
     public Page<SasipQuizSummary> findFiltered(SasipQuizFilterRequest filter) {
         Specification<Quiz> spec = Specification
@@ -34,13 +33,13 @@ public class SasipQuizServiceImpl implements SasipQuizService {
         Pageable pg = PageRequest.of(filter.getPage(), filter.getSize());
         Page<Quiz> quizPage = quizRepository.findAll(spec, pg);
 
+        logService.log("INFO", "SasipQuizServiceImpl", "Find Filtered Quizzes", "Filtered SASIP quizzes retrieved", null);
+
         return quizPage.map(SasipQuizSummary::new);
     }
 
     @Override
-    public Page<SasipQuizListItem> listSasipQuizzesWithCompletion(
-            Long userId, Pageable pageable, String alYear, QuizStatus status) {
-
+    public Page<SasipQuizListItem> listSasipQuizzesWithCompletion(Long userId, Pageable pageable, String alYear, QuizStatus status) {
         Specification<Quiz> spec = Specification
             .where((root, query, cb) -> cb.equal(root.get("quizType"), QuizType.SASIP));
 
@@ -58,7 +57,7 @@ public class SasipQuizServiceImpl implements SasipQuizService {
             boolean completed = userQuizSubmissionRepository
                 .findByUserIdAndQuizId(userId, String.valueOf(quiz.getQuizId()))
                 .isPresent();
-            
+
             return new SasipQuizListItem(
                 quiz.getQuizId(),
                 quiz.getQuizName(),
@@ -78,9 +77,10 @@ public class SasipQuizServiceImpl implements SasipQuizService {
             );
         }).toList();
 
+        logService.log("INFO", "SasipQuizServiceImpl", "List Quizzes with Completion", "Listed SASIP quizzes with completion status for userId: " + userId, String.valueOf(userId));
+
         return new PageImpl<>(quizDTOs, pageable, quizzes.getTotalElements());
     }
-
 
     @Override
     public SasipQuizStatsDTO getUserSasipStats(Long userId) {
@@ -88,6 +88,8 @@ public class SasipQuizServiceImpl implements SasipQuizService {
         double avg = Optional.ofNullable(userQuizSubmissionRepository.findAvgSasipScore(userId)).orElse(0.0);
         long completed = userQuizSubmissionRepository.countCompletedSasipQuizzes(userId);
         long total = quizRepository.countAllSasipQuizzes();
+
+        logService.log("INFO", "SasipQuizServiceImpl", "Get User SASIP Stats", "SASIP stats retrieved for userId: " + userId, String.valueOf(userId));
 
         return new SasipQuizStatsDTO(best, avg, completed, total);
     }
@@ -133,6 +135,8 @@ public class SasipQuizServiceImpl implements SasipQuizService {
         int end = Math.min(start + pageable.getPageSize(), completedQuizzes.size());
         List<SasipQuizListItem> paginated = completedQuizzes.subList(start, end);
 
+        logService.log("INFO", "SasipQuizServiceImpl", "List Completed Quizzes", "Completed SASIP quizzes listed for userId: " + userId, String.valueOf(userId));
+
         return new PageImpl<>(paginated, pageable, completedQuizzes.size());
     }
 
@@ -144,11 +148,9 @@ public class SasipQuizServiceImpl implements SasipQuizService {
             .and(QuizSpecifications.hasAlYear(filter.getAlYear()))
             .and(QuizSpecifications.isSasip());
 
-        // Sorting direction logic
         Sort.Direction direction = filter.getSortDir().equalsIgnoreCase("asc")
                 ? Sort.Direction.ASC : Sort.Direction.DESC;
 
-        // Fallback field validation (optional)
         List<String> validSortFields = List.of("createdAt", "quizName", "xp");
         String sortBy = validSortFields.contains(filter.getSortBy()) ? filter.getSortBy() : "createdAt";
 
@@ -170,6 +172,8 @@ public class SasipQuizServiceImpl implements SasipQuizService {
             dto.setTotalQuestions(quiz.getQuestionIds() != null ? quiz.getQuestionIds().size() : 0);
             return dto;
         }).toList();
+
+        logService.log("INFO", "SasipQuizServiceImpl", "Filter Quizzes With Questions", "Filtered quizzes with questions retrieved", null);
 
         return new PageImpl<>(dtoList, pageable, quizPage.getTotalElements());
     }
@@ -204,9 +208,7 @@ public class SasipQuizServiceImpl implements SasipQuizService {
             dto.setScheduledTime(quiz.getScheduledTime());
             dto.setDeadline(quiz.getDeadline());
             dto.setTotalQuestions(quiz.getQuestionIds() != null ? quiz.getQuestionIds().size() : 0);
-            dto.setQuestions(quiz.getQuestionIds()); // Optional: expose actual IDs
-
-            // ✅ Additional fields
+            dto.setQuestions(quiz.getQuestionIds());
             dto.setAttemptsAllowed(quiz.getAttemptsAllowed());
             dto.setPassAccuracy(quiz.getPassAccuracy());
             dto.setRewardIds(quiz.getRewardIdList());
@@ -219,8 +221,8 @@ public class SasipQuizServiceImpl implements SasipQuizService {
             return dto;
         }).toList();
 
+        logService.log("INFO", "SasipQuizServiceImpl", "Filter SASIP Quizzes With User", "Filtered SASIP quizzes with userId: " + userId, String.valueOf(userId));
+
         return new PageImpl<>(dtoList, pageable, quizPage.getTotalElements());
     }
-
-
 } 

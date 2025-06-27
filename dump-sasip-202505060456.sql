@@ -306,3 +306,14 @@ ADD COLUMN created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP;
 
 
 ALTER TABLE users MODIFY email VARCHAR(255) NULL;
+
+
+CREATE TABLE logs (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    level VARCHAR(20) NOT NULL,           -- INFO, ERROR, WARN, etc.
+    source VARCHAR(100) NOT NULL,         -- Class or service name
+    action VARCHAR(255) NOT NULL,         -- Summary of the operation
+    performed_by VARCHAR(100),            -- Username or userId
+    message TEXT,                         -- Detailed log message
+    timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

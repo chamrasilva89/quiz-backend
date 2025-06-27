@@ -4,6 +4,7 @@ import com.sasip.quizz.dto.*;
 import com.sasip.quizz.model.District;
 import com.sasip.quizz.repository.DistrictRepository;
 import com.sasip.quizz.service.DistrictService;
+import com.sasip.quizz.service.LogService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 public class DistrictServiceImpl implements DistrictService {
 
     private final DistrictRepository districtRepository;
+    private final LogService logService;
 
     @Override
     public DistrictResponse createDistrict(CreateDistrictRequest request) {
@@ -28,6 +30,8 @@ public class DistrictServiceImpl implements DistrictService {
                 .province(request.getProvince())
                 .build();
         district = districtRepository.save(district);
+
+        logService.log("INFO", "DistrictServiceImpl", "Create District", "Created district: " + district.getName(), "system");
         return mapToResponse(district);
     }
 
@@ -37,7 +41,10 @@ public class DistrictServiceImpl implements DistrictService {
                 .orElseThrow(() -> new EntityNotFoundException("District not found"));
         district.setName(request.getName());
         district.setProvince(request.getProvince());
-        return mapToResponse(districtRepository.save(district));
+        District updated = districtRepository.save(district);
+
+        logService.log("INFO", "DistrictServiceImpl", "Update District", "Updated district: " + updated.getName(), "system");
+        return mapToResponse(updated);
     }
 
     @Override
