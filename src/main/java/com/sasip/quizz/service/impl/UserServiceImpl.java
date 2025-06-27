@@ -5,10 +5,6 @@ import com.sasip.quizz.model.User;
 import com.sasip.quizz.repository.UserRepository;
 import com.sasip.quizz.service.UserService;
 import com.sasip.quizz.service.LogService;
-import com.sasip.quizz.dto.ChangePasswordRequest;
-import com.sasip.quizz.dto.LoginRequest;
-import com.sasip.quizz.dto.LoginResponse;
-import com.sasip.quizz.dto.UserFilterRequest;
 import com.sasip.quizz.security.JwtUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.security.authentication.BadCredentialsException;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -169,5 +166,18 @@ public class UserServiceImpl implements UserService {
         return userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
     }
+
+    @Override
+    public Page<User> getUsersByRoleCategory(String roleCategory, Pageable pageable) {
+        if ("student".equalsIgnoreCase(roleCategory)) {
+            return userRepository.findByRole("student", pageable);
+        } else if ("other".equalsIgnoreCase(roleCategory)) {
+            return userRepository.findByRoleNot("student", pageable);
+        } else {
+            throw new IllegalArgumentException("Invalid role category: " + roleCategory);
+        }
+    }
+
+
 
 }

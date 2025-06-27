@@ -6,12 +6,17 @@ import com.sasip.quizz.dto.UserUpdateRequest;
 import com.sasip.quizz.model.User;
 import com.sasip.quizz.service.UserService;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @RestController
 @RequestMapping("/api/admin/users")
@@ -51,5 +56,24 @@ public class AdminUserController {
                     .body(new ApiResponse<>("Failed to update user", 500));
         }
     }
+
+    @GetMapping("/by-role-category")
+    public ResponseEntity<ApiResponse<?>> getUsersByRoleCategory(
+            @RequestParam String roleCategory,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<User> userPage = userService.getUsersByRoleCategory(roleCategory, pageable);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("items", userPage.getContent());
+        response.put("totalItems", userPage.getTotalElements());
+        response.put("totalPages", userPage.getTotalPages());
+        response.put("currentPage", userPage.getNumber());
+
+        return ResponseEntity.ok(new ApiResponse<>(response));
+    }
+
 
 }

@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import com.sasip.quizz.model.User;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -29,5 +30,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
                 @Param("userStatus") String userStatus,
                 Pageable pageable
         );
+
+        Page<User> findByRole(String role, Pageable pageable);
+        Page<User> findByRoleNot(String role, Pageable pageable);
+
+
 
 }

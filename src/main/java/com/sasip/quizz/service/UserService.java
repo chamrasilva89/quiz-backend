@@ -20,4 +20,6 @@ public interface UserService {
     public Page<User> filterUsers(UserFilterRequest filterRequest, Pageable pageable);
     void changePassword(Long userId, ChangePasswordRequest request);
     User getUserById(Long userId);
+    Page<User> getUsersByRoleCategory(String roleCategory, Pageable pageable);
+
 }
