@@ -19,4 +19,5 @@ public interface UserService {
     LoginResponse login(LoginRequest request);
     public Page<User> filterUsers(UserFilterRequest filterRequest, Pageable pageable);
     void changePassword(Long userId, ChangePasswordRequest request);
+    User getUserById(Long userId);
 }
