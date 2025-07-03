@@ -127,7 +127,12 @@ public class UserController {
     public ResponseEntity<ApiResponse<?>> getUserById(@PathVariable Long id) {
         try {
             User user = userService.getUserById(id);
-            return ResponseEntity.ok(new ApiResponse<>(Map.of("items", user)));
+
+            // Wrap user in a list, even if it's just one item
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", List.of(user));  // Ensure items is a list
+
+            return ResponseEntity.ok(new ApiResponse<>(response));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ApiResponse<>(e.getMessage(), 404));
@@ -136,4 +141,5 @@ public class UserController {
                 .body(new ApiResponse<>("Failed to fetch user details", 500));
         }
     }
+
 }

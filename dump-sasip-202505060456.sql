@@ -317,3 +317,18 @@ CREATE TABLE logs (
     message TEXT,                         -- Detailed log message
     timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+
+CREATE TABLE staff (
+    staff_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    role VARCHAR(255) NOT NULL,
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE,
+    phone VARCHAR(20) NOT NULL, -- Adjusted VARCHAR size for phone numbers
+    username VARCHAR(255) NOT NULL UNIQUE, -- Assuming username should be unique
+    password_hash VARCHAR(255) NOT NULL, -- Store hashed passwords
+    status VARCHAR(50) NOT NULL,
+    created_date DATETIME NOT NULL,
+    updated_date DATETIME
+);

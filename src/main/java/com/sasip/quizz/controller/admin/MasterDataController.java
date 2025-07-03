@@ -497,11 +497,13 @@ public class MasterDataController {
     public ResponseEntity<ApiResponse<?>> getRewardById(@PathVariable Long id) {
         RewardDTO reward = rewardService.getRewardById(id);
 
+        // Wrap reward in a list, even if it's just one item
         Map<String, Object> response = new HashMap<>();
-        response.put("items", reward);  // ✅ key is "items" for consistency
+        response.put("items", List.of(reward));  // Ensure items is a list
 
         return ResponseEntity.ok(new ApiResponse<>(response));
     }
+
 
 
 }

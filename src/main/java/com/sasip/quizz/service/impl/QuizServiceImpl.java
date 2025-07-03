@@ -192,7 +192,7 @@ public class QuizServiceImpl implements QuizService {
         return updated;
     }
 
-    @Override
+   /*  @Override
     public ResponseEntity<ApiResponse<Object>> generateMyQuiz(MyQuizRequest request) {
         Long userId = request.getUserId();
         int numQuestions = request.getQuestionCount();
@@ -234,5 +234,97 @@ public class QuizServiceImpl implements QuizService {
         Map<String, Object> response = new HashMap<>();
         response.put("items", List.of(saved));
         return ResponseEntity.ok(new ApiResponse<>(response));
+    }*/
+
+    @Override
+    public ResponseEntity<ApiResponse<Object>> generateMyQuiz(MyQuizRequest request) {
+        Long userId = request.getUserId();
+        int numQuestions = request.getQuestionCount();
+        String difficulty = request.getDifficultyLevel();
+        List<String> modules = request.getModules();
+        String quizName = request.getQuizName();
+
+        Set<Long> excludeSet = new HashSet<>();
+        quizRepository.findAllByQuizType(QuizType.SASIP).forEach(q -> excludeSet.addAll(q.getQuestionIds()));
+        userQuizAnswerRepository.findByUserId(userId.toString())
+                .forEach(ans -> excludeSet.add(ans.getQuestionId()));
+
+        List<Question> pool = excludeSet.isEmpty()
+                ? questionRepository.findByDifficultyLevelAndModuleIn(difficulty, modules)
+                : questionRepository.findByDifficultyLevelAndModuleInAndQuestionIdNotIn(difficulty, modules, new ArrayList<>(excludeSet));
+
+        if (pool.size() < numQuestions) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>("Not enough questions available for the selected criteria.", 400));
+        }
+
+        Collections.shuffle(pool);
+        List<Question> selected = pool.subList(0, numQuestions);
+
+        Quiz quiz = new Quiz();
+        quiz.setQuizName(quizName + " - " + LocalDateTime.now());
+        quiz.setIntro("Auto generated module-based quiz.");
+        quiz.setQuestionIds(selected.stream().map(Question::getQuestionId).collect(Collectors.toList()));
+        quiz.setQuizType(QuizType.MYQUIZ);
+        quiz.setUserId(userId);
+        quiz.setAttemptsAllowed(1);
+        quiz.setTimeLimit(15);
+        quiz.setPassAccuracy(60);
+        quiz.setXp(50);
+
+        Quiz saved = quizRepository.save(quiz);
+
+        logService.log("INFO", "QuizServiceImpl", "Generate My Quiz", "My quiz generated: " + saved.getQuizName(), String.valueOf(userId));
+
+        // Create the response format as requested
+        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> quizData = new HashMap<>();
+        
+        quizData.put("quizId", saved.getQuizId());
+        quizData.put("quizName", saved.getQuizName());
+        quizData.put("intro", saved.getIntro());
+        quizData.put("modules", modules);
+        quizData.put("rewardIds", saved.getRewardIdList());
+        quizData.put("timeLimit", saved.getTimeLimit());
+        quizData.put("xp", saved.getXp());
+        quizData.put("passAccuracy", saved.getPassAccuracy());
+        quizData.put("alYear", saved.getAlYear());
+        quizData.put("attemptsAllowed", saved.getAttemptsAllowed());
+        quizData.put("scheduledTime", saved.getScheduledTime());
+        quizData.put("deadline", saved.getDeadline());
+        quizData.put("totalQuestions", selected.size());  // Add the total number of questions
+        quizData.put("questionIdsJson", selected.stream()
+                .map(question -> question.getQuestionId())
+                .collect(Collectors.toList()));
+        
+        // Map question details for each question
+        List<Map<String, Object>> questions = new ArrayList<>();
+        for (Question question : selected) {
+            Map<String, Object> questionData = new HashMap<>();
+            questionData.put("questionId", question.getQuestionId());
+            questionData.put("alYear", question.getAlYear());
+            questionData.put("questionText", question.getQuestionText());
+            questionData.put("options", question.getOptions()); // Assuming options are in a list inside the question model
+            questionData.put("status", question.getStatus());
+            questionData.put("correctAnswerId", question.getCorrectAnswerId());
+            questionData.put("explanation", question.getExplanation());
+            questionData.put("subject", question.getSubject());
+            questionData.put("type", question.getType());
+            questionData.put("subType", question.getSubType());
+            questionData.put("points", question.getPoints());
+            questionData.put("difficultyLevel", question.getDifficultyLevel());
+            questionData.put("maxTimeSec", question.getMaxTimeSec());
+            questionData.put("hasAttachment", question.isHasAttachment());
+            questionData.put("module", question.getModule());
+            questionData.put("submodule", question.getSubmodule());
+
+            questions.add(questionData);
+        }
+
+        quizData.put("questions", questions); // Add questions array
+
+        response.put("items", List.of(quizData)); // Ensure items is a list for consistency
+        return ResponseEntity.ok(new ApiResponse<>(response));
     }
+
 }
