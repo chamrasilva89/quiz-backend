@@ -2,6 +2,7 @@ package com.sasip.quizz.controller;
 
 import org.springframework.security.core.Authentication;
 import com.sasip.quizz.dto.*;
+import com.sasip.quizz.model.Quiz;
 import com.sasip.quizz.model.QuizStatus;
 import com.sasip.quizz.model.User;
 import com.sasip.quizz.repository.UserRepository;
@@ -162,6 +163,28 @@ public class SasipQuizController {
             return ResponseEntity.ok(response);
         }
 
+    @PutMapping("/{quizId}/publish")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> publishQuiz(
+            @PathVariable Long quizId,
+            @RequestParam("status") QuizStatus status) {
 
+        try {
+            // Publish the quiz by changing its status
+            sasipQuizService.publishQuiz(quizId, status);
+
+            // Retrieve the published quiz
+            Quiz publishedQuiz = sasipQuizService.getQuizById(quizId);
+
+            // Prepare the response data
+            Map<String, Object> data = new HashMap<>();
+            data.put("items", List.of(publishedQuiz));  // Wrap the published quiz in the 'items' list
+
+            // Return the response
+            return ResponseEntity.ok(new ApiResponse<>(data));
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                    .body(new ApiResponse<>(e.getMessage(), 500));
+        }
+    }
 
 }

@@ -7,6 +7,7 @@ import com.sasip.quizz.dto.SasipQuizFilterRequest;
 import com.sasip.quizz.dto.SasipQuizListItem;
 import com.sasip.quizz.dto.SasipQuizStatsDTO;
 import com.sasip.quizz.dto.SasipQuizSummary;
+import com.sasip.quizz.model.Quiz;
 import com.sasip.quizz.model.QuizStatus;
 
 import org.springframework.data.domain.Page;
@@ -20,7 +21,7 @@ public interface SasipQuizService {
     Page<SasipQuizListItem> listCompletedQuizzesOnly(Long userId, Pageable pageable, String alYear, QuizStatus status);
     Page<QuizWithQuestionsDTO> filterQuizzesWithQuestions(QuizFilterRequest filter);
     Page<QuizWithQuestionsDTO> filterSasipQuizzesWithUser(QuizFilterRequest filter, Long userId);
-
-
+    void publishQuiz(Long quizId, QuizStatus status);
+    Quiz getQuizById(Long quizId);  // Add this method to fetch quiz by ID
 
 }

@@ -244,87 +244,137 @@ public class QuizServiceImpl implements QuizService {
         List<String> modules = request.getModules();
         String quizName = request.getQuizName();
 
-        Set<Long> excludeSet = new HashSet<>();
-        quizRepository.findAllByQuizType(QuizType.SASIP).forEach(q -> excludeSet.addAll(q.getQuestionIds()));
-        userQuizAnswerRepository.findByUserId(userId.toString())
-                .forEach(ans -> excludeSet.add(ans.getQuestionId()));
-
-        List<Question> pool = excludeSet.isEmpty()
-                ? questionRepository.findByDifficultyLevelAndModuleIn(difficulty, modules)
-                : questionRepository.findByDifficultyLevelAndModuleInAndQuestionIdNotIn(difficulty, modules, new ArrayList<>(excludeSet));
-
-        if (pool.size() < numQuestions) {
+        // 1. Validate userId
+        if (userId == null || userId <= 0) {
+            logService.log("ERROR", "QuizServiceImpl", "Generate My Quiz", "User ID is invalid or missing.", String.valueOf(userId));
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ApiResponse<>("Not enough questions available for the selected criteria.", 400));
+                    .body(new ApiResponse<>("User ID is required and must be valid.", 400));
         }
 
-        Collections.shuffle(pool);
-        List<Question> selected = pool.subList(0, numQuestions);
-
-        Quiz quiz = new Quiz();
-        quiz.setQuizName(quizName + " - " + LocalDateTime.now());
-        quiz.setIntro("Auto generated module-based quiz.");
-        quiz.setQuestionIds(selected.stream().map(Question::getQuestionId).collect(Collectors.toList()));
-        quiz.setQuizType(QuizType.MYQUIZ);
-        quiz.setUserId(userId);
-        quiz.setAttemptsAllowed(1);
-        quiz.setTimeLimit(15);
-        quiz.setPassAccuracy(60);
-        quiz.setXp(50);
-
-        Quiz saved = quizRepository.save(quiz);
-
-        logService.log("INFO", "QuizServiceImpl", "Generate My Quiz", "My quiz generated: " + saved.getQuizName(), String.valueOf(userId));
-
-        // Create the response format as requested
-        Map<String, Object> response = new HashMap<>();
-        Map<String, Object> quizData = new HashMap<>();
-        
-        quizData.put("quizId", saved.getQuizId());
-        quizData.put("quizName", saved.getQuizName());
-        quizData.put("intro", saved.getIntro());
-        quizData.put("modules", modules);
-        quizData.put("rewardIds", saved.getRewardIdList());
-        quizData.put("timeLimit", saved.getTimeLimit());
-        quizData.put("xp", saved.getXp());
-        quizData.put("passAccuracy", saved.getPassAccuracy());
-        quizData.put("alYear", saved.getAlYear());
-        quizData.put("attemptsAllowed", saved.getAttemptsAllowed());
-        quizData.put("scheduledTime", saved.getScheduledTime());
-        quizData.put("deadline", saved.getDeadline());
-        quizData.put("totalQuestions", selected.size());  // Add the total number of questions
-        quizData.put("questionIdsJson", selected.stream()
-                .map(question -> question.getQuestionId())
-                .collect(Collectors.toList()));
-        
-        // Map question details for each question
-        List<Map<String, Object>> questions = new ArrayList<>();
-        for (Question question : selected) {
-            Map<String, Object> questionData = new HashMap<>();
-            questionData.put("questionId", question.getQuestionId());
-            questionData.put("alYear", question.getAlYear());
-            questionData.put("questionText", question.getQuestionText());
-            questionData.put("options", question.getOptions()); // Assuming options are in a list inside the question model
-            questionData.put("status", question.getStatus());
-            questionData.put("correctAnswerId", question.getCorrectAnswerId());
-            questionData.put("explanation", question.getExplanation());
-            questionData.put("subject", question.getSubject());
-            questionData.put("type", question.getType());
-            questionData.put("subType", question.getSubType());
-            questionData.put("points", question.getPoints());
-            questionData.put("difficultyLevel", question.getDifficultyLevel());
-            questionData.put("maxTimeSec", question.getMaxTimeSec());
-            questionData.put("hasAttachment", question.isHasAttachment());
-            questionData.put("module", question.getModule());
-            questionData.put("submodule", question.getSubmodule());
-
-            questions.add(questionData);
+        // 2. Validate modules list
+        if (modules == null || modules.isEmpty()) {
+            logService.log("ERROR", "QuizServiceImpl", "Generate My Quiz", "Modules list is null or empty.", String.valueOf(userId));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>("Modules list cannot be null or empty.", 400));
         }
 
-        quizData.put("questions", questions); // Add questions array
+        Set<Long> excludeSet = new HashSet<>();
+        try {
+            // Log the start of quiz generation
+            logService.log("INFO", "QuizServiceImpl", "Quiz Generation Start", "User ID: " + userId, String.valueOf(userId));
 
-        response.put("items", List.of(quizData)); // Ensure items is a list for consistency
-        return ResponseEntity.ok(new ApiResponse<>(response));
+            // Log existing quiz question IDs
+            quizRepository.findAllByQuizType(QuizType.SASIP).forEach(q -> {
+                logService.log("INFO", "QuizServiceImpl", "Existing Quiz", "Quiz ID: " + q.getQuizId(), String.valueOf(userId));
+                excludeSet.addAll(q.getQuestionIds());
+            });
+
+            // Log user-specific answers (exclude these questions)
+            userQuizAnswerRepository.findByUserId(userId.toString())
+                    .forEach(ans -> {
+                        logService.log("INFO", "QuizServiceImpl", "User Answer", "Answer Question ID: " + ans.getQuestionId(), String.valueOf(userId));
+                        excludeSet.add(ans.getQuestionId());
+                    });
+
+            // 3. Fetch available questions based on difficulty and modules
+            List<Question> pool = excludeSet.isEmpty()
+                    ? questionRepository.findByDifficultyLevelAndModuleIn(difficulty, modules)
+                    : questionRepository.findByDifficultyLevelAndModuleInAndQuestionIdNotIn(difficulty, modules, new ArrayList<>(excludeSet));
+
+            logService.log("INFO", "QuizServiceImpl", "Pool Size", "Available Questions Pool Size: " + pool.size(), String.valueOf(userId));
+
+            // 4. Check if there are enough questions
+            if (pool == null || pool.isEmpty()) {
+                logService.log("ERROR", "QuizServiceImpl", "Generate My Quiz", "No questions found for the selected modules and difficulty.", String.valueOf(userId));
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ApiResponse<>("No questions found for the selected modules and difficulty.", 400));
+            }
+
+            if (pool.size() < numQuestions) {
+                logService.log("ERROR", "QuizServiceImpl", "Generate My Quiz", "Not enough questions available.", String.valueOf(userId));
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ApiResponse<>("Not enough questions available for the selected criteria.", 400));
+            }
+
+            // 5. Shuffle and select questions
+            Collections.shuffle(pool);
+            List<Question> selected = pool.subList(0, numQuestions);
+
+            // 6. Create the Quiz
+            Quiz quiz = new Quiz();
+            quiz.setQuizName(quizName + " - " + LocalDateTime.now());
+            quiz.setIntro("Auto generated module-based quiz.");
+            quiz.setQuestionIds(selected.stream().map(Question::getQuestionId).collect(Collectors.toList()));
+            quiz.setQuizType(QuizType.MYQUIZ);
+            quiz.setUserId(userId);
+            quiz.setAttemptsAllowed(1);
+            quiz.setTimeLimit(15);
+            quiz.setPassAccuracy(60);
+            quiz.setXp(50);
+
+            // 7. Save the Quiz
+            Quiz saved = quizRepository.save(quiz);
+            logService.log("INFO", "QuizServiceImpl", "Quiz Saved", "Quiz ID: " + saved.getQuizId(), String.valueOf(userId));
+
+            // 8. Construct the response map
+            Map<String, Object> response = new HashMap<>();
+            Map<String, Object> quizData = new HashMap<>();
+            
+            quizData.put("quizId", saved.getQuizId());
+            quizData.put("quizName", saved.getQuizName());
+            quizData.put("intro", saved.getIntro());
+            quizData.put("modules", modules);
+            quizData.put("rewardIds", saved.getRewardIdList());
+            quizData.put("timeLimit", saved.getTimeLimit());
+            quizData.put("xp", saved.getXp());
+            quizData.put("passAccuracy", saved.getPassAccuracy());
+            quizData.put("alYear", saved.getAlYear());
+            quizData.put("attemptsAllowed", saved.getAttemptsAllowed());
+            quizData.put("scheduledTime", saved.getScheduledTime());
+            quizData.put("deadline", saved.getDeadline());
+            quizData.put("totalQuestions", selected.size());
+
+            // 9. Map questions to response
+            List<Map<String, Object>> questions = new ArrayList<>();
+            for (Question question : selected) {
+                if (question == null) {
+                    logService.log("ERROR", "QuizServiceImpl", "Generate My Quiz", "Found null question in selected list.", String.valueOf(userId));
+                    continue; // Skip null questions
+                }
+
+                Map<String, Object> questionData = new HashMap<>();
+                questionData.put("questionId", question.getQuestionId());
+                questionData.put("alYear", question.getAlYear());
+                questionData.put("questionText", question.getQuestionText());
+                questionData.put("options", question.getOptions() != null ? question.getOptions() : Collections.emptyList()); // Ensure options are not null
+                questionData.put("status", question.getStatus());
+                questionData.put("correctAnswerId", question.getCorrectAnswerId());
+                questionData.put("explanation", question.getExplanation());
+                questionData.put("subject", question.getSubject());
+                questionData.put("type", question.getType());
+                questionData.put("subType", question.getSubType());
+                questionData.put("points", question.getPoints());
+                questionData.put("difficultyLevel", question.getDifficultyLevel());
+                questionData.put("maxTimeSec", question.getMaxTimeSec());
+                questionData.put("hasAttachment", question.isHasAttachment());
+                questionData.put("module", question.getModule());
+                questionData.put("submodule", question.getSubmodule());
+
+                questions.add(questionData);
+            }
+
+            quizData.put("questions", questions);
+            response.put("items", List.of(quizData));
+
+            return ResponseEntity.ok(new ApiResponse<>(response));
+
+        } catch (Exception e) {
+            // Log the error with more detail and user context
+            logService.log("ERROR", "QuizServiceImpl", "Generate My Quiz", "Error: " + e.getMessage(), String.valueOf(userId));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("Internal server error while generating the quiz. Please try again later.", HttpStatus.INTERNAL_SERVER_ERROR.value()));
+        }
     }
+
 
 }

@@ -225,4 +225,24 @@ public class SasipQuizServiceImpl implements SasipQuizService {
 
         return new PageImpl<>(dtoList, pageable, quizPage.getTotalElements());
     }
+
+    @Override
+    public void publishQuiz(Long quizId, QuizStatus status) {
+        // Find the quiz by ID
+        Quiz quiz = quizRepository.findById(quizId)
+                .orElseThrow(() -> new RuntimeException("Quiz not found"));
+
+        // Set the status to the provided value
+        quiz.setQuizStatus(status);
+
+        // Save the updated quiz
+        quizRepository.save(quiz);
+    }
+
+    @Override
+    public Quiz getQuizById(Long quizId) {
+        // Retrieve the quiz by ID
+        return quizRepository.findById(quizId)
+                .orElseThrow(() -> new RuntimeException("Quiz not found"));
+    }
 } 
