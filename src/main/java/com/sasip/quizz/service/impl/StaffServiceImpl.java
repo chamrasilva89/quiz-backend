@@ -1,25 +1,41 @@
 package com.sasip.quizz.service.impl;
 
 import com.sasip.quizz.dto.*;
+import com.sasip.quizz.model.Role;
 import com.sasip.quizz.model.Staff;
+import com.sasip.quizz.repository.RolePermissionRepository;
+import com.sasip.quizz.repository.RoleRepository;
 import com.sasip.quizz.repository.StaffRepository;
 import com.sasip.quizz.service.StaffService;
 import com.sasip.quizz.service.LogService;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import com.sasip.quizz.security.JwtUtil;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class StaffServiceImpl implements StaffService {
-
+    private static final Logger logger = LoggerFactory.getLogger(StaffServiceImpl.class);
     private final StaffRepository staffRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final LogService logService;
-
+    @Autowired
+    private JwtUtil jwtUtil;  // JWT utility for generating tokens
+    @Autowired
+    private RolePermissionRepository rolePermissionRepository;
+    @Autowired
+    private RoleRepository roleRepository; 
+    
     public StaffServiceImpl(StaffRepository staffRepository, BCryptPasswordEncoder passwordEncoder, LogService logService) {
         this.staffRepository = staffRepository;
         this.passwordEncoder = passwordEncoder;
@@ -96,6 +112,38 @@ public class StaffServiceImpl implements StaffService {
         }
     }
 
+    public LoginResponse login(LoginRequest request) {
+        logger.info("Login attempt for staff username: {}", request.getUsername());
 
-    
+        // Step 1: Fetch the staff from the database
+        Staff staff = staffRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> {
+                    logger.warn("Login failed: staff not found for username {}", request.getUsername());
+                    return new BadCredentialsException("Invalid username or password");
+                });
+
+        // Step 2: Verify the password
+        boolean passwordMatches = passwordEncoder.matches(request.getPassword(), staff.getPasswordHash());
+        if (!passwordMatches) {
+            logger.warn("Login failed: incorrect password for username {}", request.getUsername());
+            throw new BadCredentialsException("Invalid username or password");
+        }
+
+        // Step 3: Fetch the role ID based on the role name (description) from the roles table
+        Role role = roleRepository.findByName(staff.getRole())
+                .orElseThrow(() -> {
+                    logger.warn("Login failed: role not found for role name {}", staff.getRole());
+                    return new RuntimeException("Role not found");
+                });
+
+        // Step 4: Fetch permissions based on role ID
+        List<String> permissions = rolePermissionRepository.findPermissionsByRole(role.getId());
+
+        // Step 5: Generate the JWT token for the logged-in staff
+        String token = jwtUtil.generateToken(staff.getUsername());
+        logger.info("Login successful for staff username: {}", request.getUsername());
+
+        // Step 6: Return the response with token and permissions
+        return new LoginResponse(token, permissions);  // Include role permissions for staff
+    }
 }

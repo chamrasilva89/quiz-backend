@@ -10,4 +10,5 @@ public interface StaffService {
     Staff updateStaff(Long staffId, StaffUpdateRequest updateRequest);
     Staff getStaffById(Long staffId);
     Page<Staff> getStaffByFilters(String role, String status, Pageable pageable);
+    public LoginResponse login(LoginRequest request);
 }
