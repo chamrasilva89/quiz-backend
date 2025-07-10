@@ -41,4 +41,8 @@ public class Reward {
     private LocalDateTime validTo;
 
     private boolean claimable = false;
+
+        // New fields for gift details
+    private String giftType;  // Type of gift e.g., "FREE_CARD"
+    private String giftDetails;  // Details about the gift (free text or JSON)
 }

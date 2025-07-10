@@ -379,3 +379,21 @@ CREATE TABLE notifications (
     INDEX idx_status (status)
 );
 
+ALTER TABLE reward
+ADD COLUMN gift_type VARCHAR(50),  -- Type of the gift e.g., "FREE_CARD", "FEE_REFUND"
+ADD COLUMN gift_details TEXT;     -- Details about the gift (text or JSON)
+
+
+CREATE TABLE reward_winner (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    reward_id BIGINT NOT NULL,
+    status VARCHAR(50) NOT NULL,  -- Status like "CLAIMED", "PENDING", "EXPIRED"
+    claimed_on TIMESTAMP,        -- Date when the reward was claimed (nullable if not claimed)
+    gift_details TEXT,           -- Details about the gift associated with the reward
+    gift_status VARCHAR(50) DEFAULT 'PENDING', -- Gift status e.g. "PENDING", "SENT"
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- When the record was created
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,  -- When it was last updated
+    FOREIGN KEY (user_id) REFERENCES users(user_id), -- Reference to user_id in the users table
+    FOREIGN KEY (reward_id) REFERENCES reward(id)
+);

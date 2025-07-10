@@ -5,8 +5,10 @@ import com.sasip.quizz.dto.ChangePasswordRequest;
 import com.sasip.quizz.dto.UserFilterRequest;
 import com.sasip.quizz.dto.UserRegistrationRequest;
 import com.sasip.quizz.dto.UserUpdateRequest;
+import com.sasip.quizz.model.RewardWinner;
 import com.sasip.quizz.model.User;
 import com.sasip.quizz.security.JwtUtil;
+import com.sasip.quizz.service.RewardService;
 import com.sasip.quizz.service.TokenBlacklistService;
 import com.sasip.quizz.service.UserDailyStreakService;
 import com.sasip.quizz.service.UserService;
@@ -38,7 +40,8 @@ public class UserController {
 
     @Autowired
     private UserDailyStreakService userDailyStreakService; // Service for handling streak
-
+     @Autowired
+    private RewardService rewardService;
     // User Registration with consistent ApiResponse wrapper
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<?>> registerUser(@RequestBody UserRegistrationRequest request) {
@@ -145,7 +148,7 @@ public class UserController {
                 .body(new ApiResponse<>("Failed to fetch user details", 500));
         }
     }
-    
+
     @PatchMapping("/{id}/daily-streak")
     public ResponseEntity<ApiResponse<?>> updateUserDailyStreak(@PathVariable Long id) {
         try {
@@ -162,5 +165,20 @@ public class UserController {
                     .body(new ApiResponse<>("Failed to update daily streak", 500));
         }
     }
+
+    @PostMapping("/claim/{userId}/{rewardId}")
+    public ResponseEntity<ApiResponse<?>> claimReward(@PathVariable Long userId, @PathVariable Long rewardId) {
+        try {
+            // Calling the service to claim the reward
+            RewardWinner rewardWinner = rewardService.claimReward(userId, rewardId);
+            return ResponseEntity.ok(new ApiResponse<>(Map.of("items", rewardWinner)));
+        } catch (Exception e) {
+            // Return an error response if something goes wrong
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("Failed to claim reward", 500));
+        }
+    }
+
+
 
 }

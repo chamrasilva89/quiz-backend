@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.sasip.quizz.dto.RewardDTO;
+import com.sasip.quizz.model.RewardWinner;
 
 public interface RewardService {
     RewardDTO createReward(RewardDTO dto);
@@ -16,6 +17,6 @@ public interface RewardService {
     Page<RewardDTO> getRewardsByFilters(String type, String status, String name, Pageable pageable);
     public RewardDTO updateRewardStatus(Long id, String status);
     RewardDTO getRewardById(Long id);
-
+    public RewardWinner claimReward(Long userId, Long rewardId);
 }
 
