@@ -5,8 +5,9 @@ public class LeaderboardResponse {
     private String username;
     private String school;
     private String district;
-    private int alYear;
-    private int totalPoints;
+    private Integer alYear;
+    private Integer totalPoints;
+    private String avatarUrl; // New field for avatar URL
     private int rank;
 
     // Getters and Setters
@@ -42,20 +43,28 @@ public class LeaderboardResponse {
         this.district = district;
     }
 
-    public int getAlYear() {
+    public Integer getAlYear() {
         return alYear;
     }
 
-    public void setAlYear(int alYear) {
+    public void setAlYear(Integer alYear) {
         this.alYear = alYear;
     }
 
-    public int getTotalPoints() {
+    public Integer getTotalPoints() {
         return totalPoints;
     }
 
-    public void setTotalPoints(int totalPoints) {
+    public void setTotalPoints(Integer totalPoints) {
         this.totalPoints = totalPoints;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
     }
 
     public int getRank() {

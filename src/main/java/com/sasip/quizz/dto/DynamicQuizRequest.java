@@ -15,7 +15,7 @@ public class DynamicQuizRequest {
     private String intro;
 
     private List<String> moduleList; // optional filtering by module
-     private List<Long> rewardIdList;
+    private List<Long> rewardIdList;
     private int attemptsAllowed;
 
     private int passAccuracy;
@@ -30,18 +30,10 @@ public class DynamicQuizRequest {
 
     private String alYear;
 
-    @NotNull(message = "Question count is required")
-    @Min(value = 1, message = "At least one question must be selected")
-    private Integer questionCount;
+    @NotBlank(message = "Difficulty level is required")
+    @Pattern(regexp = "easy|medium|hard|mix", flags = Pattern.Flag.CASE_INSENSITIVE, message = "Difficulty level must be easy, medium, hard, or mix")
+    private String difficultyLevel; // updated to accept "mix" as well
 
     @NotNull(message = "User ID is required")
-    private Long userId;
-
-    @NotBlank(message = "Quiz type is required")
-    private String quizType = "dynamic"; // default if applicable
-
-    @Pattern(regexp = "easy|medium|hard", flags = Pattern.Flag.CASE_INSENSITIVE, message = "Difficulty level must be easy, medium, or hard")
-    @NotBlank(message = "Difficulty level is required")
-    private String difficultyLevel;
-
+    private Long userId;  // This should be defined correctly
 }

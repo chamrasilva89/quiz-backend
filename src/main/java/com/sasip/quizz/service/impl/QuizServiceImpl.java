@@ -126,45 +126,122 @@ public class QuizServiceImpl implements QuizService {
     @Override
     public ResponseEntity<ApiResponse<Object>> generateDynamicQuiz(DynamicQuizRequest request) {
         Long userId = request.getUserId();
-        int numQuestions = request.getQuestionCount();
         String difficulty = request.getDifficultyLevel();
-        List<String> modules = request.getModuleList();
 
+        // Hardcoded values
+        int numQuestions = 5;  // Hardcoding the question count to 5
+        String quizType = "DYNAMIC";  // Hardcoding quiz type to DYNAMIC
+
+        // Exclude already used questions
         Set<Long> excludeSet = new HashSet<>();
         quizRepository.findAllByQuizType(QuizType.SASIP).forEach(q -> excludeSet.addAll(q.getQuestionIds()));
         userQuizAnswerRepository.findByUserId(userId.toString())
                 .forEach(ans -> excludeSet.add(ans.getQuestionId()));
 
-        List<Question> pool = excludeSet.isEmpty()
-                ? questionRepository.findByDifficultyLevel(difficulty)
-                : questionRepository.findByDifficultyLevelAndQuestionIdNotIn(difficulty, new ArrayList<>(excludeSet));
+        List<Question> pool = new ArrayList<>();
+        
+        // Check if "mix" is selected, else pick questions based on the difficulty
+        if ("mix".equalsIgnoreCase(difficulty)) {
+            // Fetch questions from all difficulty levels
+            pool.addAll(questionRepository.findByQuestionIdNotIn(new ArrayList<>(excludeSet)));
+        } else {
+            // Fetch questions based on difficulty and exclude already selected ones
+            pool = questionRepository.findByDifficultyLevelAndQuestionIdNotIn(difficulty, new ArrayList<>(excludeSet));
+        }
 
         if (pool.size() < numQuestions) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ApiResponse<>("Not enough questions available for the selected difficulty level.", 400));
         }
 
+        // Randomly shuffle and select questions
         Collections.shuffle(pool);
         List<Question> selected = pool.subList(0, numQuestions);
 
+        // Calculate the total timeLimit by summing maxTimeSec of each selected question
+        int totalTimeLimit = selected.stream()
+                .mapToInt(Question::getMaxTimeSec)  // Sum up maxTimeSec for each question
+                .sum();
+
+        // Calculate the total points by summing points of each selected question
+        int totalPoints = selected.stream()
+                .mapToInt(Question::getPoints)  // Sum up points for each question
+                .sum();
+
+        // Create and save the quiz
         Quiz quiz = new Quiz();
-        quiz.setQuizName("Dynamic Quiz - " + LocalDateTime.now());
+        quiz.setQuizName("Dynamic Quiz - " + UUID.randomUUID().toString());  // Temporary name using UUID
         quiz.setIntro("Auto generated dynamic quiz.");
         quiz.setQuestionIds(selected.stream().map(Question::getQuestionId).collect(Collectors.toList()));
-        quiz.setQuizType(QuizType.DYNAMIC);
+        quiz.setQuizType(QuizType.DYNAMIC);  // Always set to DYNAMIC
         quiz.setUserId(userId);
-        quiz.setAttemptsAllowed(1);
-        quiz.setTimeLimit(15);
-        quiz.setPassAccuracy(60);
-        quiz.setXp(50);
+        quiz.setAttemptsAllowed(1);  // Hardcoded attemptsAllowed
+        quiz.setTimeLimit(totalTimeLimit);  // Set the dynamically calculated time limit
+        quiz.setPassAccuracy(60);  // Hardcoded passAccuracy
+        quiz.setXp(totalPoints);  // Hardcoded XP
+        //quiz.setPoints(totalPoints);  // Set the total points for the quiz
 
+        // Save the quiz to the repository
         Quiz saved = quizRepository.save(quiz);
+        
+        // Now, update the quizName with the generated quizId
+        saved.setQuizName("Dynamic Quiz - " + saved.getQuizId());  // Update quizName with the quizId
+        quizRepository.save(saved);  // Save the updated quiz with the correct quizName
+        
+        // Log the quiz creation
         logService.log("INFO", "QuizServiceImpl", "Generate Dynamic Quiz", "Dynamic quiz generated: " + saved.getQuizName(), String.valueOf(userId));
 
+        // Construct the response map
         Map<String, Object> response = new HashMap<>();
-        response.put("items", List.of(saved));
+        Map<String, Object> quizData = new HashMap<>();
+
+        quizData.put("quizId", saved.getQuizId());
+        quizData.put("quizName", saved.getQuizName());
+        quizData.put("intro", saved.getIntro());
+        quizData.put("timeLimit", saved.getTimeLimit());
+        quizData.put("xp", saved.getXp());
+        quizData.put("passAccuracy", saved.getPassAccuracy());
+        //quizData.put("points", saved.getPoints());  // Include points
+        quizData.put("attemptsAllowed", saved.getAttemptsAllowed());
+        quizData.put("totalQuestions", selected.size());
+
+        // Map questions to response
+        List<Map<String, Object>> questions = new ArrayList<>();
+        for (Question question : selected) {
+            if (question == null) {
+                logService.log("ERROR", "QuizServiceImpl", "Generate Dynamic Quiz", "Found null question in selected list.", String.valueOf(userId));
+                continue; // Skip null questions
+            }
+
+            Map<String, Object> questionData = new HashMap<>();
+            questionData.put("questionId", question.getQuestionId());
+            questionData.put("alYear", question.getAlYear());
+            questionData.put("questionText", question.getQuestionText());
+            questionData.put("options", question.getOptions() != null ? question.getOptions() : Collections.emptyList()); // Ensure options are not null
+            questionData.put("status", question.getStatus());
+            questionData.put("correctAnswerId", question.getCorrectAnswerId());
+            questionData.put("explanation", question.getExplanation());
+            questionData.put("subject", question.getSubject());
+            questionData.put("type", question.getType());
+            questionData.put("subType", question.getSubType());
+            questionData.put("points", question.getPoints());
+            questionData.put("difficultyLevel", question.getDifficultyLevel());
+            questionData.put("maxTimeSec", question.getMaxTimeSec());
+            questionData.put("hasAttachment", question.isHasAttachment());
+            questionData.put("module", question.getModule());
+            questionData.put("submodule", question.getSubmodule());
+
+            questions.add(questionData);
+        }
+
+        quizData.put("questions", questions);
+        response.put("items", List.of(quizData));
+
         return ResponseEntity.ok(new ApiResponse<>(response));
     }
+
+
+
 
     @Override
     public Quiz updateQuizHeaderDetails(Long quizId, UpdateQuizRequest request) {
