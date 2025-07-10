@@ -332,3 +332,18 @@ CREATE TABLE staff (
     created_date DATETIME NOT NULL,
     updated_date DATETIME
 );
+
+CREATE TABLE sasip_news (
+    news_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    short_description TEXT,
+    long_description TEXT,
+    type VARCHAR(50),
+    image_url VARCHAR(255),
+    publish_date_time DATETIME,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE sasip_news MODIFY COLUMN long_description TEXT;
