@@ -18,5 +18,6 @@ public interface RewardService {
     public RewardDTO updateRewardStatus(Long id, String status);
     RewardDTO getRewardById(Long id);
     public RewardWinner claimReward(Long userId, Long rewardId);
+    
 }
 

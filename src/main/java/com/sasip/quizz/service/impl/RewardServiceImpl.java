@@ -4,7 +4,6 @@ import com.sasip.quizz.dto.RewardDTO;
 import com.sasip.quizz.model.Reward;
 import com.sasip.quizz.model.RewardType;
 import com.sasip.quizz.model.RewardWinner;
-import com.sasip.quizz.model.User;
 import com.sasip.quizz.model.RewardStatus;
 import com.sasip.quizz.repository.RewardRepository;
 import com.sasip.quizz.repository.RewardWinnerRepository;
@@ -29,6 +28,7 @@ public class RewardServiceImpl implements RewardService {
     private final LogService logService;
     private final RewardWinnerRepository rewardWinnerRepository;
     private final UserRepository userRepository;
+
     @Override
     public RewardDTO createReward(RewardDTO dto) {
         Reward reward = new Reward();
@@ -47,6 +47,8 @@ public class RewardServiceImpl implements RewardService {
         reward.setValidFrom(dto.getValidFrom());
         reward.setValidTo(dto.getValidTo());
         reward.setClaimable(dto.isClaimable());
+        reward.setGiftType(dto.getGiftType());        // Set giftType
+        reward.setGiftDetails(dto.getGiftDetails());  // Set giftDetails
 
         Reward saved = rewardRepository.save(reward);
         logService.log("INFO", "RewardServiceImpl", "Create Reward", "Created reward: " + saved.getName(), "system");
@@ -72,6 +74,8 @@ public class RewardServiceImpl implements RewardService {
         reward.setValidFrom(dto.getValidFrom());
         reward.setValidTo(dto.getValidTo());
         reward.setClaimable(dto.isClaimable());
+        reward.setGiftType(dto.getGiftType());        // Update giftType
+        reward.setGiftDetails(dto.getGiftDetails());  // Update giftDetails
 
         Reward updated = rewardRepository.save(reward);
         logService.log("INFO", "RewardServiceImpl", "Update Reward", "Updated reward: " + updated.getName(), "system");
@@ -112,7 +116,9 @@ public class RewardServiceImpl implements RewardService {
                 reward.getStatus() != null ? reward.getStatus().name() : null,
                 reward.getValidFrom(),
                 reward.getValidTo(),
-                reward.isClaimable()
+                reward.isClaimable(),
+                reward.getGiftType(),      // Include giftType in the DTO
+                reward.getGiftDetails()    // Include giftDetails in the DTO
         );
     }
 
@@ -161,33 +167,29 @@ public class RewardServiceImpl implements RewardService {
     }
 
     @Override
-public RewardWinner claimReward(Long userId, Long rewardId) {
-    // Check if the reward exists
-    Reward reward = rewardRepository.findById(rewardId)
-            .orElseThrow(() -> new RuntimeException("Reward not found"));
+    public RewardWinner claimReward(Long userId, Long rewardId) {
+        // Check if the reward exists
+        Reward reward = rewardRepository.findById(rewardId)
+                .orElseThrow(() -> new RuntimeException("Reward not found"));
 
-    // Check if the user has already claimed this reward
-    RewardWinner rewardWinner = rewardWinnerRepository.findByUser_UserIdAndReward_Id(userId, rewardId)
-            .orElse(new RewardWinner());  // if not found, create a new RewardWinner object
+        // Check if the user has already claimed this reward
+        RewardWinner rewardWinner = rewardWinnerRepository.findByUser_UserIdAndReward_Id(userId, rewardId)
+                .orElse(new RewardWinner());  // if not found, create a new RewardWinner object
 
-    // If the reward has not been claimed, assign it to the user
-    if (rewardWinner.getId() == null) {
-        // Set user and reward associations
-        rewardWinner.setUser(userRepository.findById(userId).orElseThrow());
-        rewardWinner.setReward(reward);
-        rewardWinner.setStatus("CLAIMED");  // Set the status to "CLAIMED"
-        rewardWinner.setClaimedOn(LocalDateTime.now());  // Set the time of claiming
-        rewardWinner.setGiftDetails(reward.getGiftDetails());  // Get the gift details from the Reward object
-        rewardWinner.setGiftStatus("PENDING");  // Gift status is pending initially
+        // If the reward has not been claimed, assign it to the user
+        if (rewardWinner.getId() == null) {
+            // Set user and reward associations
+            rewardWinner.setUser(userRepository.findById(userId).orElseThrow());
+            rewardWinner.setReward(reward);
+            rewardWinner.setStatus("CLAIMED");  // Set the status to "CLAIMED"
+            rewardWinner.setClaimedOn(LocalDateTime.now());  // Set the time of claiming
+            rewardWinner.setGiftDetails(reward.getGiftDetails());  // Get the gift details from the Reward object
+            rewardWinner.setGiftStatus("PENDING");  // Gift status is pending initially
 
-        // Save the reward winner record
-        rewardWinnerRepository.save(rewardWinner);  // Persist the reward winner
+            // Save the reward winner record
+            rewardWinnerRepository.save(rewardWinner);  // Persist the reward winner
+        }
+
+        return rewardWinner;  // Return the reward winner object
     }
-
-    return rewardWinner;  // Return the reward winner object
-}
-
-
-
-
 }

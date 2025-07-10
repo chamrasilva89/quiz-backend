@@ -23,4 +23,8 @@ public class RewardDTO {
     private LocalDateTime validFrom;
     private LocalDateTime validTo;
     private boolean claimable;
+
+        // Newly added reward gift fields
+    private String giftType;      // Type of gift e.g., "FREE_CARD"
+    private String giftDetails;   // Details about the gift (free text or JSON)
 }
