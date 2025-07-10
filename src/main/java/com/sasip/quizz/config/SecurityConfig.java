@@ -23,13 +23,13 @@ public class SecurityConfig {
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Autowired
-    private UserDetailsService userDetailsService;
+    private com.sasip.quizz.security.CustomUserDetailsService customUserDetailsService;  // Custom service for User and Staff
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
             .csrf().disable()
-            .authorizeHttpRequests(auth -> auth
+            .authorizeRequests(auth -> auth
                 .requestMatchers(
                     "/api/user/auth/**",       // for user login
                     "/api/admin/auth/**",      // for admin login
@@ -41,15 +41,15 @@ public class SecurityConfig {
                 .anyRequest().authenticated()  // protect all other routes
             )
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authenticationProvider(authenticationProvider())
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .authenticationProvider(authenticationProvider())  // Using the DaoAuthenticationProvider
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)  // JWT filter for authorization
             .build();
     }
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(userDetailsService);
+        provider.setUserDetailsService(customUserDetailsService);  // Use the custom user details service
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }
