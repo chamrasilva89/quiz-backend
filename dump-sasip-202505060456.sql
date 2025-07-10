@@ -347,3 +347,35 @@ CREATE TABLE sasip_news (
 
 
 ALTER TABLE sasip_news MODIFY COLUMN long_description TEXT;
+
+CREATE TABLE user_daily_streak (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id int NOT NULL,
+    last_login_date DATETIME NOT NULL,
+    current_streak INT NOT NULL DEFAULT 0,
+    streak_points INT NOT NULL DEFAULT 0,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id)
+);
+
+
+CREATE TABLE notifications (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    type VARCHAR(100) NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'Pending',
+    generated_by VARCHAR(100) NOT NULL,
+    send_on DATETIME NOT NULL,
+    audience VARCHAR(255) NOT NULL,
+    actions VARCHAR(255),
+    image VARCHAR(255),
+    extra_field_1 VARCHAR(255),
+    extra_field_2 VARCHAR(255),
+    extra_field_3 VARCHAR(255),
+    extra_field_4 VARCHAR(255),
+    extra_field_5 VARCHAR(255),
+    INDEX idx_send_on (send_on),
+    INDEX idx_status (status)
+);
+

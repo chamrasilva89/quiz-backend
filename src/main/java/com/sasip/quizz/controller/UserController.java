@@ -8,6 +8,7 @@ import com.sasip.quizz.dto.UserUpdateRequest;
 import com.sasip.quizz.model.User;
 import com.sasip.quizz.security.JwtUtil;
 import com.sasip.quizz.service.TokenBlacklistService;
+import com.sasip.quizz.service.UserDailyStreakService;
 import com.sasip.quizz.service.UserService;
 
 import java.util.HashMap;
@@ -34,6 +35,9 @@ public class UserController {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    @Autowired
+    private UserDailyStreakService userDailyStreakService; // Service for handling streak
 
     // User Registration with consistent ApiResponse wrapper
     @PostMapping("/register")
@@ -139,6 +143,23 @@ public class UserController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiResponse<>("Failed to fetch user details", 500));
+        }
+    }
+    
+    @PatchMapping("/{id}/daily-streak")
+    public ResponseEntity<ApiResponse<?>> updateUserDailyStreak(@PathVariable Long id) {
+        try {
+            // Assuming we have a service method to handle the streak logic
+            User updatedUser = userDailyStreakService.updateDailyStreak(id);
+
+            // Returning updated user with the streak details
+            return ResponseEntity.ok(new ApiResponse<>(Map.of("items", updatedUser)));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(e.getMessage(), 400));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("Failed to update daily streak", 500));
         }
     }
 
