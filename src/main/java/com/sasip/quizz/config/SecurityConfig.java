@@ -10,10 +10,9 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @Configuration
 @EnableWebSecurity
@@ -23,33 +22,34 @@ public class SecurityConfig {
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Autowired
-    private com.sasip.quizz.security.CustomUserDetailsService customUserDetailsService;  // Custom service for User and Staff
+    private com.sasip.quizz.security.CustomUserDetailsService customUserDetailsService;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-            .csrf().disable()
-            .authorizeRequests(auth -> auth
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                    "/api/user/auth/**",       // for user login
-                    "/api/admin/auth/**",      // for admin login
-                    "/api/users/register",     // allow registration
-                    "/api/admin/users/register",
-                    "/v3/api-docs/**",         // Swagger docs (optional)
-                    "/swagger-ui/**"
+                    "/api/user/auth/**",         // for user login
+                    "/api/admin/auth/**",        // for admin login
+                    "/api/users/register",       // user registration
+                    "/api/admin/users/register", // admin registration
+                    "/v3/api-docs/**",           // Swagger OpenAPI docs
+                    "/swagger-ui/**",            // Swagger UI
+                    "/swagger-ui.html"           // Swagger UI HTML entry
                 ).permitAll()
-                .anyRequest().authenticated()  // protect all other routes
+                .anyRequest().authenticated()
             )
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authenticationProvider(authenticationProvider())  // Using the DaoAuthenticationProvider
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)  // JWT filter for authorization
+            .authenticationProvider(authenticationProvider())
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .build();
     }
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(customUserDetailsService);  // Use the custom user details service
+        provider.setUserDetailsService(customUserDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }

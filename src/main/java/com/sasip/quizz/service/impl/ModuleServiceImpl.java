@@ -26,7 +26,7 @@ public class ModuleServiceImpl implements ModuleService {
         module.setName(dto.getName());
         module.setDescription(dto.getDescription());
         Module saved = moduleRepo.save(module);
-        logService.log("INFO", "ModuleServiceImpl", "Create Module", "Created module: " + saved.getName(), "system");
+        //logService.log("INFO", "ModuleServiceImpl", "Create Module", "Created module: " + saved.getName(), "system");
         return convertToDTO(saved);
     }
 
@@ -36,14 +36,14 @@ public class ModuleServiceImpl implements ModuleService {
         module.setName(dto.getName());
         module.setDescription(dto.getDescription());
         Module updated = moduleRepo.save(module);
-        logService.log("INFO", "ModuleServiceImpl", "Update Module", "Updated module: " + updated.getName(), "system");
+        //logService.log("INFO", "ModuleServiceImpl", "Update Module", "Updated module: " + updated.getName(), "system");
         return convertToDTO(updated);
     }
 
     @Override
     public void deleteModule(Long id) {
         moduleRepo.deleteById(id);
-        logService.log("WARN", "ModuleServiceImpl", "Delete Module", "Deleted module with ID: " + id, "system");
+        //logService.log("WARN", "ModuleServiceImpl", "Delete Module", "Deleted module with ID: " + id, "system");
     }
 
     @Override

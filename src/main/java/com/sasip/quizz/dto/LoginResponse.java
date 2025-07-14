@@ -1,36 +1,39 @@
 package com.sasip.quizz.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import java.util.List;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class LoginResponse {
     private String token;
-    private List<String> permissions;  // Only relevant for staff
+    private Long userId; // For users or staff
+    private List<String> permissions; // For staff login
 
-    // Constructor for just the token (user login)
     public LoginResponse(String token) {
         this.token = token;
     }
 
-    // Constructor for both token and permissions (staff login)
     public LoginResponse(String token, List<String> permissions) {
         this.token = token;
         this.permissions = permissions;
     }
 
-    // Getters and setters for both fields
-    public String getToken() {
-        return token;
+    public static LoginResponse forUser(String token, Long userId) {
+        LoginResponse response = new LoginResponse();
+        response.setToken(token);
+        response.setUserId(userId);
+        return response;
     }
 
-    public void setToken(String token) {
-        this.token = token;
-    }
-
-    public List<String> getPermissions() {
-        return permissions;
-    }
-
-    public void setPermissions(List<String> permissions) {
-        this.permissions = permissions;
+    public static LoginResponse forStaff(String token, Long staffId, List<String> permissions) {
+        LoginResponse response = new LoginResponse();
+        response.setToken(token);
+        response.setUserId(staffId);
+        response.setPermissions(permissions);
+        return response;
     }
 }

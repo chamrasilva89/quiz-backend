@@ -33,7 +33,7 @@ public class SasipQuizServiceImpl implements SasipQuizService {
         Pageable pg = PageRequest.of(filter.getPage(), filter.getSize());
         Page<Quiz> quizPage = quizRepository.findAll(spec, pg);
 
-        logService.log("INFO", "SasipQuizServiceImpl", "Find Filtered Quizzes", "Filtered SASIP quizzes retrieved", null);
+        //logService.log("INFO", "SasipQuizServiceImpl", "Find Filtered Quizzes", "Filtered SASIP quizzes retrieved", null);
 
         return quizPage.map(SasipQuizSummary::new);
     }
@@ -77,7 +77,7 @@ public class SasipQuizServiceImpl implements SasipQuizService {
             );
         }).toList();
 
-        logService.log("INFO", "SasipQuizServiceImpl", "List Quizzes with Completion", "Listed SASIP quizzes with completion status for userId: " + userId, String.valueOf(userId));
+        //logService.log("INFO", "SasipQuizServiceImpl", "List Quizzes with Completion", "Listed SASIP quizzes with completion status for userId: " + userId, String.valueOf(userId));
 
         return new PageImpl<>(quizDTOs, pageable, quizzes.getTotalElements());
     }
@@ -89,7 +89,7 @@ public class SasipQuizServiceImpl implements SasipQuizService {
         long completed = userQuizSubmissionRepository.countCompletedSasipQuizzes(userId);
         long total = quizRepository.countAllSasipQuizzes();
 
-        logService.log("INFO", "SasipQuizServiceImpl", "Get User SASIP Stats", "SASIP stats retrieved for userId: " + userId, String.valueOf(userId));
+        //logService.log("INFO", "SasipQuizServiceImpl", "Get User SASIP Stats", "SASIP stats retrieved for userId: " + userId, String.valueOf(userId));
 
         return new SasipQuizStatsDTO(best, avg, completed, total);
     }
@@ -135,7 +135,7 @@ public class SasipQuizServiceImpl implements SasipQuizService {
         int end = Math.min(start + pageable.getPageSize(), completedQuizzes.size());
         List<SasipQuizListItem> paginated = completedQuizzes.subList(start, end);
 
-        logService.log("INFO", "SasipQuizServiceImpl", "List Completed Quizzes", "Completed SASIP quizzes listed for userId: " + userId, String.valueOf(userId));
+        //logService.log("INFO", "SasipQuizServiceImpl", "List Completed Quizzes", "Completed SASIP quizzes listed for userId: " + userId, String.valueOf(userId));
 
         return new PageImpl<>(paginated, pageable, completedQuizzes.size());
     }
@@ -173,7 +173,7 @@ public class SasipQuizServiceImpl implements SasipQuizService {
             return dto;
         }).toList();
 
-        logService.log("INFO", "SasipQuizServiceImpl", "Filter Quizzes With Questions", "Filtered quizzes with questions retrieved", null);
+        //logService.log("INFO", "SasipQuizServiceImpl", "Filter Quizzes With Questions", "Filtered quizzes with questions retrieved", null);
 
         return new PageImpl<>(dtoList, pageable, quizPage.getTotalElements());
     }
@@ -221,7 +221,7 @@ public class SasipQuizServiceImpl implements SasipQuizService {
             return dto;
         }).toList();
 
-        logService.log("INFO", "SasipQuizServiceImpl", "Filter SASIP Quizzes With User", "Filtered SASIP quizzes with userId: " + userId, String.valueOf(userId));
+        //logService.log("INFO", "SasipQuizServiceImpl", "Filter SASIP Quizzes With User", "Filtered SASIP quizzes with userId: " + userId, String.valueOf(userId));
 
         return new PageImpl<>(dtoList, pageable, quizPage.getTotalElements());
     }

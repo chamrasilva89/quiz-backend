@@ -20,9 +20,19 @@ public class LogEntry {
     private String source;          // Controller/Service name or class
     private String action;          // What happened
     private String performedBy;     // Username or userId
-    
+
     @Column(columnDefinition = "TEXT")
     private String message;
 
     private LocalDateTime timestamp;
+
+   @Column(columnDefinition = "LONGTEXT")
+    private String previousValue;   // JSON or serialized text
+
+    @Column(columnDefinition = "LONGTEXT")
+    private String newValue;        // JSON or serialized text
+
+    private String entity;          // e.g., "User", "RewardWinner"
+
+    private String section;         // e.g., "AdminPanel", "QuizManagement"
 }

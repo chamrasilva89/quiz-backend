@@ -76,7 +76,7 @@ public class UserServiceImpl implements UserService {
 
         User saved = userRepository.save(user);
         logger.info("User registered successfully: {}", user.getUsername());
-        logService.log("INFO", "UserServiceImpl", "Register User", "User registered: " + saved.getUsername(), saved.getUsername());
+        //logService.log("INFO", "UserServiceImpl", "Register User", "User registered: " + saved.getUsername(), saved.getUsername());
         return saved;
     }
 
@@ -102,10 +102,11 @@ public class UserServiceImpl implements UserService {
 
         User updated = userRepository.save(user);
         logger.info("User updated: {}", userId);
-        logService.log("INFO", "UserServiceImpl", "Update User", "User updated: " + updated.getUsername(), updated.getUsername());
+        //logService.log("INFO", "UserServiceImpl", "Update User", "User updated: " + updated.getUsername(), updated.getUsername());
         return updated;
     }
 
+    // Update UserServiceImpl.java login method to return userId and log it
     @Override
     public LoginResponse login(LoginRequest request) {
         logger.info("Login attempt for username: {}", request.getUsername());
@@ -125,10 +126,23 @@ public class UserServiceImpl implements UserService {
 
         String token = jwtUtil.generateToken(user.getUsername());
         logger.info("Login successful for username: {}", request.getUsername());
-        logService.log("INFO", "UserServiceImpl", "Login", "User logged in: " + user.getUsername(), user.getUsername());
 
-        return new LoginResponse(token);
+        logService.log(
+            "INFO",
+            "UserServiceImpl",
+            "Login",
+            "User logged in successfully",
+            user.getUsername(),
+            null,
+            "{\"userId\":\"" + user.getUserId() + "\"}",
+            "User",
+            "Auth"
+        );
+
+        return LoginResponse.forUser(token, user.getUserId());
     }
+
+
 
     @Override
     public Page<User> filterUsers(UserFilterRequest filterRequest, Pageable pageable) {
@@ -158,7 +172,7 @@ public class UserServiceImpl implements UserService {
         user.setUpdatedDate(LocalDateTime.now());
         userRepository.save(user);
 
-        logService.log("INFO", "UserServiceImpl", "Change Password", "Password changed for user: " + user.getUsername(), user.getUsername());
+        //logService.log("INFO", "UserServiceImpl", "Change Password", "Password changed for user: " + user.getUsername(), user.getUsername());
     }
 
     @Override

@@ -51,7 +51,7 @@ public class RewardServiceImpl implements RewardService {
         reward.setGiftDetails(dto.getGiftDetails());  // Set giftDetails
 
         Reward saved = rewardRepository.save(reward);
-        logService.log("INFO", "RewardServiceImpl", "Create Reward", "Created reward: " + saved.getName(), "system");
+        //logService.log("INFO", "RewardServiceImpl", "Create Reward", "Created reward: " + saved.getName(), "system");
         return toDto(saved);
     }
 
@@ -78,7 +78,7 @@ public class RewardServiceImpl implements RewardService {
         reward.setGiftDetails(dto.getGiftDetails());  // Update giftDetails
 
         Reward updated = rewardRepository.save(reward);
-        logService.log("INFO", "RewardServiceImpl", "Update Reward", "Updated reward: " + updated.getName(), "system");
+        //logService.log("INFO", "RewardServiceImpl", "Update Reward", "Updated reward: " + updated.getName(), "system");
         return toDto(updated);
     }
 
@@ -88,7 +88,7 @@ public class RewardServiceImpl implements RewardService {
             throw new RuntimeException("Reward not found with ID: " + id);
         }
         rewardRepository.deleteById(id);
-        logService.log("WARN", "RewardServiceImpl", "Delete Reward", "Deleted reward with ID: " + id, "system");
+        //logService.log("WARN", "RewardServiceImpl", "Delete Reward", "Deleted reward with ID: " + id, "system");
     }
 
     @Override
@@ -155,7 +155,7 @@ public class RewardServiceImpl implements RewardService {
         }
 
         Reward updated = rewardRepository.save(reward);
-        logService.log("INFO", "RewardServiceImpl", "Update Reward Status", "Updated reward status for ID: " + updated.getId(), "system");
+        //logService.log("INFO", "RewardServiceImpl", "Update Reward Status", "Updated reward status for ID: " + updated.getId(), "system");
         return toDto(updated);
     }
 

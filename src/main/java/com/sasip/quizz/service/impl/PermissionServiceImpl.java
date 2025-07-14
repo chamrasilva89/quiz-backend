@@ -28,7 +28,7 @@ public class PermissionServiceImpl implements PermissionService {
         Permission permission = new Permission();
         permission.setPermissionName(request.getPermissionName());
         Permission saved = permissionRepository.save(permission);
-        logService.log("INFO", "PermissionServiceImpl", "Create Permission", "Created permission: " + saved.getPermissionName(), "system");
+        //logService.log("INFO", "PermissionServiceImpl", "Create Permission", "Created permission: " + saved.getPermissionName(), "system");
         return saved;
     }
 
@@ -38,7 +38,7 @@ public class PermissionServiceImpl implements PermissionService {
                 .orElseThrow(() -> new RuntimeException("Permission not found"));
         existing.setPermissionName(request.getPermissionName());
         Permission updated = permissionRepository.save(existing);
-        logService.log("INFO", "PermissionServiceImpl", "Update Permission", "Updated permission: " + updated.getPermissionName(), "system");
+        //logService.log("INFO", "PermissionServiceImpl", "Update Permission", "Updated permission: " + updated.getPermissionName(), "system");
         return updated;
     }
 

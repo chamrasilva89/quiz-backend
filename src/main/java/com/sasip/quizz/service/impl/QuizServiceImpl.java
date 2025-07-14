@@ -48,7 +48,7 @@ public class QuizServiceImpl implements QuizService {
         quiz.setQuizType(QuizType.valueOf(request.getQuizType().toUpperCase()));
         quiz.setQuizStatus(QuizStatus.valueOf(request.getQuizStatus().toUpperCase()));
         Quiz saved = quizRepository.save(quiz);
-        logService.log("INFO", "QuizServiceImpl", "Create Quiz", "Quiz created: " + saved.getQuizName(), null);
+        //logService.log("INFO", "QuizServiceImpl", "Create Quiz", "Quiz created: " + saved.getQuizName(), null);
         return saved;
     }
 
@@ -60,7 +60,7 @@ public class QuizServiceImpl implements QuizService {
     @Override
     public Quiz save(Quiz quiz) {
         Quiz saved = quizRepository.save(quiz);
-        logService.log("INFO", "QuizServiceImpl", "Save Quiz", "Quiz saved: " + saved.getQuizName(), null);
+        //logService.log("INFO", "QuizServiceImpl", "Save Quiz", "Quiz saved: " + saved.getQuizName(), null);
         return saved;
     }
 
@@ -70,7 +70,7 @@ public class QuizServiceImpl implements QuizService {
                 .orElseThrow(() -> new RuntimeException("Quiz not found"));
         quiz.setQuestionIds(questionIds);
         Quiz updated = quizRepository.save(quiz);
-        logService.log("INFO", "QuizServiceImpl", "Update Quiz Questions", "Quiz questions updated for: " + updated.getQuizName(), null);
+        //logService.log("INFO", "QuizServiceImpl", "Update Quiz Questions", "Quiz questions updated for: " + updated.getQuizName(), null);
         return updated;
     }
 
@@ -189,7 +189,7 @@ public class QuizServiceImpl implements QuizService {
         quizRepository.save(saved);  // Save the updated quiz with the correct quizName
         
         // Log the quiz creation
-        logService.log("INFO", "QuizServiceImpl", "Generate Dynamic Quiz", "Dynamic quiz generated: " + saved.getQuizName(), String.valueOf(userId));
+        //logService.log("INFO", "QuizServiceImpl", "Generate Dynamic Quiz", "Dynamic quiz generated: " + saved.getQuizName(), String.valueOf(userId));
 
         // Construct the response map
         Map<String, Object> response = new HashMap<>();
@@ -209,7 +209,7 @@ public class QuizServiceImpl implements QuizService {
         List<Map<String, Object>> questions = new ArrayList<>();
         for (Question question : selected) {
             if (question == null) {
-                logService.log("ERROR", "QuizServiceImpl", "Generate Dynamic Quiz", "Found null question in selected list.", String.valueOf(userId));
+                //logService.log("ERROR", "QuizServiceImpl", "Generate Dynamic Quiz", "Found null question in selected list.", String.valueOf(userId));
                 continue; // Skip null questions
             }
 
@@ -265,7 +265,7 @@ public class QuizServiceImpl implements QuizService {
         if (request.getQuizStatus() != null) quiz.setQuizStatus(request.getQuizStatus());
 
         Quiz updated = quizRepository.save(quiz);
-        logService.log("INFO", "QuizServiceImpl", "Update Quiz Header", "Quiz header updated: " + updated.getQuizName(), updated.getUserId() != null ? String.valueOf(updated.getUserId()) : null);
+        //logService.log("INFO", "QuizServiceImpl", "Update Quiz Header", "Quiz header updated: " + updated.getQuizName(), updated.getUserId() != null ? String.valueOf(updated.getUserId()) : null);
         return updated;
     }
 
@@ -323,14 +323,14 @@ public class QuizServiceImpl implements QuizService {
 
         // 1. Validate userId
         if (userId == null || userId <= 0) {
-            logService.log("ERROR", "QuizServiceImpl", "Generate My Quiz", "User ID is invalid or missing.", String.valueOf(userId));
+            //logService.log("ERROR", "QuizServiceImpl", "Generate My Quiz", "User ID is invalid or missing.", String.valueOf(userId));
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ApiResponse<>("User ID is required and must be valid.", 400));
         }
 
         // 2. Validate modules list
         if (modules == null || modules.isEmpty()) {
-            logService.log("ERROR", "QuizServiceImpl", "Generate My Quiz", "Modules list is null or empty.", String.valueOf(userId));
+           // logService.log("ERROR", "QuizServiceImpl", "Generate My Quiz", "Modules list is null or empty.", String.valueOf(userId));
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ApiResponse<>("Modules list cannot be null or empty.", 400));
         }
@@ -338,18 +338,18 @@ public class QuizServiceImpl implements QuizService {
         Set<Long> excludeSet = new HashSet<>();
         try {
             // Log the start of quiz generation
-            logService.log("INFO", "QuizServiceImpl", "Quiz Generation Start", "User ID: " + userId, String.valueOf(userId));
+            //logService.log("INFO", "QuizServiceImpl", "Quiz Generation Start", "User ID: " + userId, String.valueOf(userId));
 
             // Log existing quiz question IDs
             quizRepository.findAllByQuizType(QuizType.SASIP).forEach(q -> {
-                logService.log("INFO", "QuizServiceImpl", "Existing Quiz", "Quiz ID: " + q.getQuizId(), String.valueOf(userId));
+                //logService.log("INFO", "QuizServiceImpl", "Existing Quiz", "Quiz ID: " + q.getQuizId(), String.valueOf(userId));
                 excludeSet.addAll(q.getQuestionIds());
             });
 
             // Log user-specific answers (exclude these questions)
             userQuizAnswerRepository.findByUserId(userId.toString())
                     .forEach(ans -> {
-                        logService.log("INFO", "QuizServiceImpl", "User Answer", "Answer Question ID: " + ans.getQuestionId(), String.valueOf(userId));
+                        //logService.log("INFO", "QuizServiceImpl", "User Answer", "Answer Question ID: " + ans.getQuestionId(), String.valueOf(userId));
                         excludeSet.add(ans.getQuestionId());
                     });
 
@@ -358,17 +358,17 @@ public class QuizServiceImpl implements QuizService {
                     ? questionRepository.findByDifficultyLevelAndModuleIn(difficulty, modules)
                     : questionRepository.findByDifficultyLevelAndModuleInAndQuestionIdNotIn(difficulty, modules, new ArrayList<>(excludeSet));
 
-            logService.log("INFO", "QuizServiceImpl", "Pool Size", "Available Questions Pool Size: " + pool.size(), String.valueOf(userId));
+            //logService.log("INFO", "QuizServiceImpl", "Pool Size", "Available Questions Pool Size: " + pool.size(), String.valueOf(userId));
 
             // 4. Check if there are enough questions
             if (pool == null || pool.isEmpty()) {
-                logService.log("ERROR", "QuizServiceImpl", "Generate My Quiz", "No questions found for the selected modules and difficulty.", String.valueOf(userId));
+                //logService.log("ERROR", "QuizServiceImpl", "Generate My Quiz", "No questions found for the selected modules and difficulty.", String.valueOf(userId));
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(new ApiResponse<>("No questions found for the selected modules and difficulty.", 400));
             }
 
             if (pool.size() < numQuestions) {
-                logService.log("ERROR", "QuizServiceImpl", "Generate My Quiz", "Not enough questions available.", String.valueOf(userId));
+                //logService.log("ERROR", "QuizServiceImpl", "Generate My Quiz", "Not enough questions available.", String.valueOf(userId));
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(new ApiResponse<>("Not enough questions available for the selected criteria.", 400));
             }
@@ -391,7 +391,7 @@ public class QuizServiceImpl implements QuizService {
 
             // 7. Save the Quiz
             Quiz saved = quizRepository.save(quiz);
-            logService.log("INFO", "QuizServiceImpl", "Quiz Saved", "Quiz ID: " + saved.getQuizId(), String.valueOf(userId));
+            //logService.log("INFO", "QuizServiceImpl", "Quiz Saved", "Quiz ID: " + saved.getQuizId(), String.valueOf(userId));
 
             // 8. Construct the response map
             Map<String, Object> response = new HashMap<>();
@@ -415,7 +415,7 @@ public class QuizServiceImpl implements QuizService {
             List<Map<String, Object>> questions = new ArrayList<>();
             for (Question question : selected) {
                 if (question == null) {
-                    logService.log("ERROR", "QuizServiceImpl", "Generate My Quiz", "Found null question in selected list.", String.valueOf(userId));
+                    //logService.log("ERROR", "QuizServiceImpl", "Generate My Quiz", "Found null question in selected list.", String.valueOf(userId));
                     continue; // Skip null questions
                 }
 
@@ -447,7 +447,7 @@ public class QuizServiceImpl implements QuizService {
 
         } catch (Exception e) {
             // Log the error with more detail and user context
-            logService.log("ERROR", "QuizServiceImpl", "Generate My Quiz", "Error: " + e.getMessage(), String.valueOf(userId));
+            //logService.log("ERROR", "QuizServiceImpl", "Generate My Quiz", "Error: " + e.getMessage(), String.valueOf(userId));
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>("Internal server error while generating the quiz. Please try again later.", HttpStatus.INTERNAL_SERVER_ERROR.value()));
         }

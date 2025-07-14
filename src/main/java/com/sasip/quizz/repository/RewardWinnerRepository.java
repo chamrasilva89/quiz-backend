@@ -13,6 +13,8 @@ public interface RewardWinnerRepository extends JpaRepository<RewardWinner, Long
     // Find all winners of a specific reward
     List<RewardWinner> findByRewardId(Long rewardId);
 
+    Page<RewardWinner> findByRewardId(Long rewardId, Pageable pageable);
+
     // Find a winner record by user and reward, useful for checking if the user has won a specific reward
     Optional<RewardWinner> findByUser_UserIdAndReward_Id(Long userId, Long rewardId);  // Corrected query
 

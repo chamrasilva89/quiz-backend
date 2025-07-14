@@ -397,3 +397,10 @@ CREATE TABLE reward_winner (
     FOREIGN KEY (user_id) REFERENCES users(user_id), -- Reference to user_id in the users table
     FOREIGN KEY (reward_id) REFERENCES reward(id)
 );
+
+-- SQL to alter existing table
+ALTER TABLE logs
+ADD COLUMN previous_value TEXT,
+ADD COLUMN new_value TEXT,
+ADD COLUMN entity VARCHAR(100),
+ADD COLUMN section VARCHAR(100);

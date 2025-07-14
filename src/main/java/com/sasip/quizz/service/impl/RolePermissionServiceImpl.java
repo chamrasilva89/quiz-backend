@@ -54,7 +54,7 @@ public class RolePermissionServiceImpl implements RolePermissionService {
             rolePermissionRepository.save(rolePermission);
         }
 
-        logService.log("INFO", "RolePermissionServiceImpl", "Assign Permissions", "Assigned permissions to role ID: " + roleId, "system");
+        //logService.log("INFO", "RolePermissionServiceImpl", "Assign Permissions", "Assigned permissions to role ID: " + roleId, "system");
     }
 
     @Override
@@ -62,6 +62,6 @@ public class RolePermissionServiceImpl implements RolePermissionService {
     public void updatePermissionsOfRole(Long roleId, List<Long> permissionIds) {
         rolePermissionRepository.deleteByRole_Id(roleId);
         assignPermissionsToRole(roleId, permissionIds);
-        logService.log("INFO", "RolePermissionServiceImpl", "Update Permissions", "Updated permissions for role ID: " + roleId, "system");
+        //logService.log("INFO", "RolePermissionServiceImpl", "Update Permissions", "Updated permissions for role ID: " + roleId, "system");
     }
 }

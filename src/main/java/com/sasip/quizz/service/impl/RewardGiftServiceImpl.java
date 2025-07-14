@@ -28,7 +28,7 @@ public class RewardGiftServiceImpl implements RewardGiftService {
         rewardGift.setGiftType(dto.getGiftType());
         
         RewardGift saved = rewardGiftRepository.save(rewardGift);
-        logService.log("INFO", "RewardGiftServiceImpl", "Create RewardGift", "Created reward gift: " + saved.getName(), "system");
+        //logService.log("INFO", "RewardGiftServiceImpl", "Create RewardGift", "Created reward gift: " + saved.getName(), "system");
         return toDto(saved);
     }
 
@@ -42,7 +42,7 @@ public class RewardGiftServiceImpl implements RewardGiftService {
         rewardGift.setGiftType(dto.getGiftType());
 
         RewardGift updated = rewardGiftRepository.save(rewardGift);
-        logService.log("INFO", "RewardGiftServiceImpl", "Update RewardGift", "Updated reward gift: " + updated.getName(), "system");
+        //logService.log("INFO", "RewardGiftServiceImpl", "Update RewardGift", "Updated reward gift: " + updated.getName(), "system");
         return toDto(updated);
     }
 
@@ -52,7 +52,7 @@ public class RewardGiftServiceImpl implements RewardGiftService {
             throw new RuntimeException("RewardGift not found with ID: " + id);
         }
         rewardGiftRepository.deleteById(id);
-        logService.log("WARN", "RewardGiftServiceImpl", "Delete RewardGift", "Deleted reward gift with ID: " + id, "system");
+        //logService.log("WARN", "RewardGiftServiceImpl", "Delete RewardGift", "Deleted reward gift with ID: " + id, "system");
     }
 
     @Override

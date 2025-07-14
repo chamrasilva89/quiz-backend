@@ -11,4 +11,7 @@ public interface StaffService {
     Staff getStaffById(Long staffId);
     Page<Staff> getStaffByFilters(String role, String status, Pageable pageable);
     public LoginResponse login(LoginRequest request);
+    void changePassword(Long staffId, StaffChangePasswordRequest request);
+    void resetPassword(StaffResetPasswordRequest request);
+
 }

@@ -68,8 +68,7 @@ public class StaffServiceImpl implements StaffService {
 
         Staff savedStaff = staffRepository.save(staff);
 
-        // Log the action
-        logService.log("INFO", "StaffServiceImpl", "Add Staff", "Staff added: " + savedStaff.getUsername(), savedStaff.getUsername());
+        //logService.log("INFO", "StaffServiceImpl", "Add Staff", "Staff added: " + savedStaff.getUsername(), savedStaff.getUsername());
 
         return savedStaff;
     }
@@ -89,7 +88,7 @@ public class StaffServiceImpl implements StaffService {
 
         Staff updatedStaff = staffRepository.save(staff);
 
-        logService.log("INFO", "StaffServiceImpl", "Update Staff", "Staff updated: " + updatedStaff.getUsername(), updatedStaff.getUsername());
+        //logService.log("INFO", "StaffServiceImpl", "Update Staff", "Staff updated: " + updatedStaff.getUsername(), updatedStaff.getUsername());
 
         return updatedStaff;
     }
@@ -112,38 +111,95 @@ public class StaffServiceImpl implements StaffService {
         }
     }
 
+    // Update StaffServiceImpl.java login method to return staffId and log it
+    @Override
     public LoginResponse login(LoginRequest request) {
         logger.info("Login attempt for staff username: {}", request.getUsername());
 
-        // Step 1: Fetch the staff from the database
         Staff staff = staffRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> {
                     logger.warn("Login failed: staff not found for username {}", request.getUsername());
                     return new BadCredentialsException("Invalid username or password");
                 });
 
-        // Step 2: Verify the password
         boolean passwordMatches = passwordEncoder.matches(request.getPassword(), staff.getPasswordHash());
         if (!passwordMatches) {
             logger.warn("Login failed: incorrect password for username {}", request.getUsername());
             throw new BadCredentialsException("Invalid username or password");
         }
 
-        // Step 3: Fetch the role ID based on the role name (description) from the roles table
         Role role = roleRepository.findByName(staff.getRole())
                 .orElseThrow(() -> {
                     logger.warn("Login failed: role not found for role name {}", staff.getRole());
                     return new RuntimeException("Role not found");
                 });
 
-        // Step 4: Fetch permissions based on role ID
         List<String> permissions = rolePermissionRepository.findPermissionsByRole(role.getId());
-
-        // Step 5: Generate the JWT token for the logged-in staff
         String token = jwtUtil.generateToken(staff.getUsername());
         logger.info("Login successful for staff username: {}", request.getUsername());
 
-        // Step 6: Return the response with token and permissions
-        return new LoginResponse(token, permissions);  // Include role permissions for staff
+        logService.log(
+            "INFO",
+            "StaffServiceImpl",
+            "Login",
+            "Staff logged in successfully",
+            staff.getUsername(),
+            null,
+            "{\"staffId\":\"" + staff.getStaffId() + "\"}",
+            "Staff",
+            "Auth"
+        );
+
+        return LoginResponse.forStaff(token, staff.getStaffId(), permissions);
     }
+
+    @Override
+    public void changePassword(Long staffId, StaffChangePasswordRequest request) {
+        Staff staff = staffRepository.findById(staffId)
+            .orElseThrow(() -> new RuntimeException("Staff not found"));
+
+        boolean matches = passwordEncoder.matches(request.getOldPassword(), staff.getPasswordHash());
+        if (!matches) {
+            throw new IllegalArgumentException("Old password is incorrect");
+        }
+
+        staff.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        staff.setUpdatedDate(LocalDateTime.now());
+        staffRepository.save(staff);
+
+        logService.log(
+            "INFO",
+            "StaffServiceImpl",
+            "Change Password",
+            "Password changed for staff",
+            staff.getUsername(),
+            null,
+            "{\"staffId\":\"" + staff.getStaffId() + "\"}",
+            "Staff",
+            "Security"
+        );
+    }
+
+    @Override
+    public void resetPassword(StaffResetPasswordRequest request) {
+        Staff staff = staffRepository.findById(request.getStaffId())
+            .orElseThrow(() -> new RuntimeException("Staff not found"));
+
+        staff.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        staff.setUpdatedDate(LocalDateTime.now());
+        staffRepository.save(staff);
+
+        logService.log(
+            "INFO",
+            "StaffServiceImpl",
+            "Reset Password",
+            "Admin reset password for staff",
+            "admin", // You can extract actual admin user from token if needed
+            null,
+            "{\"staffId\":\"" + staff.getStaffId() + "\"}",
+            "Staff",
+            "Admin"
+        );
+    }
+
 }

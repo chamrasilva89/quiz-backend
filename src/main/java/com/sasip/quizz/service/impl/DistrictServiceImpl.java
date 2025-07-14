@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
 public class DistrictServiceImpl implements DistrictService {
 
     private final DistrictRepository districtRepository;
-    private final LogService logService;
 
     @Override
     public DistrictResponse createDistrict(CreateDistrictRequest request) {
@@ -31,7 +30,7 @@ public class DistrictServiceImpl implements DistrictService {
                 .build();
         district = districtRepository.save(district);
 
-        logService.log("INFO", "DistrictServiceImpl", "Create District", "Created district: " + district.getName(), "system");
+        //logService.log("INFO", "DistrictServiceImpl", "Create District", "Created district: " + district.getName(), "system");
         return mapToResponse(district);
     }
 
@@ -43,7 +42,7 @@ public class DistrictServiceImpl implements DistrictService {
         district.setProvince(request.getProvince());
         District updated = districtRepository.save(district);
 
-        logService.log("INFO", "DistrictServiceImpl", "Update District", "Updated district: " + updated.getName(), "system");
+        //logService.log("INFO", "DistrictServiceImpl", "Update District", "Updated district: " + updated.getName(), "system");
         return mapToResponse(updated);
     }
 

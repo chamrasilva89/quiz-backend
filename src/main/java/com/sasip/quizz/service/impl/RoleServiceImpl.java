@@ -25,7 +25,7 @@ public class RoleServiceImpl implements RoleService {
         }
         Role role = Role.builder().name(request.getName()).build();
         Role saved = roleRepository.save(role);
-        logService.log("INFO", "RoleServiceImpl", "Create Role", "Created role: " + saved.getName(), "system");
+        //logService.log("INFO", "RoleServiceImpl", "Create Role", "Created role: " + saved.getName(), "system");
         return toDTO(saved);
     }
 
@@ -34,7 +34,7 @@ public class RoleServiceImpl implements RoleService {
         Role role = roleRepository.findById(id).orElseThrow(() -> new RuntimeException("Role not found"));
         role.setName(request.getName());
         Role updated = roleRepository.save(role);
-        logService.log("INFO", "RoleServiceImpl", "Update Role", "Updated role: " + updated.getName(), "system");
+        //logService.log("INFO", "RoleServiceImpl", "Update Role", "Updated role: " + updated.getName(), "system");
         return toDTO(updated);
     }
 

@@ -58,7 +58,7 @@ public class QuestionServiceImpl implements QuestionService {
         }
 
         Question saved = questionRepository.save(question);
-        logService.log("INFO", "QuestionServiceImpl", "Add Question", "Created question ID: " + saved.getQuestionId(), "system");
+        //logService.log("INFO", "QuestionServiceImpl", "Add Question", "Created question ID: " + saved.getQuestionId(), "system");
         return saved;
     }
 
@@ -91,7 +91,7 @@ public class QuestionServiceImpl implements QuestionService {
             question.setCorrectAnswerId(request.getCorrectAnswerId());
 
         Question updated = questionRepository.save(question);
-        logService.log("INFO", "QuestionServiceImpl", "Update Question", "Updated question ID: " + updated.getQuestionId(), "system");
+        //logService.log("INFO", "QuestionServiceImpl", "Update Question", "Updated question ID: " + updated.getQuestionId(), "system");
         return updated;
     }
 

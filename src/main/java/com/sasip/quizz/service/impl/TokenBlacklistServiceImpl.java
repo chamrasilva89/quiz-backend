@@ -30,14 +30,14 @@ public class TokenBlacklistServiceImpl implements TokenBlacklistService {
         entry.setExpiresAt(expiresAt);
 
         blacklistRepository.save(entry);
-        logService.log("INFO", "TokenBlacklistServiceImpl", "Blacklist Token", "Token blacklisted with expiration", token);
+        //logService.log("INFO", "TokenBlacklistServiceImpl", "Blacklist Token", "Token blacklisted with expiration", token);
     }
 
     @Override
     public boolean isTokenBlacklisted(String token) {
         Optional<TokenBlacklist> blacklisted = blacklistRepository.findByToken(token);
         boolean result = blacklisted.isPresent();
-        logService.log("INFO", "TokenBlacklistServiceImpl", "Check Blacklist", "Checked if token is blacklisted: " + result, token);
+        //logService.log("INFO", "TokenBlacklistServiceImpl", "Check Blacklist", "Checked if token is blacklisted: " + result, token);
         return result;
     }
 }

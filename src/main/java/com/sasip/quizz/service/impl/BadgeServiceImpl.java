@@ -24,7 +24,7 @@ public class BadgeServiceImpl implements BadgeService {
         Badge badge = new Badge(null, dto.getName(), dto.getDescription(), dto.getIconUrl(), LocalDateTime.now());
         Badge saved = badgeRepo.save(badge);
 
-        logService.log("INFO", "BadgeServiceImpl", "Create Badge", "Created badge: " + saved.getName(), "system");
+        //logService.log("INFO", "BadgeServiceImpl", "Create Badge", "Created badge: " + saved.getName(), "system");
         return toDto(saved);
     }
 
@@ -36,14 +36,14 @@ public class BadgeServiceImpl implements BadgeService {
         badge.setIconUrl(dto.getIconUrl());
         Badge updated = badgeRepo.save(badge);
 
-        logService.log("INFO", "BadgeServiceImpl", "Update Badge", "Updated badge: " + updated.getName(), "system");
+        //logService.log("INFO", "BadgeServiceImpl", "Update Badge", "Updated badge: " + updated.getName(), "system");
         return toDto(updated);
     }
 
     @Override
     public void deleteBadge(Long id) {
         badgeRepo.deleteById(id);
-        logService.log("WARN", "BadgeServiceImpl", "Delete Badge", "Deleted badge with ID: " + id, "system");
+        //logService.log("WARN", "BadgeServiceImpl", "Delete Badge", "Deleted badge with ID: " + id, "system");
     }
 
     @Override
