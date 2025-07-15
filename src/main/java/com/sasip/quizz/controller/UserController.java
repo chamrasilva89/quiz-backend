@@ -2,9 +2,14 @@ package com.sasip.quizz.controller;
 
 import com.sasip.quizz.dto.ApiResponse;
 import com.sasip.quizz.dto.ChangePasswordRequest;
+import com.sasip.quizz.dto.ChangePasswordRequestWithOtp;
+import com.sasip.quizz.dto.ForgotPasswordConfirmRequest;
+import com.sasip.quizz.dto.OtpVerificationRequest;
 import com.sasip.quizz.dto.UserFilterRequest;
 import com.sasip.quizz.dto.UserRegistrationRequest;
 import com.sasip.quizz.dto.UserUpdateRequest;
+import com.sasip.quizz.exception.BadRequestException;
+import com.sasip.quizz.exception.ResourceNotFoundException;
 import com.sasip.quizz.model.RewardWinner;
 import com.sasip.quizz.model.User;
 import com.sasip.quizz.security.JwtUtil;
@@ -179,6 +184,58 @@ public class UserController {
         }
     }
 
+     // Step 1: User sends oldPassword and newPassword to request OTP for change
+    @PostMapping("/{userId}/request-change-password-otp")
+    public ResponseEntity<?> requestChangePasswordOtp(
+            @PathVariable Long userId,
+            @RequestBody ChangePasswordRequest request) {
 
+        userService.requestChangePasswordOtp(userId, request);
+        return ResponseEntity.ok(Map.of("message", "OTP sent to your registered phone number."));
+    }
+
+
+    // Step 2: User confirms password change using received OTP
+@PostMapping("/confirm-change-password")
+public ResponseEntity<?> confirmChangePassword(@RequestParam Long userId, @RequestParam String otp) {
+    try {
+        userService.confirmChangePasswordWithOtp(userId, otp);
+        return ResponseEntity.ok(Map.of("message", "Password changed successfully."));
+    } catch (BadRequestException e) {
+        return ResponseEntity.badRequest()
+                .body(Map.of("error", e.getMessage(), "status", 400));
+    } catch (ResourceNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", e.getMessage(), "status", 404));
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Something went wrong", "status", 500));
+    }
+}
+
+
+    // Step 1: Forgot password — send phone and new password, OTP will be sent
+    @PostMapping("/request-forgot-password-otp")
+    public ResponseEntity<?> requestForgotPasswordOtp(@RequestBody ForgotPasswordConfirmRequest request) {
+        userService.requestForgotPasswordOtp(request.getPhone(), request.getNewPassword());
+        return ResponseEntity.ok(Map.of("message", "OTP sent to your registered phone number."));
+    }
+
+    // Step 2: Confirm OTP for forgot password
+    @PostMapping("/confirm-forgot-password")
+    public ResponseEntity<?> confirmForgotPassword(@RequestBody OtpVerificationRequest request) {
+        try {
+            userService.confirmForgotPassword(request.getPhone(), request.getOtp());
+            return ResponseEntity.ok(Map.of("message", "Password reset successfully."));
+        } catch (ResourceNotFoundException | BadRequestException e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Something went wrong. Please try again."));
+        }
+    }
 
 }

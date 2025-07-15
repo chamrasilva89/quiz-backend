@@ -8,10 +8,12 @@ import com.sasip.quizz.dto.QuestionFilterRequest;
 import com.sasip.quizz.dto.QuestionPatchRequest;
 import com.sasip.quizz.dto.QuestionRequest;
 import com.sasip.quizz.exception.ResourceNotFoundException;
+import com.sasip.quizz.model.DifficultyLevel;
 import com.sasip.quizz.model.Question;
 import com.sasip.quizz.model.QuestionAttachment;
 import com.sasip.quizz.repository.QuestionRepository;
 import com.sasip.quizz.service.QuestionService;
+import com.sasip.quizz.util.DifficultyPointMapping;
 import com.sasip.quizz.service.LogService;
 
 import java.util.ArrayList;
@@ -38,8 +40,20 @@ public class QuestionServiceImpl implements QuestionService {
         question.setSubject(request.getSubject());
         question.setType(request.getType());
         question.setSubType(request.getSubType());
-        question.setPoints(request.getPoints());
         question.setDifficultyLevel(request.getDifficultyLevel());
+        if (request.getPoints() != null) {
+            question.setPoints(request.getPoints());
+        } else {
+            try {
+                DifficultyLevel level = DifficultyLevel.valueOf(request.getDifficultyLevel().toUpperCase());
+                int autoPoints = DifficultyPointMapping.getPointsForDifficulty(level);
+                question.setPoints(autoPoints);
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("Invalid difficulty level: " + request.getDifficultyLevel());
+            }
+        }
+
+
         question.setMaxTimeSec(request.getMaxTimeSec());
         question.setAlYear(request.getAlYear());
         question.setHasAttachment(request.isHasAttachment());

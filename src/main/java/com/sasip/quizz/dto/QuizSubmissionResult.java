@@ -15,6 +15,7 @@ public class QuizSubmissionResult {
     private int timeTakenSeconds;
     private String grade;
     private int earnedXp; 
+    private int points;
 
     @Data
     public static class QuestionResult {

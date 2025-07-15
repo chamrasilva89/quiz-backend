@@ -75,6 +75,10 @@ public class User {
     @Column(nullable = false)
     private String userStatus = "active";
 
+    @Column(nullable = false)
+    private Integer points = 0;
+
+
     // If using Spring JPA auditing, consider:
     // @CreatedDate
     // private LocalDateTime createdDate;

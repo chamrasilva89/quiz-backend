@@ -404,3 +404,25 @@ ADD COLUMN previous_value TEXT,
 ADD COLUMN new_value TEXT,
 ADD COLUMN entity VARCHAR(100),
 ADD COLUMN section VARCHAR(100);
+
+ALTER TABLE users
+ADD COLUMN points INT DEFAULT 0;
+
+CREATE TABLE difficulty_point_mapping (
+    level VARCHAR(20) PRIMARY KEY,
+    points INT NOT NULL
+);
+
+INSERT INTO difficulty_point_mapping (level, points) VALUES 
+('EASY', 10),
+('MEDIUM', 15),
+('HARD', 20);
+
+CREATE TABLE otp_verification (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT,
+    phone VARCHAR(20),
+    otp VARCHAR(10),
+    expires_at DATETIME,
+    verified BOOLEAN DEFAULT FALSE
+);

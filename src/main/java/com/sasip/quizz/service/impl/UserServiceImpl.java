@@ -1,15 +1,21 @@
 package com.sasip.quizz.service.impl;
 
 import com.sasip.quizz.dto.*;
+import com.sasip.quizz.exception.BadRequestException;
+import com.sasip.quizz.exception.ResourceNotFoundException;
 import com.sasip.quizz.model.User;
 import com.sasip.quizz.repository.UserRepository;
 import com.sasip.quizz.service.UserService;
 import com.sasip.quizz.service.LogService;
+import com.sasip.quizz.service.OtpService;
 import com.sasip.quizz.security.JwtUtil;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.security.authentication.BadCredentialsException;
 
@@ -28,6 +34,7 @@ public class UserServiceImpl implements UserService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final LogService logService;
+    @Autowired private OtpService otpService;
 
     public UserServiceImpl(UserRepository userRepository,
                            BCryptPasswordEncoder passwordEncoder,
@@ -192,6 +199,72 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+@Override
+public void requestChangePasswordOtp(Long userId, ChangePasswordRequest request) {
+    User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+    if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
+        throw new RuntimeException("Old password is incorrect");
+    }
+
+    otpService.generateAndSaveOtp(user.getPhone(), userId);
+    otpService.cachePendingPasswordChange(userId, request.getNewPassword());
+}
+
+@Override
+public void confirmChangePasswordWithOtp(Long userId, String otp) {
+    User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+    boolean isOtpValid;
+    try {
+        isOtpValid = otpService.verifyOtp(user.getPhone(), otp);
+    } catch (Exception e) {
+        throw new BadRequestException("OTP verification failed: " + e.getMessage());
+    }
+
+    if (!isOtpValid) {
+        throw new BadRequestException("Invalid or expired OTP");
+    }
+
+    String newPassword = otpService.retrievePendingPassword(userId);
+    if (newPassword == null) {
+        throw new BadRequestException("No pending password change request found. Please try again.");
+    }
+
+    user.setPasswordHash(passwordEncoder.encode(newPassword));
+    userRepository.save(user);
+    otpService.clearPendingPassword(userId);
+}
+
+@Override
+public void requestForgotPasswordOtp(String phone, String newPassword) {
+    User user = userRepository.findByPhone(phone)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    
+    otpService.generateAndSaveOtp(phone, user.getUserId());
+    otpService.cachePendingForgotPassword(phone, newPassword);
+}
+
+    @Override
+    public void confirmForgotPassword(String phone, String otp) {
+        User user = userRepository.findByPhone(phone)
+                .orElseThrow(() -> new ResourceNotFoundException("No user found with phone: " + phone));
+
+        if (!otpService.verifyOtp(phone, otp)) {
+            throw new BadRequestException("Invalid or expired OTP.");
+        }
+
+        String newPassword = otpService.retrievePendingForgotPassword(phone);
+        if (newPassword == null) {
+            throw new BadRequestException("No pending password reset request found for this phone.");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        otpService.clearPendingForgotPassword(phone);
+    }
 
 
 }

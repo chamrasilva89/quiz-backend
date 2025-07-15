@@ -36,7 +36,9 @@ public class SecurityConfig {
                     "/api/admin/users/register", // admin registration
                     "/v3/api-docs/**",           // Swagger OpenAPI docs
                     "/swagger-ui/**",            // Swagger UI
-                    "/swagger-ui.html"           // Swagger UI HTML entry
+                    "/swagger-ui.html",           // Swagger UI HTML entry
+                    "/api/users/request-forgot-password-otp",
+                    "/api/users/confirm-forgot-password"
                 ).permitAll()
                 .anyRequest().authenticated()
             )

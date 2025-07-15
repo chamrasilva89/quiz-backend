@@ -152,7 +152,10 @@ public class UserQuizAnswerServiceImpl implements UserQuizAnswerService {
 
         submissionRepo.save(summary);
         // —— end NEW ——  
-
+        // Update user XP and points
+        user.setEarnedXp(user.getEarnedXp() + earnedXp);
+        user.setPoints(user.getPoints() + rawScore);  // assuming rawScore is the earned points
+        userRepository.save(user);
         // 6) Build and return final DTO
         QuizSubmissionResult submissionResult = new QuizSubmissionResult();
         submissionResult.setResults(results);
@@ -165,8 +168,9 @@ public class UserQuizAnswerServiceImpl implements UserQuizAnswerService {
         submissionResult.setTotalScore(roundedTotalScore);
         submissionResult.setGrade(grade);
         submissionResult.setEarnedXp(earnedXp);
-
+        submissionResult.setPoints(rawScore);
         return submissionResult;
+        //
     }
 
     private void upsertLeaderboard(Long userId, String username,
@@ -259,7 +263,7 @@ public QuizSubmissionResult getQuizSubmissionResult(String userId, String quizId
     resp.setTimeTakenSeconds(summary.getTimeTakenSeconds());
     resp.setGrade(calculateGrade(summary.getTotalScore())); // ✅ grade from score
     resp.setEarnedXp(earnedXp); // ✅ include XP
-
+    resp.setPoints(summary.getRawScore());
     return resp;
 }
 

@@ -21,5 +21,8 @@ public interface UserService {
     void changePassword(Long userId, ChangePasswordRequest request);
     User getUserById(Long userId);
     Page<User> getUsersByRoleCategory(String roleCategory, Pageable pageable);
-
+    void confirmForgotPassword(String phone, String otp);
+    void requestForgotPasswordOtp(String phone, String newPassword);
+    void confirmChangePasswordWithOtp(Long userId, String otp);
+    void requestChangePasswordOtp(Long userId, ChangePasswordRequest request);
 }

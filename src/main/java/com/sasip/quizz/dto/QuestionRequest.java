@@ -20,7 +20,7 @@ public class QuestionRequest {
     private String subject;
     private String type;
     private String subType;
-    private int points;
+    private Integer  points;
     private String difficultyLevel;
     private int maxTimeSec;
     private boolean hasAttachment;
