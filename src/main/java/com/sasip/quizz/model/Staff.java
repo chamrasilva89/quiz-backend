@@ -44,4 +44,20 @@ public class Staff {
     private LocalDateTime createdDate;
 
     private LocalDateTime updatedDate;
+
+    // Constructor excluding passwordHash
+    public Staff(Long staffId, String username, String role, String firstName, String lastName, String email, String phone, String status, LocalDateTime createdDate, LocalDateTime updatedDate) {
+        this.staffId = staffId;
+        this.username = username;
+        this.role = role;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.phone = phone;
+        this.status = status;
+        this.createdDate = createdDate;
+        this.updatedDate = updatedDate;
+    }
+
 }
+

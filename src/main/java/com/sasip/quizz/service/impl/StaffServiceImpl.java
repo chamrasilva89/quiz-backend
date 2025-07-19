@@ -12,6 +12,7 @@ import com.sasip.quizz.service.LogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -22,6 +23,7 @@ import com.sasip.quizz.security.JwtUtil;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class StaffServiceImpl implements StaffService {
@@ -111,7 +113,6 @@ public class StaffServiceImpl implements StaffService {
         }
     }
 
-    // Update StaffServiceImpl.java login method to return staffId and log it
     @Override
     public LoginResponse login(LoginRequest request) {
         logger.info("Login attempt for staff username: {}", request.getUsername());
@@ -138,10 +139,14 @@ public class StaffServiceImpl implements StaffService {
         String token = jwtUtil.generateToken(staff.getUsername());
         logger.info("Login successful for staff username: {}", request.getUsername());
 
+        // Create a new Staff object excluding passwordHash and using the new constructor
+        Staff staffDetails = new Staff(staff.getStaffId(), staff.getUsername(), staff.getRole(), staff.getFirstName(), staff.getLastName(), staff.getEmail(), staff.getPhone(), staff.getStatus(), staff.getCreatedDate(), staff.getUpdatedDate());
+
         logService.log(
             "INFO",
             "StaffServiceImpl",
             "Login",
+            "Staff Login",
             "Staff logged in successfully",
             staff.getUsername(),
             null,
@@ -150,8 +155,11 @@ public class StaffServiceImpl implements StaffService {
             "Auth"
         );
 
-        return LoginResponse.forStaff(token, staff.getStaffId(), permissions);
+        return LoginResponse.forStaff(token, staff.getStaffId(), permissions, staffDetails);
     }
+
+
+
 
     @Override
     public void changePassword(Long staffId, StaffChangePasswordRequest request) {
@@ -168,15 +176,16 @@ public class StaffServiceImpl implements StaffService {
         staffRepository.save(staff);
 
         logService.log(
-            "INFO",
-            "StaffServiceImpl",
-            "Change Password",
-            "Password changed for staff",
-            staff.getUsername(),
-            null,
-            "{\"staffId\":\"" + staff.getStaffId() + "\"}",
-            "Staff",
-            "Security"
+            "INFO",                        // Log level
+            "StaffServiceImpl",            // Source class (where the action happened)
+            "Change Password",    
+            "Change Password",         // Action (What happened)
+            "Password changed for staff",  // Action description (short description of what happened)
+            staff.getUsername(),           // Performed by (staff username performing the action)
+            "",                            // Previous value (no previous value, empty string for security)
+            "{\"staffId\":\"" + staff.getStaffId() + "\"}", // New value (new state after the action)
+            "Staff",                       // Entity (the entity being affected, here "Staff")
+            "Security"                     // Section (which part of the application, here "Security")
         );
     }
 
@@ -193,6 +202,7 @@ public class StaffServiceImpl implements StaffService {
             "INFO",
             "StaffServiceImpl",
             "Reset Password",
+            "Staff Password Reset",
             "Admin reset password for staff",
             "admin", // You can extract actual admin user from token if needed
             null,
@@ -200,6 +210,33 @@ public class StaffServiceImpl implements StaffService {
             "Staff",
             "Admin"
         );
+    }
+
+    @Override
+    public Staff updateStaffPartial(Long staffId, StaffPartialUpdateRequest updateRequest) {
+        // Fetch the staff to be updated
+        Staff staff = staffRepository.findById(staffId)
+                .orElseThrow(() -> new RuntimeException("Staff not found"));
+
+        // Check if the email already exists (except for the current staff member)
+        if (updateRequest.getEmail() != null) {
+            Optional<Staff> existingStaff = staffRepository.findByEmail(updateRequest.getEmail());
+            if (existingStaff.isPresent() && !existingStaff.get().getStaffId().equals(staffId)) {
+                throw new DataIntegrityViolationException("Duplicate entry for email: " + updateRequest.getEmail());
+            }
+            staff.setEmail(updateRequest.getEmail());
+        }
+
+        // Update other fields
+        if (updateRequest.getFirstName() != null) staff.setFirstName(updateRequest.getFirstName());
+        if (updateRequest.getLastName() != null) staff.setLastName(updateRequest.getLastName());
+        if (updateRequest.getPhone() != null) staff.setPhone(updateRequest.getPhone());
+
+        staff.setUpdatedDate(LocalDateTime.now());
+
+        // Save and return the updated staff
+        Staff updatedStaff = staffRepository.save(staff);
+        return updatedStaff;
     }
 
 }

@@ -13,5 +13,5 @@ public interface StaffService {
     public LoginResponse login(LoginRequest request);
     void changePassword(Long staffId, StaffChangePasswordRequest request);
     void resetPassword(StaffResetPasswordRequest request);
-
+    public Staff updateStaffPartial(Long staffId, StaffPartialUpdateRequest updateRequest);
 }

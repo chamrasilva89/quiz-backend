@@ -12,6 +12,7 @@ public class LoginResponse {
     private String token;
     private Long userId; // For users or staff
     private List<String> permissions; // For staff login
+    private Object userDetails; // Object to hold either user or staff details
 
     public LoginResponse(String token) {
         this.token = token;
@@ -22,18 +23,20 @@ public class LoginResponse {
         this.permissions = permissions;
     }
 
-    public static LoginResponse forUser(String token, Long userId) {
+    public static LoginResponse forUser(String token, Long userId, Object userDetails) {
         LoginResponse response = new LoginResponse();
         response.setToken(token);
         response.setUserId(userId);
+        response.setUserDetails(userDetails);
         return response;
     }
 
-    public static LoginResponse forStaff(String token, Long staffId, List<String> permissions) {
+    public static LoginResponse forStaff(String token, Long staffId, List<String> permissions, Object staffDetails) {
         LoginResponse response = new LoginResponse();
         response.setToken(token);
         response.setUserId(staffId);
         response.setPermissions(permissions);
+        response.setUserDetails(staffDetails);
         return response;
     }
 }

@@ -20,21 +20,27 @@ public class RewardWinnerController {
 
     private final RewardWinnerService rewardWinnerService;
 
-    @GetMapping("/{rewardId}/winners")
-    public ResponseEntity<Map<String, Object>> getRewardWinners(@PathVariable Long rewardId,
-                                                                 @RequestParam(defaultValue = "0") int page,
-                                                                 @RequestParam(defaultValue = "10") int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<RewardWinnerDTO> winnersPage = rewardWinnerService.getWinnersByRewardId(rewardId, pageable);
+@GetMapping("/{rewardId}/winners")
+public ResponseEntity<Map<String, Object>> getRewardWinners(
+        @PathVariable Long rewardId,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size) {
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("items", winnersPage.getContent());
-        response.put("currentPage", winnersPage.getNumber());
-        response.put("totalItems", winnersPage.getTotalElements());
-        response.put("totalPages", winnersPage.getTotalPages());
+    Pageable pageable = PageRequest.of(page, size);
+    Page<RewardWinnerDTO> winnersPage = rewardWinnerService.getWinnersByRewardId(rewardId, pageable);
 
-        return ResponseEntity.ok(response);
-    }
+    Map<String, Object> pagination = new HashMap<>();
+    pagination.put("items", winnersPage.getContent());
+    pagination.put("currentPage", winnersPage.getNumber());
+    pagination.put("totalItems", winnersPage.getTotalElements());
+    pagination.put("totalPages", winnersPage.getTotalPages());
+
+    Map<String, Object> response = new HashMap<>();
+    response.put("data", pagination);
+
+    return ResponseEntity.ok(response);
+}
+
 
     @PatchMapping("/winners/{rewardWinnerId}/gift-status")
     public ResponseEntity<Map<String, Object>> updateGiftStatus(@PathVariable Long rewardWinnerId,

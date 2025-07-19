@@ -14,51 +14,57 @@ public class LogServiceImpl implements LogService {
 
     private final LogRepository logRepository;
     private static final int MAX_TEXT_LENGTH = 60000;
+
     public LogServiceImpl(LogRepository logRepository) {
         this.logRepository = logRepository;
     }
 
     @Override
-    public void log(String level, String source, String action, String message, String performedBy) {
-        log(level, source, action, message, performedBy, null, null, null, null);
+    public void log(String level, String source, String action, String actionDescription, String message, String performedBy) {
+        log(level, source, action, actionDescription, message, performedBy, null, null, null, null);
     }
 
     @Override
-public void log(String level, String source, String action, String message, String performedBy,
-                String previousValue, String newValue, String entity, String section) {
+    public void log(String level, String source, String action, String actionDescription, String message, String performedBy,
+                    String previousValue, String newValue, String entity, String section) {
 
-    if (previousValue != null && previousValue.length() > MAX_TEXT_LENGTH) {
-        previousValue = previousValue.substring(0, MAX_TEXT_LENGTH) + "...[TRUNCATED]";
+        // Truncate large values to avoid database issues
+        if (previousValue != null && previousValue.length() > MAX_TEXT_LENGTH) {
+            previousValue = previousValue.substring(0, MAX_TEXT_LENGTH) + "...[TRUNCATED]";
+        }
+
+        if (newValue != null && newValue.length() > MAX_TEXT_LENGTH) {
+            newValue = newValue.substring(0, MAX_TEXT_LENGTH) + "...[TRUNCATED]";
+        }
+
+        if (message != null && message.length() > MAX_TEXT_LENGTH) {
+            message = message.substring(0, MAX_TEXT_LENGTH) + "...[TRUNCATED]";
+        }
+
+        // Create a new LogEntry object
+        LogEntry entry = LogEntry.builder()
+                .level(level)
+                .source(source)
+                .action(action)
+                .actionDescription(actionDescription) // New field for description
+                .message(message)
+                .performedBy(performedBy)
+                .timestamp(LocalDateTime.now())
+                .previousValue(previousValue)
+                .newValue(newValue)
+                .entity(entity)
+                .section(section)
+                .build();
+
+        try {
+            // Save the log entry to the repository
+            logRepository.save(entry);
+        } catch (Exception e) {
+            System.err.println("⚠️ Failed to log entry: " + e.getMessage());
+            // Optionally log to file or fallback system
+        }
     }
 
-    if (newValue != null && newValue.length() > MAX_TEXT_LENGTH) {
-        newValue = newValue.substring(0, MAX_TEXT_LENGTH) + "...[TRUNCATED]";
-    }
-
-    if (message != null && message.length() > MAX_TEXT_LENGTH) {
-        message = message.substring(0, MAX_TEXT_LENGTH) + "...[TRUNCATED]";
-    }
-
-    LogEntry entry = LogEntry.builder()
-        .level(level)
-        .source(source)
-        .action(action)
-        .message(message)
-        .performedBy(performedBy)
-        .timestamp(LocalDateTime.now())
-        .previousValue(previousValue)
-        .newValue(newValue)
-        .entity(entity)
-        .section(section)
-        .build();
-
-    try {
-        logRepository.save(entry);
-    } catch (Exception e) {
-        System.err.println("⚠️ Failed to log entry: " + e.getMessage());
-        // Optionally log to file or fallback system
-    }
-}
     @Override
     public Page<LogEntry> filterLogs(String level, String source, String performedBy, LocalDateTime from, LocalDateTime to, Pageable pageable) {
         Specification<LogEntry> spec = Specification.where(null);

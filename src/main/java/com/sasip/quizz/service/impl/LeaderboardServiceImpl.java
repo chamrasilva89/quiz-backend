@@ -82,26 +82,26 @@ public class LeaderboardServiceImpl implements LeaderboardService {
             LeaderboardResponse res = new LeaderboardResponse();
 
             if (entry instanceof Leaderboard lb) {
+                 User user = userRepository.findByUsername(lb.getUsername())
+                        .orElseThrow(() -> new RuntimeException("User not found"));
                 res.setUserId(lb.getUserId());
-                res.setUsername(lb.getUsername());
+                res.setUsername(user.getFirstName() + " " + user.getLastName());
                 res.setSchool(lb.getSchool());
                 res.setDistrict(lb.getDistrict());
                 res.setAlYear(lb.getAlYear());
                 res.setTotalPoints(lb.getTotalPoints());
                 // Fetch avatarUrl from the User table
-                User user = userRepository.findByUsername(lb.getUsername())
-                        .orElseThrow(() -> new RuntimeException("User not found"));
                 res.setAvatarUrl(user.getAvatarUrl());
             } else if (entry instanceof MonthlyLeaderboard mlb) {
+                                // Fetch avatarUrl from the User table
+                User user = userRepository.findByUsername(mlb.getUsername())
+                        .orElseThrow(() -> new RuntimeException("User not found"));
                 res.setUserId(mlb.getUserId());
-                res.setUsername(mlb.getUsername());
+                res.setUsername(user.getFirstName() + " " + user.getLastName()); // Full name
                 res.setSchool(mlb.getSchool());
                 res.setDistrict(mlb.getDistrict());
                 res.setAlYear(mlb.getAlYear());
                 res.setTotalPoints(mlb.getTotalPoints());
-                // Fetch avatarUrl from the User table
-                User user = userRepository.findByUsername(mlb.getUsername())
-                        .orElseThrow(() -> new RuntimeException("User not found"));
                 res.setAvatarUrl(user.getAvatarUrl());
             }
 

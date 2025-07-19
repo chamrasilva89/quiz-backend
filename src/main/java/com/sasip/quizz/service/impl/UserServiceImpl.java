@@ -131,6 +131,9 @@ public class UserServiceImpl implements UserService {
             throw new BadCredentialsException("Invalid username or password");
         }
 
+        // Create a new User object excluding passwordHash and using the new constructor
+        User userDetails = new User(user.getUserId(), user.getUsername(), user.getRole(), user.getFirstName(), user.getLastName(), user.getAvatarUrl(), user.getSchool(), user.getAlYear(), user.getDistrict(), user.getMedium(), user.getPhone(), user.getEmail(), user.getEarnedXp(), user.getStreakCount(), user.getAverageScore(), user.getTotalQuizzesTaken(), user.getParentName(), user.getParentContactNo(), user.getCreatedDate(), user.getUpdatedDate(), user.getUserStatus(), user.getPoints());
+
         String token = jwtUtil.generateToken(user.getUsername());
         logger.info("Login successful for username: {}", request.getUsername());
 
@@ -138,6 +141,7 @@ public class UserServiceImpl implements UserService {
             "INFO",
             "UserServiceImpl",
             "Login",
+            "lOGIN TO system",
             "User logged in successfully",
             user.getUsername(),
             null,
@@ -145,8 +149,7 @@ public class UserServiceImpl implements UserService {
             "User",
             "Auth"
         );
-
-        return LoginResponse.forUser(token, user.getUserId());
+        return LoginResponse.forUser(token, user.getUserId(), userDetails);
     }
 
 

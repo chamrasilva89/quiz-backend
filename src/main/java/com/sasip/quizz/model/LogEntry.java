@@ -19,6 +19,7 @@ public class LogEntry {
     private String level;           // INFO, ERROR, WARN
     private String source;          // Controller/Service name or class
     private String action;          // What happened
+    private String actionDescription; // Description of the action (e.g., "Create", "Update")
     private String performedBy;     // Username or userId
 
     @Column(columnDefinition = "TEXT")
@@ -26,7 +27,7 @@ public class LogEntry {
 
     private LocalDateTime timestamp;
 
-   @Column(columnDefinition = "LONGTEXT")
+    @Column(columnDefinition = "LONGTEXT")
     private String previousValue;   // JSON or serialized text
 
     @Column(columnDefinition = "LONGTEXT")

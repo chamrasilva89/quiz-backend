@@ -10,8 +10,10 @@ import java.util.Optional;
 public interface StaffRepository extends JpaRepository<Staff, Long>, JpaSpecificationExecutor<Staff> {
     Optional<Staff> findByUsername(String username);
     Optional<Staff> findByEmail(String email);
+
     Page<Staff> findByRole(String role, Pageable pageable);
     Page<Staff> findByStatus(String status, Pageable pageable);
     Page<Staff> findByRoleAndStatus(String role, String status, Pageable pageable);
     Page<Staff> findAll(Pageable pageable); // for all staff
+    
 }

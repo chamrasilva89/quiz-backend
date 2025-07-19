@@ -4,6 +4,7 @@ import com.sasip.quizz.dto.*;
 import com.sasip.quizz.model.Staff;
 import com.sasip.quizz.service.StaffService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -45,6 +46,22 @@ public class AdminStaffController {
                     .body(new ApiResponse<>("Failed to update staff", 500));
         }
     }
+
+    @PatchMapping("/partial/{id}")
+    public ResponseEntity<ApiResponse<?>> updateStaffPartial(@PathVariable Long id, @RequestBody StaffPartialUpdateRequest updateRequest) {
+        try {
+            Staff staff = staffService.updateStaffPartial(id, updateRequest);
+            return ResponseEntity.ok(new ApiResponse<>(Map.of("items", List.of(staff))));
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>("Email address already in use", 400));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("Failed to update staff", 500));
+        }
+    }
+
+
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<?>> getStaffById(@PathVariable Long id) {

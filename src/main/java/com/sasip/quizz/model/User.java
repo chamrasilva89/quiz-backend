@@ -42,14 +42,13 @@ public class User {
     @Column(length = 15,nullable = false )
     private String phone;
 
-   @Column(nullable = true) // or just omit nullable
+    @Column(nullable = true)
     private String email;
-
 
     private String username;
 
     @Column(nullable = false)
-    private String passwordHash;
+    private String passwordHash; // We will exclude this when returning user details
 
     @Column(nullable = false)
     private Integer earnedXp = 0;
@@ -57,7 +56,6 @@ public class User {
     @Column(nullable = false)
     private Integer streakCount = 0;
 
-    // Use scale/precision with BigDecimal if high accuracy is needed
     private Double averageScore;
 
     @Column(nullable = false)
@@ -78,11 +76,30 @@ public class User {
     @Column(nullable = false)
     private Integer points = 0;
 
+    // Constructor excluding passwordHash
+public User(Long userId, String username, String role, String firstName, String lastName, String avatarUrl, String school, Integer alYear, String district, String medium, String phone, String email, Integer earnedXp, Integer streakCount, Double averageScore, Integer totalQuizzesTaken, String parentName, String parentContactNo, LocalDateTime createdDate, LocalDateTime updatedDate, String userStatus, Integer points) {
+    this.userId = userId;
+    this.username = username;
+    this.role = role;
+    this.firstName = firstName;
+    this.lastName = lastName;
+    this.avatarUrl = avatarUrl;
+    this.school = school;
+    this.alYear = alYear;
+    this.district = district;
+    this.medium = medium;
+    this.phone = phone;
+    this.email = email;
+    this.earnedXp = earnedXp;
+    this.streakCount = streakCount;
+    this.averageScore = averageScore;
+    this.totalQuizzesTaken = totalQuizzesTaken;
+    this.parentName = parentName;
+    this.parentContactNo = parentContactNo;
+    this.createdDate = createdDate;
+    this.updatedDate = updatedDate;
+    this.userStatus = userStatus;
+    this.points = points;
+}
 
-    // If using Spring JPA auditing, consider:
-    // @CreatedDate
-    // private LocalDateTime createdDate;
-    //
-    // @LastModifiedDate
-    // private LocalDateTime updatedDate;
 }
