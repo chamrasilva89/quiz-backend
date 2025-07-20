@@ -132,7 +132,7 @@ public class UserServiceImpl implements UserService {
         }
 
         // Create a new User object excluding passwordHash and using the new constructor
-        User userDetails = new User(user.getUserId(), user.getUsername(), user.getRole(), user.getFirstName(), user.getLastName(), user.getAvatarUrl(), user.getSchool(), user.getAlYear(), user.getDistrict(), user.getMedium(), user.getPhone(), user.getEmail(), user.getEarnedXp(), user.getStreakCount(), user.getAverageScore(), user.getTotalQuizzesTaken(), user.getParentName(), user.getParentContactNo(), user.getCreatedDate(), user.getUpdatedDate(), user.getUserStatus(), user.getPoints());
+        User userDetails = new User(user.getUserId(), user.getUsername(), user.getRole(), user.getFirstName(), user.getLastName(), user.getAvatarUrl(), user.getSchool(), user.getAlYear(), user.getDistrict(), user.getMedium(), user.getPhone(), user.getEmail(), user.getEarnedXp(), user.getStreakCount(), user.getAverageScore(), user.getTotalQuizzesTaken(), user.getParentName(), user.getParentContactNo(), user.getCreatedDate(), user.getUpdatedDate(), user.getUserStatus(), user.getPoints(),user.getProfileImageBase64());
 
         String token = jwtUtil.generateToken(user.getUsername());
         logger.info("Login successful for username: {}", request.getUsername());
@@ -269,5 +269,11 @@ public void requestForgotPasswordOtp(String phone, String newPassword) {
         otpService.clearPendingForgotPassword(phone);
     }
 
+    @Override
+    public User updateProfileImage(Long userId, String base64Image) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        user.setProfileImageBase64(base64Image);
+        return userRepository.save(user);
+    }
 
 }

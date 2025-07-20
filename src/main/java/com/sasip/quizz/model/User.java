@@ -39,7 +39,7 @@ public class User {
 
     private String medium;
 
-    @Column(length = 15,nullable = false )
+    @Column(length = 15, nullable = false)
     private String phone;
 
     @Column(nullable = true)
@@ -76,30 +76,45 @@ public class User {
     @Column(nullable = false)
     private Integer points = 0;
 
-    // Constructor excluding passwordHash
-public User(Long userId, String username, String role, String firstName, String lastName, String avatarUrl, String school, Integer alYear, String district, String medium, String phone, String email, Integer earnedXp, Integer streakCount, Double averageScore, Integer totalQuizzesTaken, String parentName, String parentContactNo, LocalDateTime createdDate, LocalDateTime updatedDate, String userStatus, Integer points) {
-    this.userId = userId;
-    this.username = username;
-    this.role = role;
-    this.firstName = firstName;
-    this.lastName = lastName;
-    this.avatarUrl = avatarUrl;
-    this.school = school;
-    this.alYear = alYear;
-    this.district = district;
-    this.medium = medium;
-    this.phone = phone;
-    this.email = email;
-    this.earnedXp = earnedXp;
-    this.streakCount = streakCount;
-    this.averageScore = averageScore;
-    this.totalQuizzesTaken = totalQuizzesTaken;
-    this.parentName = parentName;
-    this.parentContactNo = parentContactNo;
-    this.createdDate = createdDate;
-    this.updatedDate = updatedDate;
-    this.userStatus = userStatus;
-    this.points = points;
-}
+    // New field to store profile image as Base64 string
+    @Column(name = "profile_image_base64", columnDefinition = "LONGTEXT")
+    private String profileImageBase64;
 
+    // Constructor excluding passwordHash
+    public User(Long userId, String username, String role, String firstName, String lastName, String avatarUrl, String school, Integer alYear, String district, String medium, String phone, String email, Integer earnedXp, Integer streakCount, Double averageScore, Integer totalQuizzesTaken, String parentName, String parentContactNo, LocalDateTime createdDate, LocalDateTime updatedDate, String userStatus, Integer points, String profileImageBase64) {
+        this.userId = userId;
+        this.username = username;
+        this.role = role;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.avatarUrl = avatarUrl;
+        this.school = school;
+        this.alYear = alYear;
+        this.district = district;
+        this.medium = medium;
+        this.phone = phone;
+        this.email = email;
+        this.earnedXp = earnedXp;
+        this.streakCount = streakCount;
+        this.averageScore = averageScore;
+        this.totalQuizzesTaken = totalQuizzesTaken;
+        this.parentName = parentName;
+        this.parentContactNo = parentContactNo;
+        this.createdDate = createdDate;
+        this.updatedDate = updatedDate;
+        this.userStatus = userStatus;
+        this.points = points;
+        this.profileImageBase64 = profileImageBase64;
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        createdDate = LocalDateTime.now();
+        updatedDate = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedDate = LocalDateTime.now();
+    }
 }

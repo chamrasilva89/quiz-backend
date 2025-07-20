@@ -25,4 +25,5 @@ public interface UserService {
     void requestForgotPasswordOtp(String phone, String newPassword);
     void confirmChangePasswordWithOtp(Long userId, String otp);
     void requestChangePasswordOtp(Long userId, ChangePasswordRequest request);
+    User updateProfileImage(Long userId, String base64Image);
 }

@@ -426,3 +426,8 @@ CREATE TABLE otp_verification (
     expires_at DATETIME,
     verified BOOLEAN DEFAULT FALSE
 );
+
+ALTER TABLE sasip_news MODIFY COLUMN image_base64 LONGTEXT;
+
+ALTER TABLE users
+ADD COLUMN profile_image_base64 LONGTEXT;

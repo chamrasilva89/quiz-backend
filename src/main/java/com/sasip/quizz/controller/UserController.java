@@ -238,4 +238,19 @@ public ResponseEntity<?> confirmChangePassword(@RequestParam Long userId, @Reque
         }
     }
 
+    @PatchMapping("/{userId}/profile-image")
+    public ResponseEntity<ApiResponse<?>> updateProfileImage(
+            @PathVariable Long userId,
+            @RequestBody String base64Image) {
+        try {
+            // Call the service to update the profile image
+            User user = userService.updateProfileImage(userId, base64Image);
+            
+            // Return success response
+            return ResponseEntity.ok(new ApiResponse<>(user));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("Error updating profile image", 500));
+        }
+    }
 }

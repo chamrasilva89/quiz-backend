@@ -10,7 +10,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-
 @Service
 public class SasipNewsServiceImpl implements SasipNewsService {
 
@@ -25,6 +24,7 @@ public class SasipNewsServiceImpl implements SasipNewsService {
         news.setLongDescription(request.getLongDescription());
         news.setType(request.getType());
         news.setImageUrl(request.getImageUrl());
+        news.setImageBase64(request.getImageBase64());  // Handle imageBase64
         news.setPublishDateTime(request.getPublishDateTime());
         return sasipNewsRepository.save(news);
     }
@@ -37,6 +37,7 @@ public class SasipNewsServiceImpl implements SasipNewsService {
         existingNews.setLongDescription(request.getLongDescription());
         existingNews.setType(request.getType());
         existingNews.setImageUrl(request.getImageUrl());
+        existingNews.setImageBase64(request.getImageBase64());  // Handle imageBase64
         existingNews.setPublishDateTime(request.getPublishDateTime());
         return sasipNewsRepository.save(existingNews);
     }
@@ -59,6 +60,7 @@ public class SasipNewsServiceImpl implements SasipNewsService {
             response.setTitle(news.getTitle());
             response.setShortDescription(news.getShortDescription());
             response.setImageUrl(news.getImageUrl());
+            response.setImageBase64(news.getImageBase64());  // Add imageBase64
             response.setPublishDateTime(news.getPublishDateTime());
             return response;
         });

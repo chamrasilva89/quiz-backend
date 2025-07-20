@@ -32,6 +32,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         this.userRepository = userRepository;
     }
 
+    
     @Override
     public Page<LeaderboardResponse> getLeaderboard(LeaderboardFilterRequest request, Pageable pageable) {
         Page<?> leaderboardPage;
@@ -82,7 +83,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
             LeaderboardResponse res = new LeaderboardResponse();
 
             if (entry instanceof Leaderboard lb) {
-                 User user = userRepository.findByUsername(lb.getUsername())
+                User user = userRepository.findByUsername(lb.getUsername())
                         .orElseThrow(() -> new RuntimeException("User not found"));
                 res.setUserId(lb.getUserId());
                 res.setUsername(user.getFirstName() + " " + user.getLastName());
@@ -90,18 +91,24 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                 res.setDistrict(lb.getDistrict());
                 res.setAlYear(lb.getAlYear());
                 res.setTotalPoints(lb.getTotalPoints());
+
                 // Fetch avatarUrl from the User table
                 res.setAvatarUrl(user.getAvatarUrl());
+
+                // Add the profile image as a Base64 string
+                res.setProfileImageBase64(user.getProfileImageBase64());
             } else if (entry instanceof MonthlyLeaderboard mlb) {
-                                // Fetch avatarUrl from the User table
                 User user = userRepository.findByUsername(mlb.getUsername())
                         .orElseThrow(() -> new RuntimeException("User not found"));
                 res.setUserId(mlb.getUserId());
-                res.setUsername(user.getFirstName() + " " + user.getLastName()); // Full name
+                res.setUsername(user.getFirstName() + " " + user.getLastName());
                 res.setSchool(mlb.getSchool());
                 res.setDistrict(mlb.getDistrict());
                 res.setAlYear(mlb.getAlYear());
                 res.setTotalPoints(mlb.getTotalPoints());
+
+                // Add the profile image as a Base64 string
+                res.setProfileImageBase64(user.getProfileImageBase64());
                 res.setAvatarUrl(user.getAvatarUrl());
             }
 
@@ -111,4 +118,5 @@ public class LeaderboardServiceImpl implements LeaderboardService {
 
         return new PageImpl<>(responseList, pageable, ((Page<?>) leaderboardPage).getTotalElements());
     }
+
 }
