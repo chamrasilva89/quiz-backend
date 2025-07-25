@@ -276,4 +276,48 @@ public void requestForgotPasswordOtp(String phone, String newPassword) {
         return userRepository.save(user);
     }
 
+    @Override
+    public boolean updateFcmToken(Long userId, String fcmToken) {
+        try {
+            User user = userRepository.findById(userId).orElse(null);
+            if (user != null) {
+                user.setFcmToken(fcmToken);
+                userRepository.save(user);
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            System.err.println("Error updating FCM token for user " + userId + ": " + e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public List<String> getFcmTokensByUserIds(List<Long> userIds) {
+        try {
+            List<User> users = userRepository.findAllById(userIds);
+            return users.stream()
+                    .map(User::getFcmToken)
+                    .filter(token -> token != null && !token.trim().isEmpty())
+                    .collect(java.util.stream.Collectors.toList());
+        } catch (Exception e) {
+            System.err.println("Error getting FCM tokens by user IDs: " + e.getMessage());
+            return new java.util.ArrayList<>();
+        }
+    }
+
+    @Override
+    public List<String> getAllFcmTokens() {
+        try {
+            List<User> allUsers = userRepository.findAll();
+            return allUsers.stream()
+                    .map(User::getFcmToken)
+                    .filter(token -> token != null && !token.trim().isEmpty())
+                    .collect(java.util.stream.Collectors.toList());
+        } catch (Exception e) {
+            System.err.println("Error getting all FCM tokens: " + e.getMessage());
+            return new java.util.ArrayList<>();
+        }
+    }
+
 }

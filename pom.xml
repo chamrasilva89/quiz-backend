@@ -114,6 +114,14 @@
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-aop</artifactId>
 </dependency>
+	
+	<!-- Firebase Admin SDK for push notifications -->
+	<dependency>
+		<groupId>com.google.firebase</groupId>
+		<artifactId>firebase-admin</artifactId>
+		<version>9.2.0</version>
+	</dependency>
+	
  </dependencies>
 	<build>
 		<plugins>

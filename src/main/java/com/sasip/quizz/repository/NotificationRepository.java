@@ -27,4 +27,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     Page<Notification> findByTypeAndGeneratedByAndAudienceInAndSendOnBeforeOrderBySendOnDesc(String type,
             String generatedBy, List<String> audiences, LocalDateTime currentDateTime, Pageable pageable);
+
+    // Methods for scheduled notification processing
+    List<Notification> findByStatusAndSendOnBefore(String status, LocalDateTime dateTime);
+    List<Notification> findBySendOnBefore(LocalDateTime dateTime);
 }

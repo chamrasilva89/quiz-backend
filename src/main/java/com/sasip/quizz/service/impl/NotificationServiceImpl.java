@@ -3,7 +3,10 @@ package com.sasip.quizz.service.impl;
 import com.sasip.quizz.dto.NotificationResponseDTO;
 import com.sasip.quizz.dto.PaginatedNotificationsResponseDTO;
 import com.sasip.quizz.model.Notification;
+import com.sasip.quizz.model.User;
 import com.sasip.quizz.repository.NotificationRepository;
+import com.sasip.quizz.repository.UserRepository;
+import com.sasip.quizz.service.FirebasePushNotificationService;
 import com.sasip.quizz.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -20,6 +23,12 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Autowired
     private NotificationRepository notificationRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private FirebasePushNotificationService firebasePushNotificationService;
 
     @Override
     public PaginatedNotificationsResponseDTO getNotificationsForUser(Long userId, int page, int size) {
@@ -162,7 +171,113 @@ public PaginatedNotificationsResponseDTO filterNotifications(
     return response;
 }
 
+    @Override
+    public boolean sendPushNotificationToUser(Long userId, String title, String body, String imageUrl) {
+        try {
+            User user = userRepository.findById(userId).orElse(null);
+            if (user == null) {
+                System.err.println("User not found with ID: " + userId);
+                return false;
+            }
 
+            if (user.getFcmToken() == null || user.getFcmToken().trim().isEmpty()) {
+                System.err.println("User " + userId + " does not have an FCM token");
+                return false;
+            }
 
+            return firebasePushNotificationService.sendPushNotification(
+                    user.getFcmToken(), title, body, imageUrl);
+
+        } catch (Exception e) {
+            System.err.println("Error sending push notification to user " + userId + ": " + e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public boolean sendPushNotificationToAllUsers(String title, String body, String imageUrl) {
+        try {
+            List<User> allUsers = userRepository.findAll();
+            List<String> fcmTokens = allUsers.stream()
+                    .map(User::getFcmToken)
+                    .filter(token -> token != null && !token.trim().isEmpty())
+                    .collect(Collectors.toList());
+
+            if (fcmTokens.isEmpty()) {
+                System.err.println("No users with FCM tokens found");
+                return false;
+            }
+
+            return firebasePushNotificationService.sendPushNotificationToMultipleDevices(
+                    fcmTokens, title, body, imageUrl);
+
+        } catch (Exception e) {
+            System.err.println("Error sending push notification to all users: " + e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public boolean sendPushNotificationToTopic(String topic, String title, String body, String imageUrl) {
+        try {
+            return firebasePushNotificationService.sendPushNotificationToTopic(
+                    topic, title, body, imageUrl);
+        } catch (Exception e) {
+            System.err.println("Error sending push notification to topic " + topic + ": " + e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public Notification createAndSendNotification(String title, String description, String type, 
+                                                String audience, String imageUrl, boolean sendPush) {
+        try {
+            // Create notification in database
+            Notification notification = Notification.builder()
+                    .title(title)
+                    .description(description)
+                    .type(type)
+                    .status("Sent")
+                    .generatedBy("System")
+                    .sendOn(LocalDateTime.now())
+                    .audience(audience)
+                    .actions("View App")
+                    .image(imageUrl)
+                    .build();
+
+            notification = notificationRepository.save(notification);
+
+            // Send push notification if requested
+            if (sendPush) {
+                boolean pushSent = false;
+                
+                if ("All Users".equals(audience)) {
+                    pushSent = sendPushNotificationToAllUsers(title, description, imageUrl);
+                } else if (audience.startsWith("User-")) {
+                    try {
+                        Long userId = Long.parseLong(audience.substring(5)); // Remove "User-" prefix
+                        pushSent = sendPushNotificationToUser(userId, title, description, imageUrl);
+                    } catch (NumberFormatException e) {
+                        System.err.println("Invalid user ID in audience: " + audience);
+                    }
+                } else {
+                    // Treat as topic
+                    pushSent = sendPushNotificationToTopic(audience, title, description, imageUrl);
+                }
+
+                // Update notification status based on push result
+                if (!pushSent) {
+                    notification.setStatus("Push Failed");
+                    notificationRepository.save(notification);
+                }
+            }
+
+            return notification;
+
+        } catch (Exception e) {
+            System.err.println("Error creating and sending notification: " + e.getMessage());
+            return null;
+        }
+    }
 
 }

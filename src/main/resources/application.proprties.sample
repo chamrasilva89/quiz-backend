@@ -21,3 +21,6 @@ springdoc.default-produces-media-type=application/json
 app.jwt.secret={{KEY}}
 jwt.expiration=3600000
 jwt.issuer=sasip-quizz
+
+# Firebase Configuration
+firebase.service-account-key=firebase-service-account.json

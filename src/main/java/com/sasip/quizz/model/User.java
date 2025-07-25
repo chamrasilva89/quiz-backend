@@ -80,6 +80,10 @@ public class User {
     @Column(name = "profile_image_base64", columnDefinition = "LONGTEXT")
     private String profileImageBase64;
 
+    // FCM token for push notifications
+    @Column(name = "fcm_token")
+    private String fcmToken;
+
     // Constructor excluding passwordHash
     public User(Long userId, String username, String role, String firstName, String lastName, String avatarUrl, String school, Integer alYear, String district, String medium, String phone, String email, Integer earnedXp, Integer streakCount, Double averageScore, Integer totalQuizzesTaken, String parentName, String parentContactNo, LocalDateTime createdDate, LocalDateTime updatedDate, String userStatus, Integer points, String profileImageBase64) {
         this.userId = userId;

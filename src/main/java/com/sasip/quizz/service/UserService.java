@@ -26,4 +26,9 @@ public interface UserService {
     void confirmChangePasswordWithOtp(Long userId, String otp);
     void requestChangePasswordOtp(Long userId, ChangePasswordRequest request);
     User updateProfileImage(Long userId, String base64Image);
+    
+    // FCM token management methods
+    boolean updateFcmToken(Long userId, String fcmToken);
+    List<String> getFcmTokensByUserIds(List<Long> userIds);
+    List<String> getAllFcmTokens();
 }
