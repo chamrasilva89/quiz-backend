@@ -51,13 +51,25 @@ public class UserController {
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<?>> registerUser(@RequestBody UserRegistrationRequest request) {
         try {
+            // Step 1: Call the service to register the user and send OTP
             User registeredUser = userService.registerUser(request);
-            // Wrap response inside "data": { "items": [ ... ] } for uniformity (non-paginated)
-            return ResponseEntity.ok(new ApiResponse<>(Map.of("items", registeredUser)));
+
+            // Return a response indicating OTP has been sent for confirmation
+            return ResponseEntity.ok(new ApiResponse<>(Map.of(
+                "message", "OTP sent to your phone for confirmation",
+                "items", List.of(registeredUser)
+            )));
+            
         } catch (IllegalArgumentException e) {
+            // Handle bad request errors like invalid data or validation failure
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(e.getMessage(), 400));
+        } catch (RuntimeException e) {
+            // Handle user-specific exceptions like already existing phone number or username
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ApiResponse<>(e.getMessage(), 400));
         } catch (Exception e) {
+            // Handle other unexpected errors
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>("Internal server error", 500));
         }
@@ -253,4 +265,30 @@ public ResponseEntity<?> confirmChangePassword(@RequestParam Long userId, @Reque
                     .body(new ApiResponse<>("Error updating profile image", 500));
         }
     }
+
+    @PostMapping("/confirm-registration-otp")
+    public ResponseEntity<ApiResponse<?>> confirmRegistrationOtp(@RequestParam String phone, @RequestParam String otp) {
+        try {
+            // Call the service method to confirm OTP and complete registration
+            userService.confirmRegistrationOtp(phone, otp);
+
+            // Prepare the response
+            Map<String, Object> response = Map.of(
+                "message", "Registration completed successfully.",
+                "items", List.of("User registration is complete and OTP has been verified.")
+            );
+
+            return ResponseEntity.ok(new ApiResponse<>(response));
+            
+        } catch (Exception e) {
+            // Handle errors with proper response format
+            Map<String, Object> errorResponse = Map.of(
+                "error", e.getMessage(),
+                "status", 400
+            );
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse<>(errorResponse));
+        }
+    }
+
+
 }

@@ -26,4 +26,7 @@ public interface UserService {
     void confirmChangePasswordWithOtp(Long userId, String otp);
     void requestChangePasswordOtp(Long userId, ChangePasswordRequest request);
     User updateProfileImage(Long userId, String base64Image);
+     void requestRegistrationOtp(UserRegistrationRequest request);  // Request OTP for signup
+    void confirmRegistrationOtp(String phone, String otp);  // Confirm OTP and complete registration
+    public void storeFcmToken(Long userId, String fcmToken);
 }

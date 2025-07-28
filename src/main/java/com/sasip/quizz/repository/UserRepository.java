@@ -15,6 +15,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByPhone(String phone);
     boolean existsByEmail(String email);
     boolean existsByUsername(String username);
+     boolean existsByPhone(String phone);
     @Query("SELECT u FROM User u WHERE " +
         "(:role IS NULL OR u.role = :role) AND " +
         "(:name IS NULL OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', :name, '%')) OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :name, '%'))) AND " +
@@ -34,7 +35,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
         Page<User> findByRole(String role, Pageable pageable);
         Page<User> findByRoleNot(String role, Pageable pageable);
-
+        List<User> findByAlYear(Integer alYear);
 
 
 }

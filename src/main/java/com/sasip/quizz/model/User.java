@@ -80,8 +80,12 @@ public class User {
     @Column(name = "profile_image_base64", columnDefinition = "LONGTEXT")
     private String profileImageBase64;
 
+    // New field to store FCM token
+    @Column(name = "fcm_token", length = 255)
+    private String fcmToken; // FCM token field
+
     // Constructor excluding passwordHash
-    public User(Long userId, String username, String role, String firstName, String lastName, String avatarUrl, String school, Integer alYear, String district, String medium, String phone, String email, Integer earnedXp, Integer streakCount, Double averageScore, Integer totalQuizzesTaken, String parentName, String parentContactNo, LocalDateTime createdDate, LocalDateTime updatedDate, String userStatus, Integer points, String profileImageBase64) {
+    public User(Long userId, String username, String role, String firstName, String lastName, String avatarUrl, String school, Integer alYear, String district, String medium, String phone, String email, Integer earnedXp, Integer streakCount, Double averageScore, Integer totalQuizzesTaken, String parentName, String parentContactNo, LocalDateTime createdDate, LocalDateTime updatedDate, String userStatus, Integer points, String profileImageBase64, String fcmToken) {
         this.userId = userId;
         this.username = username;
         this.role = role;
@@ -105,6 +109,7 @@ public class User {
         this.userStatus = userStatus;
         this.points = points;
         this.profileImageBase64 = profileImageBase64;
+        this.fcmToken = fcmToken; // Assigning fcmToken
     }
 
     @PrePersist

@@ -8,7 +8,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -35,7 +34,6 @@ public class Quiz {
 
     private String quizName;
     private String intro;
-
 
     // Store JSON string in DB
     @Column(name = "modules", columnDefinition = "json")
@@ -70,11 +68,15 @@ public class Quiz {
     @Column(name = "quiz_status")
     private QuizStatus quizStatus = QuizStatus.DRAFT;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "notification_status", nullable = false)
+    private NotificationStatus notificationStatus = NotificationStatus.NOT_STARTED; // Default to NOT_STARTED
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-        // Transient fields for convenience
+    // Transient fields for convenience
     @Transient
     private List<String> moduleList;
 
@@ -103,7 +105,7 @@ public class Quiz {
         }
     }
 
-        // moduleList getter/setter with JSON parse/serialize
+    // moduleList getter/setter with JSON parse/serialize
     public List<String> getModuleList() {
         if (this.moduleList == null && this.modules != null) {
             try {
@@ -117,12 +119,10 @@ public class Quiz {
     }
 
     public void setModuleList(List<String> moduleList) {
-        System.out.println("setModuleList called with: " + moduleList);
         this.moduleList = moduleList;
         try {
             ObjectMapper mapper = new ObjectMapper();
             this.modules = mapper.writeValueAsString(moduleList);
-            System.out.println("Serialized modules JSON: " + this.modules);
         } catch (Exception e) {
             throw new RuntimeException("Failed to serialize modules to JSON", e);
         }
@@ -142,12 +142,10 @@ public class Quiz {
     }
 
     public void setRewardIdList(List<Long> rewardIdList) {
-        System.out.println("setRewardIdList called with: " + rewardIdList);
         this.rewardIdList = rewardIdList;
         try {
             ObjectMapper mapper = new ObjectMapper();
             this.rewardIds = mapper.writeValueAsString(rewardIdList);
-            System.out.println("Serialized rewardIds JSON: " + this.rewardIds);
         } catch (Exception e) {
             throw new RuntimeException("Failed to serialize reward IDs to JSON", e);
         }

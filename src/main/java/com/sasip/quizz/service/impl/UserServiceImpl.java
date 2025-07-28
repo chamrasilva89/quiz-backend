@@ -9,7 +9,8 @@ import com.sasip.quizz.service.UserService;
 import com.sasip.quizz.service.LogService;
 import com.sasip.quizz.service.OtpService;
 import com.sasip.quizz.security.JwtUtil;
-
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -35,7 +36,8 @@ public class UserServiceImpl implements UserService {
     private final JwtUtil jwtUtil;
     private final LogService logService;
     @Autowired private OtpService otpService;
-
+    
+    private final Map<String, String> passwordCache = new ConcurrentHashMap<>();
     public UserServiceImpl(UserRepository userRepository,
                            BCryptPasswordEncoder passwordEncoder,
                            JwtUtil jwtUtil,
@@ -46,46 +48,59 @@ public class UserServiceImpl implements UserService {
         this.logService = logService;
     }
 
-    @Override
-    public User registerUser(UserRegistrationRequest request) {
-        logger.info("Registering user with username: {}", request.getUsername());
+@Override
+public User registerUser(UserRegistrationRequest request) {
+    logger.info("Registering user with username: {}", request.getUsername());
 
-        if (request.getEmail() != null && userRepository.existsByEmail(request.getEmail())) {
-            logger.warn("Email already in use: {}", request.getEmail());
-            throw new RuntimeException("Email already in use");
-        }
-
-        if (userRepository.existsByUsername(request.getUsername())) {
-            logger.warn("Username already exists: {}", request.getUsername());
-            throw new RuntimeException("Username already exists");
-        }
-
-        String hashedPassword = passwordEncoder.encode(request.getPassword());
-
-        User user = new User();
-        user.setRole(request.getRole());
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
-        user.setAvatarUrl(request.getAvatarUrl());
-        user.setSchool(request.getSchool());
-        user.setAlYear(request.getAlYear());
-        user.setDistrict(request.getDistrict());
-        user.setMedium(request.getMedium());
-        user.setPhone(request.getPhone());
-        user.setEmail(request.getEmail());
-        user.setUsername(request.getUsername());
-        user.setPasswordHash(hashedPassword);
-        user.setParentName(request.getParentName());
-        user.setParentContactNo(request.getParentContactNo());
-        user.setCreatedDate(LocalDateTime.now());
-        user.setUpdatedDate(LocalDateTime.now());
-        user.setUserStatus(request.getUserStatus() != null ? request.getUserStatus() : "active");
-
-        User saved = userRepository.save(user);
-        logger.info("User registered successfully: {}", user.getUsername());
-        //logService.log("INFO", "UserServiceImpl", "Register User", "User registered: " + saved.getUsername(), saved.getUsername());
-        return saved;
+    // Ensure the user does not exist with the provided email
+    if (request.getEmail() != null && userRepository.existsByEmail(request.getEmail())) {
+        logger.warn("Email already in use: {}", request.getEmail());
+        throw new RuntimeException("Email already in use");
     }
+
+    // Ensure the username does not already exist
+    if (userRepository.existsByUsername(request.getUsername())) {
+        logger.warn("Username already exists: {}", request.getUsername());
+        String newUsername = request.getUsername() + "_" + System.currentTimeMillis(); // handle conflict
+        logger.info("Username conflict, using generated username: {}", newUsername);
+        request.setUsername(newUsername);
+    }
+
+    // Create User object (but don't set password yet)
+    User user = new User();
+    user.setRole(request.getRole());
+    user.setFirstName(request.getFirstName());
+    user.setLastName(request.getLastName());
+    user.setAvatarUrl(request.getAvatarUrl());
+    user.setSchool(request.getSchool());
+    user.setAlYear(request.getAlYear());
+    user.setDistrict(request.getDistrict());
+    user.setMedium(request.getMedium());
+    user.setPhone(request.getPhone());
+    user.setEmail(request.getEmail());
+    user.setUsername(request.getUsername());
+
+    // Temporarily store plain-text password in cache for later hashing
+    passwordCache.put(request.getPhone(), request.getPassword());
+
+    user.setPasswordHash("");  // No password yet, will set later
+    user.setParentName(request.getParentName());
+    user.setParentContactNo(request.getParentContactNo());
+    user.setCreatedDate(LocalDateTime.now());
+    user.setUpdatedDate(LocalDateTime.now());
+    user.setUserStatus(request.getUserStatus() != null ? request.getUserStatus() : "active");
+
+    // Save the user temporarily without a password (for OTP verification)
+    User savedUser = userRepository.save(user);
+    logger.info("User registered successfully (temp): {}", savedUser.getUsername());
+
+    // Generate OTP and send it to the user's phone
+    otpService.generateAndSendOtpForSignup(savedUser.getPhone(), savedUser.getUserId());
+    otpService.cachePendingRegistration(savedUser.getPhone(), savedUser.getUserId());
+
+    return savedUser;
+}
+
 
     @Override
     public User patchUser(Long userId, UserUpdateRequest updateRequest) {
@@ -132,7 +147,7 @@ public class UserServiceImpl implements UserService {
         }
 
         // Create a new User object excluding passwordHash and using the new constructor
-        User userDetails = new User(user.getUserId(), user.getUsername(), user.getRole(), user.getFirstName(), user.getLastName(), user.getAvatarUrl(), user.getSchool(), user.getAlYear(), user.getDistrict(), user.getMedium(), user.getPhone(), user.getEmail(), user.getEarnedXp(), user.getStreakCount(), user.getAverageScore(), user.getTotalQuizzesTaken(), user.getParentName(), user.getParentContactNo(), user.getCreatedDate(), user.getUpdatedDate(), user.getUserStatus(), user.getPoints(),user.getProfileImageBase64());
+        User userDetails = new User(user.getUserId(), user.getUsername(), user.getRole(), user.getFirstName(), user.getLastName(), user.getAvatarUrl(), user.getSchool(), user.getAlYear(), user.getDistrict(), user.getMedium(), user.getPhone(), user.getEmail(), user.getEarnedXp(), user.getStreakCount(), user.getAverageScore(), user.getTotalQuizzesTaken(), user.getParentName(), user.getParentContactNo(), user.getCreatedDate(), user.getUpdatedDate(), user.getUserStatus(), user.getPoints(),user.getProfileImageBase64(),user.getFcmToken());
 
         String token = jwtUtil.generateToken(user.getUsername());
         logger.info("Login successful for username: {}", request.getUsername());
@@ -274,6 +289,90 @@ public void requestForgotPasswordOtp(String phone, String newPassword) {
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
         user.setProfileImageBase64(base64Image);
         return userRepository.save(user);
+    }
+
+     @Override
+public void requestRegistrationOtp(UserRegistrationRequest request) {
+    // Ensure the user does not exist already
+    if (userRepository.existsByPhone(request.getPhone())) {
+        throw new BadRequestException("User already exists with this phone number");
+    }
+
+    // Save the user but do not activate yet (no userId assigned)
+    User user = new User();
+    user.setRole(request.getRole());
+    user.setFirstName(request.getFirstName());
+    user.setLastName(request.getLastName());
+    user.setAvatarUrl(request.getAvatarUrl());
+    user.setSchool(request.getSchool());
+    user.setAlYear(request.getAlYear());
+    user.setDistrict(request.getDistrict());
+    user.setMedium(request.getMedium());
+    user.setPhone(request.getPhone());
+    user.setEmail(request.getEmail());
+    user.setUsername(request.getUsername());
+    user.setPasswordHash("");  // No password yet, will set later
+    user.setParentName(request.getParentName());
+    user.setParentContactNo(request.getParentContactNo());
+    user.setCreatedDate(LocalDateTime.now());
+    user.setUpdatedDate(LocalDateTime.now());
+    user.setUserStatus(request.getUserStatus());
+
+    // Save the user temporarily (without final password)
+    User savedUser = userRepository.save(user);
+
+    // Generate OTP and send it to the user's phone
+    otpService.generateAndSendOtpForSignup(savedUser.getPhone(), savedUser.getUserId());
+
+    // Cache the user info temporarily for later validation
+    otpService.cachePendingRegistration(savedUser.getPhone(), savedUser.getUserId());
+}
+
+@Override
+public void confirmRegistrationOtp(String phone, String otp) {
+    // Verify the OTP
+    if (!otpService.verifyOtp(phone, otp)) {
+        throw new BadRequestException("Invalid or expired OTP");
+    }
+
+    // Retrieve the userId from the cached data using OtpService
+    Long userId = otpService.getPendingRegistration(phone);
+    if (userId == null) {
+        throw new BadRequestException("No pending registration request found for this phone");
+    }
+
+    // Retrieve the user and update their status to active
+    User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+    // Retrieve the plain-text password from the cache and hash it
+    String plainPassword = passwordCache.get(phone);
+    if (plainPassword == null) {
+        throw new BadRequestException("Password not found in memory cache");
+    }
+
+    // Hash the password
+    String hashedPassword = passwordEncoder.encode(plainPassword);
+
+    // Set the hashed password and save user
+    user.setPasswordHash(hashedPassword);
+    user.setUserStatus("active");  // Mark user as active after OTP confirmation
+    userRepository.save(user);
+
+    // Clear the password cache as it's no longer needed
+    passwordCache.remove(phone);
+
+    // Clear the cache once the registration is successful
+    otpService.clearPendingRegistration(phone);
+}
+
+    @Override
+    public void storeFcmToken(Long userId, String fcmToken) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setFcmToken(fcmToken); // Update the FCM token field
+        userRepository.save(user);   // Save the user with the updated token
     }
 
 }

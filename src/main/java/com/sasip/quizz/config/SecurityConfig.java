@@ -38,7 +38,8 @@ public class SecurityConfig {
                     "/swagger-ui/**",            // Swagger UI
                     "/swagger-ui.html",           // Swagger UI HTML entry
                     "/api/users/request-forgot-password-otp",
-                    "/api/users/confirm-forgot-password"
+                    "/api/users/confirm-forgot-password",
+                    "/api/users/confirm-registration-otp" // Allow OTP confirmation without token check
                 ).permitAll()
                 .anyRequest().authenticated()
             )

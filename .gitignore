@@ -33,3 +33,6 @@ build/
 .vscode/
 
 application.properties
+
+# Firebase Admin SDK credentials file (do not commit to the repository)
+firebase-adminsdk.json

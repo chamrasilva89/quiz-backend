@@ -1,6 +1,8 @@
 package com.sasip.quizz.service.impl;
 
+import com.sasip.quizz.dto.UserRegistrationRequest;
 import com.sasip.quizz.model.OtpVerification;
+import com.sasip.quizz.model.User;
 import com.sasip.quizz.repository.OtpVerificationRepository;
 import com.sasip.quizz.service.OtpService;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,7 @@ public class OtpServiceImpl implements OtpService {
     // In-memory stores for pending password data
     private final Map<Long, String> pendingPasswordChange = new ConcurrentHashMap<>();
     private final Map<String, String> pendingForgotPassword = new ConcurrentHashMap<>();
+    private final Map<String, Long> pendingRegistration = new ConcurrentHashMap<>(); // Mapping phone to userId for registration
 
     @Override
     public String generateAndSendOtp(String phone, Long userId) {
@@ -92,5 +95,42 @@ public class OtpServiceImpl implements OtpService {
     @Override
     public void generateAndSaveOtp(String phone, Long userId) {
         generateAndSendOtp(phone, userId);
+    }
+
+    // Generate and send OTP for user registration
+    @Override
+    public String generateAndSendOtpForSignup(String phone, Long userId) {
+        String otp = String.format("%06d", random.nextInt(999999));
+        
+        // Save OTP to the database
+        OtpVerification verification = new OtpVerification();
+        verification.setUserId(userId);
+        verification.setPhone(phone);
+        verification.setOtp(otp);
+        verification.setExpiresAt(LocalDateTime.now().plusMinutes(5));
+        verification.setVerified(false);
+
+        otpRepo.save(verification);
+
+        // Simulate sending OTP (replace with SMS gateway)
+        System.out.println("✅ OTP sent to " + phone + ": " + otp);
+        return otp;
+    }
+
+    // Caching pending registration (used to temporarily store userId against phone)
+    @Override
+    public void cachePendingRegistration(String phone, Long userId) {
+        pendingRegistration.put(phone, userId);  // Store phone and userId temporarily for verification
+    }
+
+    // Clear the cache once registration is successful
+    @Override
+    public void clearPendingRegistration(String phone) {
+        pendingRegistration.remove(phone);  // Clear the cache after successful registration
+    }
+
+    // Retrieve the userId for pending registration based on phone number
+    public Long getPendingRegistration(String phone) {
+        return pendingRegistration.get(phone);
     }
 }

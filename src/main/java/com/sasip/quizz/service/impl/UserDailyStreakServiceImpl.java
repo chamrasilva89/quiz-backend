@@ -2,14 +2,19 @@ package com.sasip.quizz.service.impl;
 
 import com.sasip.quizz.model.User;
 import com.sasip.quizz.model.UserDailyStreak;
-import com.sasip.quizz.model.Notification;
+import com.sasip.quizz.model.NotificationEntity;
 import com.sasip.quizz.repository.UserRepository;
 import com.sasip.quizz.repository.UserDailyStreakRepository;
 import com.sasip.quizz.repository.NotificationRepository;
+import com.sasip.quizz.service.PushNotificationService;
 import com.sasip.quizz.service.UserDailyStreakService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class UserDailyStreakServiceImpl implements UserDailyStreakService {
@@ -23,83 +28,69 @@ public class UserDailyStreakServiceImpl implements UserDailyStreakService {
     @Autowired
     private NotificationRepository notificationRepository;
 
+    @Autowired
+    private PushNotificationService pushNotificationService;
+
     @Override
+    @Transactional
     public User updateDailyStreak(Long userId) {
-        System.out.println("Starting updateDailyStreak for user ID: " + userId);  // Log the start of the method
+        System.out.println("Starting updateDailyStreak for user ID: " + userId);
 
         // Find user
         User user = userRepository.findById(userId)
             .orElseThrow(() -> {
-                System.out.println("User not found with ID: " + userId);  // Log if user is not found
+                System.out.println("User not found with ID: " + userId);
                 return new RuntimeException("User not found with ID: " + userId);
             });
 
-        System.out.println("Found user: " + user);  // Log the found user
+        System.out.println("Found user: " + user.getUsername());
 
         // Retrieve UserDailyStreak record using the userId directly, or create a new one if not found
         UserDailyStreak userDailyStreak = userDailyStreakRepository.findByUser(user)
             .orElseGet(() -> {
-                System.out.println("No daily streak record found for User ID: " + userId + ", creating a new record.");  // Log if no streak record is found
-                // Create a new UserDailyStreak if not found
+                System.out.println("No daily streak record found for User ID: " + userId + ", creating a new record.");
                 UserDailyStreak newUserDailyStreak = UserDailyStreak.builder()
-                        .user(user)  // Set the user reference
-                        .lastLoginDate(LocalDateTime.now())  // Set the last login date to the current time
-                        .currentStreak(0)  // Initialize streak as 0
-                        .streakPoints(0)  // Initialize points as 0
+                        .user(user)
+                        .lastLoginDate(LocalDateTime.now())
+                        .currentStreak(1)
+                        .streakPoints(1)
                         .build();
-                // Save the new record
                 return userDailyStreakRepository.save(newUserDailyStreak);
             });
 
-        System.out.println("Found UserDailyStreak: " + userDailyStreak);  // Log the found or newly created UserDailyStreak
-
-        // Get the current time and check if last login was yesterday or the same day
         LocalDateTime currentTime = LocalDateTime.now();
-        System.out.println("Current Time: " + currentTime);  // Log the current time
         boolean isSameDay = userDailyStreak.getLastLoginDate().toLocalDate().isEqual(currentTime.toLocalDate());
         boolean isConsecutiveDay = userDailyStreak.getLastLoginDate().toLocalDate().plusDays(1).isEqual(currentTime.toLocalDate());
 
-        System.out.println("Last login date: " + userDailyStreak.getLastLoginDate());  // Log the last login date
-        System.out.println("isSameDay: " + isSameDay + ", isConsecutiveDay: " + isConsecutiveDay);  // Log the conditions
-
         if (!isSameDay) {
             if (isConsecutiveDay) {
-                // Increase streak count and points
-                System.out.println("Increasing streak count and points for user ID: " + userId);
                 userDailyStreak.setCurrentStreak(userDailyStreak.getCurrentStreak() + 1);
-                userDailyStreak.setStreakPoints(userDailyStreak.getStreakPoints() + 10);  // Example: +10 points for consecutive days
+                userDailyStreak.setStreakPoints(userDailyStreak.getStreakPoints() + 10); // Example: +10 points for consecutive days
             } else {
-                // Reset streak if not consecutive (missed a day)
-                System.out.println("Resetting streak count and points for user ID: " + userId);
-                userDailyStreak.setCurrentStreak(0);
-                userDailyStreak.setStreakPoints(0);
+                userDailyStreak.setCurrentStreak(1);
+                userDailyStreak.setStreakPoints(1);
 
                 // Send missed login notification
                 sendMissedLoginNotification(userId);
             }
 
-            // Update last login date
-            System.out.println("Updating last login date for user ID: " + userId);
             userDailyStreak.setLastLoginDate(currentTime);
             user.setStreakCount(userDailyStreak.getCurrentStreak());
 
-            // Save updated streak and user data
             userDailyStreakRepository.save(userDailyStreak);
             userRepository.save(user);
 
-            System.out.println("Updated user and daily streak saved.");  // Log after saving
+            System.out.println("Updated user and daily streak saved.");
         } else {
-            System.out.println("User already logged in today, no updates needed.");  // Log if already logged in today
+            System.out.println("User already logged in today, no updates needed.");
         }
 
-        return user;  // Return updated user with streak info
+        return user;
     }
-
 
     @Override
     public void sendMissedLoginNotification(Long userId) {
-        // Create a notification for missed login
-        Notification notification = Notification.builder()
+        NotificationEntity notification = NotificationEntity.builder()
                 .title("Missed Daily Streak")
                 .description("You missed a day of logging in!")
                 .type("Missed Login")
@@ -118,4 +109,41 @@ public class UserDailyStreakServiceImpl implements UserDailyStreakService {
 
         notificationRepository.save(notification);
     }
+
+    // Scheduled task to run every day at 2:03 AM to check if users missed their login
+@Scheduled(cron = "0 15 9 * * *") // Run at 02:03 AM every day
+@Transactional
+public void sendMissedLoginReminderNotifications() {
+    LocalDateTime currentTime = LocalDateTime.now();
+    LocalDateTime startOfDay = currentTime.toLocalDate().atStartOfDay();
+    LocalDateTime yesterday = currentTime.minusDays(1);
+
+    System.out.println("Scheduled task for missed login reminder started at: " + currentTime);
+
+    // Find all users who logged in yesterday but haven't logged in today
+    List<UserDailyStreak> missedUsers = userDailyStreakRepository.findByLastLoginDateBefore(startOfDay);
+
+    // Process each missed user and send notifications
+    for (UserDailyStreak userDailyStreak : missedUsers) {
+        User user = userDailyStreak.getUser();
+        System.out.println("Processing missed login for user: " + user.getUsername());
+
+        String fcmToken = user.getFcmToken();
+
+        // Check if the token is not null and not blank before sending
+        if (fcmToken != null && !fcmToken.isBlank()) {
+            System.out.println("Sending missed login push notification to user: " + user.getUsername());
+            pushNotificationService.sendMissedLoginReminderNotification(user, fcmToken);
+        } else {
+            System.out.println("Skipping push notification for user: " + user.getUsername() + " because their FCM token is missing.");
+        }
+        // ------------------------
+
+        // You can still create the in-app notification regardless of the FCM token
+        sendMissedLoginNotification(user.getUserId());
+    }
+
+    System.out.println("Missed login reminder notifications sent at: " + currentTime);
+}
+
 }

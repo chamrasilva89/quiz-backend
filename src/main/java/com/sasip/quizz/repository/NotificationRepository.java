@@ -1,6 +1,6 @@
 package com.sasip.quizz.repository;
 
-import com.sasip.quizz.model.Notification;
+import com.sasip.quizz.model.NotificationEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,23 +8,23 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public interface NotificationRepository extends JpaRepository<Notification, Long> {
+public interface NotificationRepository extends JpaRepository<NotificationEntity, Long> {
     // Fetch notifications based on audience (specific user or all users)
-    Page<Notification> findByAudienceInAndSendOnBeforeOrderBySendOnDesc(
+    Page<NotificationEntity> findByAudienceInAndSendOnBeforeOrderBySendOnDesc(
             List<String> audiences, LocalDateTime currentDateTime, Pageable pageable);
 
     // Filter notifications by type, generatedBy, audience, status, and sendOn date
-    Page<Notification> findByTypeAndGeneratedByAndAudienceInAndStatusAndSendOnBeforeOrderBySendOnDesc(
+    Page<NotificationEntity> findByTypeAndGeneratedByAndAudienceInAndStatusAndSendOnBeforeOrderBySendOnDesc(
             String type, String generatedBy, List<String> audiences, String status, LocalDateTime currentDateTime, Pageable pageable);
 
     // Optional filter for type and status only, without audience or generatedBy
-    Page<Notification> findByTypeAndStatusAndSendOnBeforeOrderBySendOnDesc(
+    Page<NotificationEntity> findByTypeAndStatusAndSendOnBeforeOrderBySendOnDesc(
             String type, String status, LocalDateTime currentDateTime, Pageable pageable);
 
     // You can also add other filters if needed, for example, filtering only by type and audience
-    Page<Notification> findByTypeAndAudienceInAndSendOnBeforeOrderBySendOnDesc(
+    Page<NotificationEntity> findByTypeAndAudienceInAndSendOnBeforeOrderBySendOnDesc(
             String type, List<String> audiences, LocalDateTime currentDateTime, Pageable pageable);
 
-    Page<Notification> findByTypeAndGeneratedByAndAudienceInAndSendOnBeforeOrderBySendOnDesc(String type,
+    Page<NotificationEntity> findByTypeAndGeneratedByAndAudienceInAndSendOnBeforeOrderBySendOnDesc(String type,
             String generatedBy, List<String> audiences, LocalDateTime currentDateTime, Pageable pageable);
 }

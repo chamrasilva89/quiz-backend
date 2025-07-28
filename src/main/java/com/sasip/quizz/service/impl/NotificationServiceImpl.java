@@ -2,7 +2,7 @@ package com.sasip.quizz.service.impl;
 
 import com.sasip.quizz.dto.NotificationResponseDTO;
 import com.sasip.quizz.dto.PaginatedNotificationsResponseDTO;
-import com.sasip.quizz.model.Notification;
+import com.sasip.quizz.model.NotificationEntity;
 import com.sasip.quizz.repository.NotificationRepository;
 import com.sasip.quizz.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,7 +66,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public boolean updateNotificationStatus(Long notificationId, String status) {
-        Notification notification = notificationRepository.findById(notificationId).orElse(null);
+        NotificationEntity notification = notificationRepository.findById(notificationId).orElse(null);
         if (notification != null) {
             notification.setStatus(status);  // Update the status
             notificationRepository.save(notification);  // Save the updated notification
@@ -103,7 +103,7 @@ public PaginatedNotificationsResponseDTO filterNotifications(
     }
 
     // Adjust the query parameters based on whether the status is provided
-    Page<Notification> notificationPage = null;
+    Page<NotificationEntity> notificationPage = null;
 
     try {
         if (status != null && !status.isEmpty()) {
