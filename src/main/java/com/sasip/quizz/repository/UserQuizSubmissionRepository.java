@@ -19,4 +19,5 @@ public interface UserQuizSubmissionRepository extends JpaRepository<UserQuizSubm
     @Query("SELECT COUNT(u) FROM UserQuizSubmission u JOIN Quiz q ON u.quizId = CAST(q.quizId AS string) WHERE u.userId = :userId AND q.quizType = 'SASIP'")
     Long countCompletedSasipQuizzes(@Param("userId") Long userId);
 
+
 }

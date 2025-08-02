@@ -6,6 +6,7 @@ import com.sasip.quizz.model.QuizType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,5 +33,13 @@ public interface QuizRepository
     List<Quiz> findByScheduledTimeBefore(LocalDateTime currentTime);
     List<Quiz> findByScheduledTimeBeforeAndNotificationStatus(LocalDateTime currentTime, NotificationStatus status);
     List<Quiz> findByDeadlineBeforeAndNotificationStatus(LocalDateTime deadline, NotificationStatus status);
+
+     // Method to find active quizzes for a given academic year
+    @Query("SELECT q FROM Quiz q WHERE q.alYear = :alYear " +
+           "AND q.quizStatus = 'ACTIVE' " + // Correct attribute name is 'quizStatus', not 'status'
+           "AND q.scheduledTime <= :currentDate " +
+           "AND q.deadline >= :currentDate")
+    List<Quiz> findActiveQuizzesForYear(@Param("alYear") String alYear, 
+                                        @Param("currentDate") LocalDateTime currentDate);
 
 }

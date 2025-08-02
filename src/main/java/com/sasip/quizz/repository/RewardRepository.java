@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface RewardRepository extends JpaRepository<Reward, Long> {
@@ -19,4 +20,7 @@ public interface RewardRepository extends JpaRepository<Reward, Long> {
             @Param("type") RewardType type,
             @Param("status") RewardStatus status,
             @Param("name") String name);
+
+       @Query("SELECT r FROM Reward r WHERE r.status = 'ACTIVE' AND r.validFrom <= :currentDate AND r.validTo >= :currentDate")
+    List<Reward> findActiveRewards(@Param("currentDate") LocalDateTime currentDate);
 }

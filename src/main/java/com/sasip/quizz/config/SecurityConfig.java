@@ -37,6 +37,8 @@ public class SecurityConfig {
                     "/v3/api-docs/**",           // Swagger OpenAPI docs
                     "/swagger-ui/**",            // Swagger UI
                     "/swagger-ui.html",           // Swagger UI HTML entry
+                    "/swagger-ui/favicon-32x32.png",  // Favicon
+                    "/v3/api-docs/swagger-config", // Swagger Config
                     "/api/users/request-forgot-password-otp",
                     "/api/users/confirm-forgot-password",
                     "/api/users/confirm-registration-otp" // Allow OTP confirmation without token check

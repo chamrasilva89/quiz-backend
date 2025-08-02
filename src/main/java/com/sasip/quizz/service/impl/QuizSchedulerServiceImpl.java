@@ -1,8 +1,10 @@
 package com.sasip.quizz.service.impl;
 
+import com.sasip.quizz.model.AdminNotification;
 import com.sasip.quizz.model.NotificationStatus;
 import com.sasip.quizz.model.Quiz;
 import com.sasip.quizz.model.User;
+import com.sasip.quizz.repository.AdminNotificationRepository;
 import com.sasip.quizz.repository.QuizRepository;
 import com.sasip.quizz.repository.UserRepository;
 import com.sasip.quizz.service.PushNotificationService;
@@ -11,6 +13,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -19,11 +22,13 @@ public class QuizSchedulerServiceImpl implements QuizSchedulerService {
     private final QuizRepository quizRepository;
     private final UserRepository userRepository;  // Inject UserRepository
     private final PushNotificationService pushNotificationService;
+    private final AdminNotificationRepository adminNotificationRepository; 
 
-    public QuizSchedulerServiceImpl(QuizRepository quizRepository, UserRepository userRepository, PushNotificationService pushNotificationService) {
+    public QuizSchedulerServiceImpl(QuizRepository quizRepository, UserRepository userRepository, PushNotificationService pushNotificationService, AdminNotificationRepository adminNotificationRepository) {
         this.quizRepository = quizRepository;
         this.userRepository = userRepository;
         this.pushNotificationService = pushNotificationService;
+        this.adminNotificationRepository = adminNotificationRepository;
     }
 
     @Scheduled(cron = "0 * * * * *") // Run every minute
@@ -55,7 +60,66 @@ public class QuizSchedulerServiceImpl implements QuizSchedulerService {
             quiz.setNotificationStatus(NotificationStatus.START_NOTIFICATION);
             quizRepository.save(quiz);
         }
+
+         // Check and send admin notifications
+        sendAdminNotifications(currentTime);
     }
+
+private void sendAdminNotifications(LocalDateTime currentTime) {
+    // Fetch admin notifications that need to be sent today
+    List<AdminNotification> adminNotifications = adminNotificationRepository.findByPublishOnBeforeAndStatus(currentTime, "Published");
+
+    // Process each admin notification
+    for (AdminNotification adminNotification : adminNotifications) {
+        System.out.println("Sending admin notification: " + adminNotification.getTitle());
+
+        List<User> users = new ArrayList<>();
+
+        // Check if the audience is "All Students" (for all users)
+        if ("All Students".equals(adminNotification.getAudience())) {
+            users = userRepository.findAll();
+        }
+        // Check if the audience is based on AL-year (e.g., AL-year-2025)
+        else if (adminNotification.getAudience().startsWith("AL-year")) {
+            String[] audienceParts = adminNotification.getAudience().split("-");
+            if (audienceParts.length > 1) {
+                try {
+                    String alYear = audienceParts[1];
+                    users = userRepository.findByAlYear(Integer.parseInt(alYear));
+                } catch (NumberFormatException e) {
+                    // Handle invalid alYear format if necessary
+                    System.out.println("Invalid AL-year format in audience: " + adminNotification.getAudience());
+                }
+            } else {
+                System.out.println("Invalid AL-year format: " + adminNotification.getAudience());
+            }
+        }
+        // Check if the audience is based on a specific user (e.g., User-13)
+        else if (adminNotification.getAudience().startsWith("User-")) {
+            String[] audienceParts = adminNotification.getAudience().split("-");
+            if (audienceParts.length > 1) {
+                try {
+                    Long userId = Long.valueOf(audienceParts[1]);
+                    users = List.of(userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found")));
+                } catch (NumberFormatException e) {
+                    // Handle invalid user ID format if necessary
+                    System.out.println("Invalid user ID format in audience: " + adminNotification.getAudience());
+                }
+            } else {
+                System.out.println("Invalid user ID format: " + adminNotification.getAudience());
+            }
+        }
+
+        // Send notification to each user
+        for (User user : users) {
+            String fcmToken = user.getFcmToken();
+            if (fcmToken != null) {
+                pushNotificationService.sendAdminNotification(adminNotification, fcmToken);
+            }
+        }
+    }
+}
+
 
     // Scheduled task for deadline approaching notification
     @Scheduled(cron = "0 0 10 * * *") // Run every day at 10:00 AM (Adjust as needed)

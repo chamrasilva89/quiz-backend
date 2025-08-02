@@ -187,7 +187,7 @@ public class UserController {
     public ResponseEntity<ApiResponse<?>> claimReward(@PathVariable Long userId, @PathVariable Long rewardId) {
         try {
             // Calling the service to claim the reward
-            RewardWinner rewardWinner = rewardService.claimReward(userId, rewardId);
+            RewardWinner rewardWinner = rewardService.claimRewardlist(userId, rewardId);
             return ResponseEntity.ok(new ApiResponse<>(Map.of("items", rewardWinner)));
         } catch (Exception e) {
             // Return an error response if something goes wrong

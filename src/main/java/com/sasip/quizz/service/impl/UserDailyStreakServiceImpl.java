@@ -111,7 +111,7 @@ public class UserDailyStreakServiceImpl implements UserDailyStreakService {
     }
 
     // Scheduled task to run every day at 2:03 AM to check if users missed their login
-@Scheduled(cron = "0 15 9 * * *") // Run at 02:03 AM every day
+@Scheduled(cron = "0 59 9 * * *") // Run at 02:03 AM every day
 @Transactional
 public void sendMissedLoginReminderNotifications() {
     LocalDateTime currentTime = LocalDateTime.now();

@@ -5,6 +5,7 @@ import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
 import com.sasip.quizz.model.Quiz;
 import com.sasip.quizz.model.User;
+import com.sasip.quizz.model.AdminNotification;
 import com.sasip.quizz.model.NotificationEntity;
 import com.sasip.quizz.repository.NotificationRepository;
 import com.sasip.quizz.service.PushNotificationService;
@@ -208,4 +209,61 @@ public class PushNotificationServiceImpl implements PushNotificationService {
             e.printStackTrace();
         }
     }
+
+    @Override
+public void sendAdminNotification(AdminNotification adminNotification, String fcmToken) {
+    // Prepare the notification with title and description from the admin notification
+    Notification notification = Notification.builder()
+            .setTitle(adminNotification.getTitle())
+            .setBody(adminNotification.getDescription())
+            .setImage(adminNotification.getImage()) // Optional: if admin notification includes an image
+            .build();
+
+    // Unique notification ID (can be adjusted based on requirements)
+    String notificationId = "admin-" + adminNotification.getId();
+
+    // Prepare the message to send via Firebase Cloud Messaging (FCM)
+    Message message = Message.builder()
+            .setToken(fcmToken)
+            .setNotification(notification)
+            .putData("title", adminNotification.getTitle())
+            .putData("body", adminNotification.getDescription())
+            .putData("text", adminNotification.getDescription()) // Optional text, you can add custom logic here
+            .putData("notificationId", notificationId)
+            .putData("smallIcon", adminNotification.getImage()) // Optional: You can provide an icon for the notification
+            .putData("largeIcon", adminNotification.getImage()) // Optional: Use the same or different image for large icon
+            .putData("imageUrl", adminNotification.getImage()) // Optional: If there's an image URL
+            .putData("navigationScreen", "Notification") // Example: You can add screen navigation to your app
+            .putData("navigationSubScreen", "NotificationDetails") // Example: Add sub-screen navigation
+            .putData("navigationId", adminNotification.getId().toString()) // Use notification ID for navigation
+            .build();
+
+    try {
+        // Send the message using Firebase
+        String response = FirebaseMessaging.getInstance().send(message);
+        System.out.println("Successfully sent admin notification: " + response);
+
+        // Create a record for this notification in the database
+        NotificationEntity record = NotificationEntity.builder()
+                .title(adminNotification.getTitle())
+                .description(adminNotification.getDescription())
+                .type("ADMIN_NOTIFICATION")
+                .status("SENT")
+                .generatedBy("Admin")
+                .sendOn(LocalDateTime.now())
+                .audience(adminNotification.getAudience()) // Audience could be specific users or "All Users"
+                .actions(adminNotification.getActions()) // You can define actions if needed (e.g., "View Details")
+                .image(adminNotification.getImage()) // Optional image URL
+                .extraField1(adminNotification.getExtraField1()) // Additional data, if needed
+                .extraField2(adminNotification.getExtraField2()) // More extra fields can be used as per the requirement
+                .build();
+
+        // Save the notification record in the database
+        notificationRepository.save(record);
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        System.out.println("Failed to send admin notification: " + e.getMessage());
+    }
+}
 }
