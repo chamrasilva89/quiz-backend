@@ -6,6 +6,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.sasip.quizz.model.UserQuizSubmission;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserQuizSubmissionRepository extends JpaRepository<UserQuizSubmission, Long> {
@@ -19,5 +20,9 @@ public interface UserQuizSubmissionRepository extends JpaRepository<UserQuizSubm
     @Query("SELECT COUNT(u) FROM UserQuizSubmission u JOIN Quiz q ON u.quizId = CAST(q.quizId AS string) WHERE u.userId = :userId AND q.quizType = 'SASIP'")
     Long countCompletedSasipQuizzes(@Param("userId") Long userId);
 
+   // CORRECTED: Explicit JPQL query to handle type casting for the IN clause.
+    //@Query("SELECT u FROM UserQuizSubmission u WHERE u.userId = :userId AND u.quizId IN :quizIds")
+    @Query("SELECT u FROM UserQuizSubmission u WHERE u.userId = :userId AND u.quizId IN :quizIds")
+  List<UserQuizSubmission> findByUserIdAndQuizIdIn(Long userId, List<Long> quizIds);
 
 }

@@ -11,8 +11,12 @@ import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class SasipQuizServiceImpl implements SasipQuizService {
@@ -38,49 +42,121 @@ public class SasipQuizServiceImpl implements SasipQuizService {
         return quizPage.map(SasipQuizSummary::new);
     }
 
-    @Override
-    public Page<SasipQuizListItem> listSasipQuizzesWithCompletion(Long userId, Pageable pageable, String alYear, QuizStatus status) {
-        Specification<Quiz> spec = Specification
-            .where((root, query, cb) -> cb.equal(root.get("quizType"), QuizType.SASIP));
+@Override
+public Page<SasipQuizListItem> listSasipQuizzesWithCompletion(Long userId, Pageable pageable, String alYear, QuizStatus status) {
+    // Log the input parameters
+    System.out.println("Listing quizzes for userId: " + userId);
+    System.out.println("Filters: alYear=" + alYear + ", quizStatus=" + status + ", pageable=" + pageable);
 
-        if (alYear != null && !alYear.isBlank()) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("alYear"), alYear));
-        }
+    // Create the Specification with no initial filter
+    Specification<Quiz> spec = Specification.where((root, query, cb) -> cb.equal(root.get("quizType"), QuizType.SASIP));
 
-        if (status != null) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("quizStatus"), status));
-        }
+    if (alYear != null && !alYear.isBlank()) {
+        spec = spec.and((root, query, cb) -> cb.equal(root.get("alYear"), alYear));
+    }
 
-        Page<Quiz> quizzes = quizRepository.findAll(spec, pageable);
+    if (status != null) {
+        spec = spec.and((root, query, cb) -> cb.equal(root.get("quizStatus"), status));
+    }
 
-        List<SasipQuizListItem> quizDTOs = quizzes.getContent().stream().map(quiz -> {
-            boolean completed = userQuizSubmissionRepository
-                .findByUserIdAndQuizId(userId, String.valueOf(quiz.getQuizId()))
-                .isPresent();
+    // Log the specification being used
+    System.out.println("Specification: " + spec);
+
+    // Fetch quizzes using the specification and pagination
+    Page<Quiz> quizzes = quizRepository.findAll(spec, pageable);
+    System.out.println("Fetched quizzes: " + quizzes.getContent().size() + " quizzes found");
+
+    // 1. Get all quiz IDs from the current page of results (Quiz IDs as Long)
+    List<Long> quizIdsOnPage = quizzes.getContent().stream()
+            .map(Quiz::getQuizId) // Assuming quizId is Long in the Quiz entity
+            .collect(Collectors.toList());
+    System.out.println("Quiz IDs on page: " + quizIdsOnPage);
+
+    // 2. Fetch all user submissions for these specific quizzes in a SINGLE database query.
+    Map<Long, UserQuizSubmission> submissionsMap = quizIdsOnPage.isEmpty()
+            ? Collections.emptyMap()
+            : userQuizSubmissionRepository
+                    .findByUserIdAndQuizIdIn(userId, quizIdsOnPage).stream()
+                    .collect(Collectors.toMap(submission -> Long.parseLong(submission.getQuizId()), submission -> submission));
+
+    // Log the submissions map
+    System.out.println("Fetched user quiz submissions: " + submissionsMap.size() + " submissions found");
+
+    // 3. Map each quiz to its DTO, using the submission data if it exists.
+    List<SasipQuizListItem> quizDTOs = quizzes.getContent().stream().map(quiz -> {
+        // Look up the submission from our map using the Long quizId.
+        UserQuizSubmission submission = submissionsMap.get(quiz.getQuizId());
+
+        // Log the processing of each quiz and submission
+        System.out.println("Processing quizId: " + quiz.getQuizId() + ", submission found: " + (submission != null));
+
+        if (submission != null) {
+            // CASE 1: A submission exists for this quiz.
+            // Log the submission data to ensure it is being mapped correctly
+            System.out.println("Mapping submission data for quizId: " + quiz.getQuizId() +
+                    ", endTime: " + submission.getEndTime() +
+                    ", totalScore: " + submission.getTotalScore() +
+                    ", correctCount: " + submission.getCorrectCount());
 
             return new SasipQuizListItem(
-                quiz.getQuizId(),
-                quiz.getQuizName(),
-                quiz.getIntro(),
-                quiz.getXp(),
-                quiz.getPassAccuracy(),
-                quiz.getTimeLimit(),
-                quiz.getAlYear(),
-                quiz.getAttemptsAllowed(),
-                quiz.getQuizStatus(),
-                quiz.getScheduledTime(),
-                quiz.getDeadline(),
-                completed,
-                quiz.getModuleList(),
-                quiz.getRewardIdList(),
-                quiz.getQuestionIds() != null ? quiz.getQuestionIds().size() : 0
+                    quiz.getQuizId(),
+                    quiz.getQuizName(),
+                    quiz.getIntro(),
+                    quiz.getXp(),
+                    quiz.getPassAccuracy(),
+                    quiz.getTimeLimit(),
+                    quiz.getAlYear(),
+                    quiz.getAttemptsAllowed(),
+                    quiz.getQuizStatus(),
+                    quiz.getScheduledTime(),
+                    quiz.getDeadline(),
+                    true, // completed
+                    quiz.getModuleList(),
+                    quiz.getRewardIdList(),
+                    quiz.getQuestionIds() != null ? quiz.getQuestionIds().size() : 0,
+                    submission.getEndTime(), // date (completion)
+                    (int) submission.getTotalScore(), // points (score)
+                    submission.getCorrectCount(), // correct answers
+                    quiz.getQuizType()
             );
-        }).toList();
+        } else {
+            // CASE 2: No submission exists for this quiz.
+            // Log the fact that there is no submission for this quiz
+            System.out.println("No submission found for quizId: " + quiz.getQuizId());
 
-        //logService.log("INFO", "SasipQuizServiceImpl", "List Quizzes with Completion", "Listed SASIP quizzes with completion status for userId: " + userId, String.valueOf(userId));
+            return new SasipQuizListItem(
+                    quiz.getQuizId(),
+                    quiz.getQuizName(),
+                    quiz.getIntro(),
+                    quiz.getXp(),
+                    quiz.getPassAccuracy(),
+                    quiz.getTimeLimit(),
+                    quiz.getAlYear(),
+                    quiz.getAttemptsAllowed(),
+                    quiz.getQuizStatus(),
+                    quiz.getScheduledTime(),
+                    quiz.getDeadline(),
+                    false, // NOT completed
+                    quiz.getModuleList(),
+                    quiz.getRewardIdList(),
+                    quiz.getQuestionIds() != null ? quiz.getQuestionIds().size() : 0,
+                    null, // no completion date
+                    0,    // no score
+                    0,    // no correct answers
+                    quiz.getQuizType()
+            );
+        }
+    }).collect(Collectors.toList());
 
-        return new PageImpl<>(quizDTOs, pageable, quizzes.getTotalElements());
-    }
+    // Log the final DTO size
+    System.out.println("Mapped quizzes to DTO: " + quizDTOs.size() + " items");
+
+    // Return the final page. The content list is now correctly populated.
+    return new PageImpl<>(quizDTOs, pageable, quizzes.getTotalElements());
+}
+
+
+
 
     @Override
     public SasipQuizStatsDTO getUserSasipStats(Long userId) {
@@ -109,27 +185,31 @@ public class SasipQuizServiceImpl implements SasipQuizService {
 
         Page<Quiz> quizzes = quizRepository.findAll(spec, Pageable.unpaged());
 
-        List<SasipQuizListItem> completedQuizzes = quizzes.getContent().stream()
-            .filter(quiz -> userQuizSubmissionRepository
-                .findByUserIdAndQuizId(userId, String.valueOf(quiz.getQuizId()))
-                .isPresent())
-            .map(quiz -> new SasipQuizListItem(
-                quiz.getQuizId(),
-                quiz.getQuizName(),
-                quiz.getIntro(),
-                quiz.getXp(),
-                quiz.getPassAccuracy(),
-                quiz.getTimeLimit(),
-                quiz.getAlYear(),
-                quiz.getAttemptsAllowed(),
-                quiz.getQuizStatus(),
-                quiz.getScheduledTime(),
-                quiz.getDeadline(),
-                true,
-                quiz.getModuleList(),
-                quiz.getRewardIdList(),
-                quiz.getQuestionIds() != null ? quiz.getQuestionIds().size() : 0
-            )).toList();
+    List<SasipQuizListItem> completedQuizzes = quizzes.getContent().stream()
+        .filter(quiz -> userQuizSubmissionRepository
+            .findByUserIdAndQuizId(userId, String.valueOf(quiz.getQuizId()))
+            .isPresent())
+        .map(quiz -> new SasipQuizListItem(
+            quiz.getQuizId(),
+            quiz.getQuizName(),
+            quiz.getIntro(),
+            quiz.getXp(),
+            quiz.getPassAccuracy(),
+            quiz.getTimeLimit(),
+            quiz.getAlYear(),
+            quiz.getAttemptsAllowed(),
+            quiz.getQuizStatus(),
+            quiz.getScheduledTime(),
+            quiz.getDeadline(),
+            true,
+            quiz.getModuleList(),
+            quiz.getRewardIdList(),
+            quiz.getQuestionIds() != null ? quiz.getQuestionIds().size() : 0,
+            null, // no completion date
+            0,    // no score
+            0 ,   // no correct answers
+            quiz.getQuizType()
+        )).toList();
 
         int start = (int) pageable.getOffset();
         int end = Math.min(start + pageable.getPageSize(), completedQuizzes.size());

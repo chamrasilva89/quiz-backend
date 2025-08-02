@@ -1,6 +1,8 @@
 package com.sasip.quizz.dto;
 
 import com.sasip.quizz.model.QuizStatus;
+import com.sasip.quizz.model.QuizType;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -28,4 +30,10 @@ public class SasipQuizListItem {
     private List<String> modules;
     private List<Long> rewardIds;
     private int totalQuestions;
+
+        // Additional fields to be added in the response
+    private LocalDateTime date; // completion date
+    private int points;         // total score (points)
+    private int correctCount;   // number of correct answers
+    private QuizType quizType;  // quiz type (SASIP, DYNAMIC, MYQUIZ)
 }
