@@ -14,6 +14,7 @@ public class NotificationController {
     @Autowired
     private NotificationService notificationService;
 
+
     @GetMapping("/{userId}")
     public ResponseEntity<ApiResponse<?>> getNotificationsForUser(
             @PathVariable Long userId,

@@ -3,10 +3,12 @@ package com.sasip.quizz.repository;
 import com.sasip.quizz.model.Staff;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.stereotype.Repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.util.Optional;
 
+@Repository
 public interface StaffRepository extends JpaRepository<Staff, Long>, JpaSpecificationExecutor<Staff> {
     Optional<Staff> findByUsername(String username);
     Optional<Staff> findByEmail(String email);

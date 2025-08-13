@@ -206,11 +206,15 @@ public class RewardServiceImpl implements RewardService {
 
         return rewardWinner;  // Return the reward winner object
     }
-
- @Override
+    
+@Override
 public RewardResponse getActiveRewardsForUser(Long userId) {
     // Fetch active rewards from DB
     List<Reward> activeRewards = rewardRepository.findActiveRewards(LocalDateTime.now());
+
+    // Sort rewards by validFrom in descending order
+    activeRewards.sort((reward1, reward2) -> reward2.getValidFrom().compareTo(reward1.getValidFrom()));
+
     List<RewardDetail> rewardDetails = new ArrayList<>();
 
     for (Reward reward : activeRewards) {
@@ -228,9 +232,11 @@ public RewardResponse getActiveRewardsForUser(Long userId) {
             rewardDetails.add(new RewardDetail(reward, currentPoints, reward.getPoints(), status)); // Send both current and required points
         }
     }
+
     // Return the collected rewards
     return new RewardResponse(rewardDetails);
 }
+
 
 @Override
 public boolean claimReward(Long userId, Long rewardId) {

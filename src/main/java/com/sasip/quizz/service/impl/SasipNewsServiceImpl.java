@@ -7,7 +7,9 @@ import com.sasip.quizz.repository.SasipNewsRepository;
 import com.sasip.quizz.service.SasipNewsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -48,23 +50,27 @@ public class SasipNewsServiceImpl implements SasipNewsService {
         sasipNewsRepository.delete(existingNews);
     }
 
-    @Override
-    public Page<NewsListResponse> getAllNews(Pageable pageable) {
-        // Use repository method to fetch paginated results
-        Page<SasipNews> newsPage = sasipNewsRepository.findAll(pageable);
+@Override
+public Page<NewsListResponse> getAllNews(Pageable pageable) {
+    // Apply sorting by publishDateTime in descending order
+    Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Order.desc("publishDateTime")));
 
-        // Convert SasipNews to NewsListResponse
-        return newsPage.map(news -> {
-            NewsListResponse response = new NewsListResponse();
-            response.setNewsId(news.getNewsId());
-            response.setTitle(news.getTitle());
-            response.setShortDescription(news.getShortDescription());
-            response.setImageUrl(news.getImageUrl());
-            response.setImageBase64(news.getImageBase64());  // Add imageBase64
-            response.setPublishDateTime(news.getPublishDateTime());
-            return response;
-        });
-    }
+    // Use repository method to fetch paginated results with sorting
+    Page<SasipNews> newsPage = sasipNewsRepository.findAll(sortedPageable);
+
+    // Convert SasipNews to NewsListResponse
+    return newsPage.map(news -> {
+        NewsListResponse response = new NewsListResponse();
+        response.setNewsId(news.getNewsId());
+        response.setTitle(news.getTitle());
+        response.setShortDescription(news.getShortDescription());
+        response.setImageUrl(news.getImageUrl());
+        response.setImageBase64(news.getImageBase64());  // Add imageBase64
+        response.setPublishDateTime(news.getPublishDateTime());
+        return response;
+    });
+}
+
 
     @Override
     public SasipNews getNewsById(Long newsId) {

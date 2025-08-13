@@ -29,4 +29,5 @@ public interface UserService {
      void requestRegistrationOtp(UserRegistrationRequest request);  // Request OTP for signup
     void confirmRegistrationOtp(String phone, String otp);  // Confirm OTP and complete registration
     public void storeFcmToken(Long userId, String fcmToken);
+     boolean isUsernameAvailable(String username);
 }

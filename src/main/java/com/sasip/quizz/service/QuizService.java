@@ -12,6 +12,7 @@ import com.sasip.quizz.dto.MyQuizRequest;
 import com.sasip.quizz.dto.QuizRequest;
 import com.sasip.quizz.dto.QuizResponse;
 import com.sasip.quizz.dto.SasipQuizResponse;
+import com.sasip.quizz.dto.ScoreboardResponseDTO;
 import com.sasip.quizz.dto.UpdateQuizRequest;
 import com.sasip.quizz.model.Quiz;
 
@@ -27,6 +28,7 @@ public interface QuizService {
     public ResponseEntity<ApiResponse<Object>> generateDynamicQuiz(DynamicQuizRequest request);
     public Quiz updateQuizHeaderDetails(Long quizId, UpdateQuizRequest request);
     public ResponseEntity<ApiResponse<Object>> generateMyQuiz(MyQuizRequest request);
+    ScoreboardResponseDTO getQuizScoreboard(Long quizId, int page, int size);
 }
 
 

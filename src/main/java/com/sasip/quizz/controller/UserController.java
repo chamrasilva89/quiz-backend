@@ -290,5 +290,18 @@ public ResponseEntity<?> confirmChangePassword(@RequestParam Long userId, @Reque
         }
     }
 
+    
+    @GetMapping("/check-username/{username}")
+    public ApiResponse<String> checkUsernameAvailability(@PathVariable String username) {
+        boolean isAvailable = userService.isUsernameAvailable(username);
+
+        if (isAvailable) {
+            // Return a successful response with a message that the username is available
+            return new ApiResponse<>("Username is available");
+        } else {
+            // Return an error response with a message that the username is already taken
+            return new ApiResponse<>("Username already taken", 400);  // Status 400 for bad request
+        }
+    }
 
 }

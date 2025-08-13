@@ -2,7 +2,6 @@ package com.sasip.quizz.repository;
 
 import com.sasip.quizz.model.NotificationStatus;
 import com.sasip.quizz.model.Quiz;
-import com.sasip.quizz.model.QuizStatus;
 import com.sasip.quizz.model.QuizType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -34,30 +33,13 @@ public interface QuizRepository
     List<Quiz> findByScheduledTimeBefore(LocalDateTime currentTime);
     List<Quiz> findByScheduledTimeBeforeAndNotificationStatus(LocalDateTime currentTime, NotificationStatus status);
     List<Quiz> findByDeadlineBeforeAndNotificationStatus(LocalDateTime deadline, NotificationStatus status);
-    
-    // Add this method to find quizzes by deadline before the current time and quiz status as ACTIVE
-    List<Quiz> findByDeadlineBeforeAndQuizStatus(LocalDateTime deadline, QuizStatus quizStatus);
 
-    // Method to find active quizzes for a given academic year
+     // Method to find active quizzes for a given academic year
     @Query("SELECT q FROM Quiz q WHERE q.alYear = :alYear " +
            "AND q.quizStatus = 'ACTIVE' " + // Correct attribute name is 'quizStatus', not 'status'
            "AND q.scheduledTime <= :currentDate " +
            "AND q.deadline >= :currentDate")
     List<Quiz> findActiveQuizzesForYear(@Param("alYear") String alYear, 
                                         @Param("currentDate") LocalDateTime currentDate);
-
-
-    @Query(value = "SELECT q, s FROM Quiz q JOIN UserQuizSubmission s ON CAST(q.quizId AS string) = s.quizId " +
-                   "WHERE s.userId = :userId " +
-                   "AND (:alYear IS NULL OR q.alYear = :alYear) " +
-                   "AND (:status IS NULL OR q.quizStatus = :status)",
-           countQuery = "SELECT count(q) FROM Quiz q JOIN UserQuizSubmission s ON CAST(q.quizId AS string) = s.quizId " +
-                        "WHERE s.userId = :userId " +
-                        "AND (:alYear IS NULL OR q.alYear = :alYear) " +
-                        "AND (:status IS NULL OR q.quizStatus = :status)")
-    Page<Object[]> findCompletedQuizzesForUser(@Param("userId") Long userId,
-                                               @Param("alYear") String alYear,
-                                               @Param("status") QuizStatus status,
-                                               Pageable pageable);
 
 }

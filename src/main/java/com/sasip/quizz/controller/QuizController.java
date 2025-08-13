@@ -3,13 +3,14 @@ package com.sasip.quizz.controller;
 import com.sasip.quizz.dto.ApiResponse;
 import com.sasip.quizz.dto.DynamicQuizRequest;
 import com.sasip.quizz.dto.MyQuizRequest;
-import com.sasip.quizz.dto.PublishQuizRequest;
 import com.sasip.quizz.dto.QuestionResultWithDetails;
 import com.sasip.quizz.dto.QuizRequest;
 import com.sasip.quizz.dto.QuizResponse;
 import com.sasip.quizz.dto.QuizSubmissionRequest;
 import com.sasip.quizz.dto.QuizSubmissionResult;
 import com.sasip.quizz.dto.SasipQuizResponse;
+import com.sasip.quizz.dto.ScoreboardResponseDTO;
+import com.sasip.quizz.dto.SummaryStatsDTO;
 import com.sasip.quizz.dto.UpdateQuizQuestionsRequest;
 import com.sasip.quizz.dto.UpdateQuizRequest;
 import com.sasip.quizz.exception.DuplicateSubmissionException;
@@ -17,7 +18,6 @@ import com.sasip.quizz.exception.NotEnoughQuestionsException;
 import com.sasip.quizz.exception.ResourceNotFoundException;
 import com.sasip.quizz.model.Quiz;
 import com.sasip.quizz.service.QuizService;
-import com.sasip.quizz.service.SasipQuizService;
 import com.sasip.quizz.service.UserQuizAnswerService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -49,8 +49,7 @@ public class QuizController {
     @Autowired
     private UserQuizAnswerService userQuizAnswerService;
 
-    @Autowired
-    private SasipQuizService sasipQuizService;
+
 
     @Operation(summary = "Create a new quiz", description = "Provide quiz details to create a new quiz")
     @PostMapping
@@ -293,4 +292,19 @@ public ResponseEntity<ApiResponse<Map<String,Object>>> startQuiz(
         }
     }
 
+    @GetMapping("/quiz-summary")
+    public ResponseEntity<ApiResponse<SummaryStatsDTO>> getQuizSummary(@RequestParam Long userId) {
+        SummaryStatsDTO summaryStats = userQuizAnswerService.getUserQuizSummary(userId);
+        return ResponseEntity.ok(new ApiResponse<>(summaryStats));
+    }
+
+    @GetMapping("/{quizId}/scoreboard")
+    public ResponseEntity<ScoreboardResponseDTO> getQuizScoreboard(
+            @PathVariable Long quizId,
+            @RequestParam int page,
+            @RequestParam int size) {
+        
+        ScoreboardResponseDTO response = quizService.getQuizScoreboard(quizId, page, size);
+        return ResponseEntity.ok(response);
+    }
 }

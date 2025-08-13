@@ -4,6 +4,5 @@ public enum RewardWinStatus {
      NOTELIGIBLE,
     ELIGIBLE,
     CLAIMED,
-    ISSUED,
     LOCKED 
 }

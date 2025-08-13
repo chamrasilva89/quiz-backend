@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.sasip.quizz.model.Question;
 import com.sasip.quizz.model.Quiz;
+import com.sasip.quizz.model.Reward; // Import Reward class for rewardDetails
 
 public class QuizResponse {
     private Long quizId;
@@ -18,12 +19,13 @@ public class QuizResponse {
     private int attemptsAllowed;
     private LocalDateTime scheduledTime;
     private LocalDateTime deadline;
-    private List<Long> rewardIds;
+    private List<Reward> rewardDetails; // Updated from List<Object> to List<Reward> for reward details
     private List<Question> questions;
     private String quizStatus;
+    private Long usersStartedCount; // New field to hold the count
 
-    // Constructor to map Quiz and Questions to QuizResponse
-    public QuizResponse(Quiz quiz, List<Question> questions) {
+    // Constructor to map Quiz, Questions, and rewardDetails to QuizResponse
+    public QuizResponse(Quiz quiz, List<Question> questions, Long usersStartedCount, List<Reward> rewardDetails) {
         this.quizId = quiz.getQuizId();
         this.quizName = quiz.getQuizName();
         this.intro = quiz.getIntro();
@@ -39,14 +41,21 @@ public class QuizResponse {
         this.attemptsAllowed = quiz.getAttemptsAllowed();
         this.scheduledTime = quiz.getScheduledTime();
         this.deadline = quiz.getDeadline();
-        this.rewardIds = quiz.getRewardIdList();
+        this.rewardDetails = rewardDetails; // Set the rewardDetails list
         this.questions = questions;
         this.quizStatus = quiz.getQuizStatus().name();
+        this.usersStartedCount = usersStartedCount; // Set the usersStartedCount
     }
 
-    
-
     // Getters and Setters
+    public Long getUsersStartedCount() {
+        return usersStartedCount;
+    }
+
+    public void setUsersStartedCount(Long usersStartedCount) {
+        this.usersStartedCount = usersStartedCount;
+    }
+
     public Long getQuizId() {
         return quizId;
     }
@@ -135,12 +144,12 @@ public class QuizResponse {
         this.deadline = deadline;
     }
 
-    public List<Long> getRewardIds() {
-        return rewardIds;
+    public List<Reward> getRewardDetails() {
+        return rewardDetails;
     }
 
-    public void setRewardIds(List<Long> rewardIds) {
-        this.rewardIds = rewardIds;
+    public void setRewardDetails(List<Reward> rewardDetails) {
+        this.rewardDetails = rewardDetails;
     }
 
     public List<Question> getQuestions() {

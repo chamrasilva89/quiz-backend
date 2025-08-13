@@ -4,6 +4,8 @@ import com.sasip.quizz.model.NotificationEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,4 +29,16 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
 
     Page<NotificationEntity> findByTypeAndGeneratedByAndAudienceInAndSendOnBeforeOrderBySendOnDesc(String type,
             String generatedBy, List<String> audiences, LocalDateTime currentDateTime, Pageable pageable);
-}
+
+  // New method to fetch notifications by audience values ("All Students" or "AL Year 2025")
+    List<NotificationEntity> findByAudienceIn(List<String> audiences);
+    
+    @Query(value = "SELECT n FROM NotificationEntity n WHERE n.audience IN :audiences AND n.sendOn < :currentDateTime",
+           countQuery = "SELECT count(n.id) FROM NotificationEntity n WHERE n.audience IN :audiences AND n.sendOn < :currentDateTime")
+    Page<NotificationEntity> findNotificationsByAudienceAndTime(
+        @Param("audiences") List<String> audiences,
+        @Param("currentDateTime") LocalDateTime currentDateTime,
+        Pageable pageable
+    );
+
+ }

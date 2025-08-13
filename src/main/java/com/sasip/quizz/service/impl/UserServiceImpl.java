@@ -10,6 +10,7 @@ import com.sasip.quizz.service.LogService;
 import com.sasip.quizz.service.OtpService;
 import com.sasip.quizz.security.JwtUtil;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -373,6 +374,13 @@ public void confirmRegistrationOtp(String phone, String otp) {
 
         user.setFcmToken(fcmToken); // Update the FCM token field
         userRepository.save(user);   // Save the user with the updated token
+    }
+
+    @Override
+    public boolean isUsernameAvailable(String username) {
+        // Check if the username already exists in the database
+        Optional<User> existingUser = userRepository.findByUsername(username);
+        return !existingUser.isPresent(); // If the user is not present, the username is available
     }
 
 }

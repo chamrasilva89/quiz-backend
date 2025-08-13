@@ -49,13 +49,22 @@ public class RewardWinnerServiceImpl implements RewardWinnerService {
         });
     }
 
-    @Override
-    public void updateGiftStatus(Long rewardWinnerId, String newStatus) {
-        RewardWinner rewardWinner = rewardWinnerRepository.findById(rewardWinnerId)
-                .orElseThrow(() -> new IllegalArgumentException("RewardWinner not found with ID: " + rewardWinnerId));
-        rewardWinner.setGiftStatus(newStatus);
-        rewardWinner.setUpdatedAt(java.time.LocalDateTime.now());
-        rewardWinnerRepository.save(rewardWinner);
-        
-    }
+@Override
+public void updateGiftStatus(Long rewardWinnerId, String newStatus) {
+    // Find the RewardWinner by ID
+    RewardWinner rewardWinner = rewardWinnerRepository.findById(rewardWinnerId)
+            .orElseThrow(() -> new IllegalArgumentException("RewardWinner not found with ID: " + rewardWinnerId));
+
+    // Update the gift status
+    rewardWinner.setGiftStatus(newStatus);
+
+    // Set the RewardWinner status to 'SENT'
+    rewardWinner.setStatus("COMPLETED");
+
+    // Update the timestamp
+    rewardWinner.setUpdatedAt(java.time.LocalDateTime.now());
+
+    // Save the updated RewardWinner
+    rewardWinnerRepository.save(rewardWinner);
+}
 }

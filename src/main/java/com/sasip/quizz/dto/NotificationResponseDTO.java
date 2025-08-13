@@ -14,6 +14,14 @@ public class NotificationResponseDTO {
     private String actions;
     private String image;
 
+    // Add fields for navigation details
+    private String navigationScreen;
+    private String navigationSubScreen;
+    private String navigationId;
+
+    // Add fields for quiz-specific details
+    private String quizId; // Only for quiz notifications
+
     // Getters and setters
     public Long getId() {
         return id;
@@ -93,5 +101,37 @@ public class NotificationResponseDTO {
 
     public void setImage(String image) {
         this.image = image;
+    }
+
+    public String getNavigationScreen() {
+        return navigationScreen;
+    }
+
+    public void setNavigationScreen(String navigationScreen) {
+        this.navigationScreen = navigationScreen;
+    }
+
+    public String getNavigationSubScreen() {
+        return navigationSubScreen;
+    }
+
+    public void setNavigationSubScreen(String navigationSubScreen) {
+        this.navigationSubScreen = navigationSubScreen;
+    }
+
+    public String getNavigationId() {
+        return navigationId;
+    }
+
+    public void setNavigationId(String navigationId) {
+        this.navigationId = navigationId;
+    }
+
+    public String getQuizId() {
+        return quizId;
+    }
+
+    public void setQuizId(String quizId) {
+        this.quizId = quizId;
     }
 }

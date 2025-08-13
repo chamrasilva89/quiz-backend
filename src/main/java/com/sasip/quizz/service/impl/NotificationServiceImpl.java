@@ -21,48 +21,70 @@ public class NotificationServiceImpl implements NotificationService {
     @Autowired
     private NotificationRepository notificationRepository;
 
-    @Override
-    public PaginatedNotificationsResponseDTO getNotificationsForUser(Long userId, int page, int size) {
-        // Current time to filter notifications
-        LocalDateTime currentDateTime = LocalDateTime.now();
+@Override
+public PaginatedNotificationsResponseDTO getNotificationsForUser(Long userId, int page, int size) {
+    // Current time to filter notifications
+    LocalDateTime currentDateTime = LocalDateTime.now();
 
-        // Define audience values - specific user and all users
-        List<String> audiences = List.of("User-" + userId, "All Users");
+    // Define audience values - specific user and all users
+    List<String> audiences = List.of("User-" + userId, "All Users");
 
-        // Pagination setup
-        Pageable pageable = PageRequest.of(page, size);
+    // Pagination setup
+    Pageable pageable = PageRequest.of(page, size);
 
-        // Fetch notifications relevant to user and all users, that are past or current
-        var notificationPage = notificationRepository.findByAudienceInAndSendOnBeforeOrderBySendOnDesc(
-                audiences, currentDateTime, pageable);
+    // Fetch notifications relevant to user and all users, that are past or current
+    var notificationPage = notificationRepository.findByAudienceInAndSendOnBeforeOrderBySendOnDesc(
+            audiences, currentDateTime, pageable);
 
-        // Map to the DTO response
-        List<NotificationResponseDTO> notifications = notificationPage.getContent().stream()
-                .map(notification -> {
-                    NotificationResponseDTO dto = new NotificationResponseDTO();
-                    dto.setId(notification.getId());
-                    dto.setTitle(notification.getTitle());
-                    dto.setDescription(notification.getDescription());
-                    dto.setType(notification.getType());
-                    dto.setStatus(notification.getStatus());
-                    dto.setGeneratedBy(notification.getGeneratedBy());
-                    dto.setSendOn(notification.getSendOn());
-                    dto.setAudience(notification.getAudience());
-                    dto.setActions(notification.getActions());
-                    dto.setImage(notification.getImage());
-                    return dto;
-                })
-                .collect(Collectors.toList());
+    // Map to the DTO response
+    List<NotificationResponseDTO> notifications = notificationPage.getContent().stream()
+            .map(notification -> {
+                NotificationResponseDTO dto = new NotificationResponseDTO();
+                dto.setId(notification.getId());
+                dto.setTitle(notification.getTitle());
+                dto.setDescription(notification.getDescription());
+                dto.setType(notification.getType());
+                dto.setStatus(notification.getStatus());
+                dto.setGeneratedBy(notification.getGeneratedBy());
+                dto.setSendOn(notification.getSendOn());
+                dto.setAudience(notification.getAudience());
+                dto.setActions(notification.getActions());
+                dto.setImage(notification.getImage());
 
-        // Return paginated response
-        PaginatedNotificationsResponseDTO response = new PaginatedNotificationsResponseDTO();
-        response.setItems(notifications);
-        response.setCurrentPage(notificationPage.getNumber());
-        response.setTotalItems(notificationPage.getTotalElements());
-        response.setTotalPages(notificationPage.getTotalPages());
+                // Set hardcoded navigation details
+                dto.setNavigationScreen("Quiz");
+                dto.setNavigationSubScreen("QuizDetails");
+                
+                // Set navigation ID as the notification ID
+                dto.setNavigationId(String.valueOf(notification.getId()));
 
-        return response;
-    }
+                // Handle quiz-related details based on notification type
+                if (notification.getType() != null) {
+                    if (notification.getType().equalsIgnoreCase("QUIZ_START") || notification.getType().equalsIgnoreCase("QUIZ_DEADLINE")) {
+                        // Extract quiz ID from extraField1 (assuming format "Quiz ID: <id>")
+                        String extraField1 = notification.getExtraField1();
+                        if (extraField1 != null && extraField1.contains("Quiz ID:")) {
+                            String quizId = extraField1.split(":")[1].trim();  // Extract the ID after "Quiz ID:"
+                            dto.setQuizId(quizId); // Set the quiz ID in the DTO
+                        }
+                    }
+                }
+
+                return dto;
+            })
+            .collect(Collectors.toList());
+
+    // Return paginated response
+    PaginatedNotificationsResponseDTO response = new PaginatedNotificationsResponseDTO();
+    response.setItems(notifications);
+    response.setCurrentPage(notificationPage.getNumber());
+    response.setTotalItems(notificationPage.getTotalElements());
+    response.setTotalPages(notificationPage.getTotalPages());
+
+    return response;
+}
+
+
 
     @Override
     public boolean updateNotificationStatus(Long notificationId, String status) {

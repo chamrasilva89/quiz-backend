@@ -3,6 +3,7 @@ package com.sasip.quizz.service.impl;
 import com.sasip.quizz.dto.QuestionResultWithDetails;
 import com.sasip.quizz.dto.QuizSubmissionRequest;
 import com.sasip.quizz.dto.QuizSubmissionResult;
+import com.sasip.quizz.dto.SummaryStatsDTO;
 import com.sasip.quizz.exception.DuplicateSubmissionException;
 import com.sasip.quizz.exception.ResourceNotFoundException;
 import com.sasip.quizz.model.Leaderboard;
@@ -46,7 +47,9 @@ public class UserQuizAnswerServiceImpl implements UserQuizAnswerService {
     private QuizRepository quizRepository;
     private static final int MAX_TIME_SECONDS = 600;
     private static final double SPEED_FACTOR = 0.3;
-
+    @Autowired
+    private UserQuizSubmissionRepository userQuizSubmissionRepository;
+    
     @Override
     public QuizSubmissionResult submitQuizAnswers(QuizSubmissionRequest request) {
         // 1) Convert userId once
@@ -383,5 +386,35 @@ public Page<QuestionResultWithDetails> getSubmissionWithQuestionDetails(String u
     return new PageImpl<>(paginated, pageable, allResults.size());
 }
 
+@Override
+public SummaryStatsDTO getUserQuizSummary(Long userId) {
+    // Get all completed quiz submissions for the user
+    List<UserQuizSubmission> submissions = userQuizSubmissionRepository.findByUserId(userId);
+
+    // Get the number of completed quizzes
+    long completedQuizzesCount = submissions.stream()
+            .map(UserQuizSubmission::getQuizId)
+            .distinct()
+            .count();
+
+    // Calculate the total number of questions completed
+    int totalQuestions = submissions.stream()
+            .mapToInt(UserQuizSubmission::getTotalQuestions)
+            .sum();
+
+    // Calculate total points from completed quizzes
+    double totalPoints = submissions.stream()
+            .mapToDouble(UserQuizSubmission::getTotalScore)
+            .sum();
+
+    // Create DTO to return the summary stats
+    SummaryStatsDTO summaryStatsDTO = new SummaryStatsDTO(
+            completedQuizzesCount,
+            totalQuestions,
+            totalPoints
+    );
+
+    return summaryStatsDTO;
+}
 
 }

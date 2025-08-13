@@ -9,6 +9,8 @@ import com.sasip.quizz.model.AdminNotification;
 import com.sasip.quizz.model.NotificationEntity;
 import com.sasip.quizz.repository.NotificationRepository;
 import com.sasip.quizz.service.PushNotificationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 
@@ -16,7 +18,7 @@ import java.time.LocalDateTime;
 
 @Service
 public class PushNotificationServiceImpl implements PushNotificationService {
-
+ private static final Logger logger = LoggerFactory.getLogger(PushNotificationServiceImpl.class);
     private final NotificationRepository notificationRepository;
 
     public PushNotificationServiceImpl(NotificationRepository notificationRepository) {
@@ -25,96 +27,121 @@ public class PushNotificationServiceImpl implements PushNotificationService {
 
     @Override
     public void sendQuizStartNotification(Quiz quiz, String fcmToken) {
-        Notification notification = Notification.builder()
-            .setTitle("Quiz Available")
-            .setBody("The quiz '" + quiz.getQuizName() + "' is now available to start!")
-            .setImage("https://my.alfred.edu/zoom/_images/foster-lake.jpg")
-            .build();
+        logger.info("Attempting to send quiz start notification for Quiz ID: {} to FCM token: {}", quiz.getQuizId(), fcmToken);
 
-        String notificationId = "1234";
+        Notification notification = Notification.builder()
+                .setTitle("Quiz Available")
+                .setBody("The quiz '" + quiz.getQuizName() + "' is now available to start!")
+                .setImage("https://my.alfred.edu/zoom/_images/foster-lake.jpg")
+                .build();
+
+        // Dynamically create the notificationId
+        String notificationId = "quiz-start-" + quiz.getQuizId();
 
         Message message = Message.builder()
-            .setToken(fcmToken)
-            .setNotification(notification)
-            .putData("title", "Quiz Time!")
-            .putData("body", "Your daily quiz is ready.")
-            .putData("text", "This is a long description for the quiz.")
-            .putData("notificationId", notificationId)
-            .putData("smallIcon", "https://my.alfred.edu/zoom/_images/foster-lake.jpg")
-            .putData("largeIcon", "https://my.alfred.edu/zoom/_images/foster-lake.jpg")
-            .putData("imageUrl", "https://my.alfred.edu/zoom/_images/foster-lake.jpg")
-            .putData("navigationScreen", "Quiz")
-            .putData("navigationSubScreen", "QuizDetails")
-            .putData("navigationId", "1")
-            .build();
+                .setToken(fcmToken)
+                .setNotification(notification)
+                .putData("title", "Quiz Time!")
+                .putData("body", "Your daily quiz is ready.")
+                .putData("text", "This is a long description for the quiz.")
+                .putData("notificationId", notificationId)
+                .putData("smallIcon", "https://my.alfred.edu/zoom/_images/foster-lake.jpg")
+                .putData("largeIcon", "https://my.alfred.edu/zoom/_images/foster-lake.jpg")
+                .putData("imageUrl", "https://my.alfred.edu/zoom/_images/foster-lake.jpg")
+                .putData("navigationScreen", "Quiz")
+                .putData("navigationSubScreen", "QuizDetails")
+                .putData("navigationId", String.valueOf(quiz.getQuizId()))  // Use quiz ID for navigation
+                .build();
 
         try {
             String response = FirebaseMessaging.getInstance().send(message);
-            System.out.println("Successfully sent quiz start notification: " + response);
+            logger.info("✅ Successfully sent quiz start notification. Response: {}", response);
 
+            // Save notification record to the database
             NotificationEntity record = NotificationEntity.builder()
-                .title("Quiz Time!")
-                .description("This is a long description for the quiz.")
-                .type("QUIZ_START")
-                .status("SENT")
-                .generatedBy("System")
-                .sendOn(LocalDateTime.now())
-                .audience("AL Year " + quiz.getAlYear())
-                .actions("View App")
-                .image("https://my.alfred.edu/zoom/_images/foster-lake.jpg")
-                .extraField1("Quiz ID: " + quiz.getQuizId())
-                .extraField2("Scheduled Time: " + quiz.getScheduledTime())
-                .build();
+                    .title("Quiz Time!")
+                    .description("This is a long description for the quiz.")
+                    .type("QUIZ_START")
+                    .status("SENT")
+                    .generatedBy("System")
+                    .sendOn(LocalDateTime.now())
+                    .audience("AL Year " + quiz.getAlYear())
+                    .actions("View App")
+                    .image("https://my.alfred.edu/zoom/_images/foster-lake.jpg")
+                    .extraField1("Quiz ID: " + quiz.getQuizId())
+                    .extraField2("Scheduled Time: " + quiz.getScheduledTime())
+                    .extraField3("Screen: Quiz, Sub Screen: QuizDetails, Value: " + quiz.getQuizId() + ", Type: quiz") // Add detailed data
+                    .build();
 
             notificationRepository.save(record);
+            logger.info("✅ Notification record saved to the database for Quiz ID: {}", quiz.getQuizId());
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("❌ Failed to send quiz start notification for Quiz ID: {}. Error: {}", quiz.getQuizId(), e.getMessage(), e);
+
+            // Optionally, save a failed record to the database
+            NotificationEntity record = NotificationEntity.builder()
+                    .title("Quiz Time!")
+                    .description("This is a long description for the quiz.")
+                    .type("QUIZ_START")
+                    .status("FAILED")
+                    .generatedBy("System")
+                    .sendOn(LocalDateTime.now())
+                    .audience("AL Year " + quiz.getAlYear())
+                    .actions("View App")
+                    .image("https://my.alfred.edu/zoom/_images/foster-lake.jpg")
+                    .extraField1("Quiz ID: " + quiz.getQuizId())
+                    .extraField2("Scheduled Time: " + quiz.getScheduledTime())
+                    .build();
+            notificationRepository.save(record);
         }
     }
+
 
     @Override
     public void sendDeadlineApproachingNotification(Quiz quiz, String fcmToken) {
         Notification notification = Notification.builder()
-            .setTitle("Deadline Approaching")
-            .setBody("The deadline for the quiz '" + quiz.getQuizName() + "' is approaching!")
-            .setImage("https://my.alfred.edu/zoom/_images/foster-lake.jpg")
-            .build();
+                .setTitle("Deadline Approaching")
+                .setBody("The deadline for the quiz '" + quiz.getQuizName() + "' is approaching!")
+                .setImage("https://my.alfred.edu/zoom/_images/foster-lake.jpg")
+                .build();
 
-        String notificationId = "5678";
+        // Dynamically create the notificationId
+        String notificationId = "quiz-deadline-" + quiz.getQuizId();
 
         Message message = Message.builder()
-            .setToken(fcmToken)
-            .setNotification(notification)
-            .putData("title", "Quiz Deadline Approaching")
-            .putData("body", "Your quiz deadline is near.")
-            .putData("text", "Please complete the quiz before the deadline!")
-            .putData("notificationId", notificationId)
-            .putData("smallIcon", "https://my.alfred.edu/zoom/_images/foster-lake.jpg")
-            .putData("largeIcon", "https://my.alfred.edu/zoom/_images/foster-lake.jpg")
-            .putData("imageUrl", "https://my.alfred.edu/zoom/_images/foster-lake.jpg")
-            .putData("navigationScreen", "Quiz")
-            .putData("navigationSubScreen", "QuizDetails")
-            .putData("navigationId", "1")
-            .build();
+                .setToken(fcmToken)
+                .setNotification(notification)
+                .putData("title", "Quiz Deadline Approaching")
+                .putData("body", "Your quiz deadline is near.")
+                .putData("text", "Please complete the quiz before the deadline!")
+                .putData("notificationId", notificationId)
+                .putData("smallIcon", "https://my.alfred.edu/zoom/_images/foster-lake.jpg")
+                .putData("largeIcon", "https://my.alfred.edu/zoom/_images/foster-lake.jpg")
+                .putData("imageUrl", "https://my.alfred.edu/zoom/_images/foster-lake.jpg")
+                .putData("navigationScreen", "Quiz")
+                .putData("navigationSubScreen", "QuizDetails")
+                .putData("navigationId", String.valueOf(quiz.getQuizId()))  // Use quiz ID for navigation
+                .build();
 
         try {
             String response = FirebaseMessaging.getInstance().send(message);
-            System.out.println("Successfully sent deadline approaching notification: " + response);
+            logger.info("Successfully sent deadline approaching notification: " + response);
 
             NotificationEntity record = NotificationEntity.builder()
-                .title("Quiz Deadline Approaching")
-                .description("Please complete the quiz before the deadline!")
-                .type("QUIZ_DEADLINE")
-                .status("SENT")
-                .generatedBy("System")
-                .sendOn(LocalDateTime.now())
-                .audience("AL Year " + quiz.getAlYear())
-                .actions("View App")
-                .image("https://my.alfred.edu/zoom/_images/foster-lake.jpg")
-                .extraField1("Quiz ID: " + quiz.getQuizId())
-                .extraField2("Deadline: " + quiz.getDeadline())
-                .build();
+                    .title("Quiz Deadline Approaching")
+                    .description("Please complete the quiz before the deadline!")
+                    .type("QUIZ_DEADLINE")
+                    .status("SENT")
+                    .generatedBy("System")
+                    .sendOn(LocalDateTime.now())
+                    .audience("AL Year " + quiz.getAlYear())
+                    .actions("View App")
+                    .image("https://my.alfred.edu/zoom/_images/foster-lake.jpg")
+                    .extraField1("Quiz ID: " + quiz.getQuizId())
+                    .extraField2("Deadline: " + quiz.getDeadline())
+                    .extraField3("Screen: Quiz, Sub Screen: QuizDetails, Value: " + quiz.getQuizId() + ", Type: quiz") // Add detailed data
+                    .build();
 
             notificationRepository.save(record);
 
@@ -126,45 +153,47 @@ public class PushNotificationServiceImpl implements PushNotificationService {
     @Override
     public void sendReminderNotification(Quiz quiz, String fcmToken) {
         Notification notification = Notification.builder()
-            .setTitle("Reminder")
-            .setBody("Reminder: The quiz '" + quiz.getQuizName() + "' is still open!")
-            .setImage("https://my.alfred.edu/zoom/_images/foster-lake.jpg")
-            .build();
+                .setTitle("Reminder")
+                .setBody("Reminder: The quiz '" + quiz.getQuizName() + "' is still open!")
+                .setImage("https://my.alfred.edu/zoom/_images/foster-lake.jpg")
+                .build();
 
-        String notificationId = "91011";
+        // Dynamically create the notificationId
+        String notificationId = "quiz-reminder-" + quiz.getQuizId();
 
         Message message = Message.builder()
-            .setToken(fcmToken)
-            .setNotification(notification)
-            .putData("title", "Reminder for Quiz")
-            .putData("body", "Reminder: Complete your quiz now!")
-            .putData("text", "This is your reminder to finish the quiz!")
-            .putData("notificationId", notificationId)
-            .putData("smallIcon", "https://my.alfred.edu/zoom/_images/foster-lake.jpg")
-            .putData("largeIcon", "https://my.alfred.edu/zoom/_images/foster-lake.jpg")
-            .putData("imageUrl", "https://my.alfred.edu/zoom/_images/foster-lake.jpg")
-            .putData("navigationScreen", "Quiz")
-            .putData("navigationSubScreen", "QuizDetails")
-            .putData("navigationId", "1")
-            .build();
+                .setToken(fcmToken)
+                .setNotification(notification)
+                .putData("title", "Reminder for Quiz")
+                .putData("body", "Reminder: Complete your quiz now!")
+                .putData("text", "This is your reminder to finish the quiz!")
+                .putData("notificationId", notificationId)
+                .putData("smallIcon", "https://my.alfred.edu/zoom/_images/foster-lake.jpg")
+                .putData("largeIcon", "https://my.alfred.edu/zoom/_images/foster-lake.jpg")
+                .putData("imageUrl", "https://my.alfred.edu/zoom/_images/foster-lake.jpg")
+                .putData("navigationScreen", "Quiz")
+                .putData("navigationSubScreen", "QuizDetails")
+                .putData("navigationId", String.valueOf(quiz.getQuizId()))  // Use quiz ID for navigation
+                .build();
 
         try {
             String response = FirebaseMessaging.getInstance().send(message);
-            System.out.println("Successfully sent reminder notification: " + response);
+            logger.info("Successfully sent reminder notification: " + response);
 
             NotificationEntity record = NotificationEntity.builder()
-                .title("Reminder for Quiz")
-                .description("This is your reminder to finish the quiz!")
-                .type("QUIZ_REMINDER")
-                .status("SENT")
-                .generatedBy("System")
-                .sendOn(LocalDateTime.now())
-                .audience("AL Year " + quiz.getAlYear())
-                .actions("View App")
-                .image("https://my.alfred.edu/zoom/_images/foster-lake.jpg")
-                .extraField1("Quiz ID: " + quiz.getQuizId())
-                .extraField2("Scheduled: " + quiz.getScheduledTime())
-                .build();
+                    .title("Reminder for Quiz")
+                    .description("This is your reminder to finish the quiz!")
+                    .type("QUIZ_REMINDER")
+                    .status("SENT")
+                    .generatedBy("System")
+                    .sendOn(LocalDateTime.now())
+                    .audience("AL Year " + quiz.getAlYear())
+                    .actions("View App")
+                    .image("https://my.alfred.edu/zoom/_images/foster-lake.jpg")
+                    .extraField1("Quiz ID: " + quiz.getQuizId())
+                    .extraField2("Scheduled: " + quiz.getScheduledTime())
+                    .extraField3("Screen: Quiz, Sub Screen: QuizDetails, Value: " + quiz.getQuizId() + ", Type: quiz") // Add detailed data
+                    .build();
 
             notificationRepository.save(record);
 
@@ -174,25 +203,26 @@ public class PushNotificationServiceImpl implements PushNotificationService {
     }
 
         // New method for sending missed login reminder notification
-    @Override
-    public void sendMissedLoginReminderNotification(User user, String fcmToken) {
-        // Prepare the notification
-        Notification notification = Notification.builder()
+ @Override
+public void sendMissedLoginReminderNotification(User user, String fcmToken) {
+    // Prepare the notification
+    Notification notification = Notification.builder()
             .setTitle("Missed Daily Streak")
             .setBody("You missed a day of logging in!")
             .setImage("https://my.alfred.edu/zoom/_images/foster-lake.jpg") // Optional Image
             .build();
 
-        // Prepare the data payload
-        String notificationId = "9999"; // Placeholder notification ID
+    // Generate a unique notification ID using user ID
+    String notificationId = "missed-login-" + user.getUserId(); // Using user ID for uniqueness
 
-        Message message = Message.builder()
+    // Prepare the message to send via Firebase Cloud Messaging (FCM)
+    Message message = Message.builder()
             .setToken(fcmToken)
             .setNotification(notification)
             .putData("title", "Missed Login Reminder")
             .putData("body", "You missed a day of logging in!")
             .putData("text", "Please log in today to maintain your streak!")
-            .putData("notificationId", notificationId)
+            .putData("notificationId", notificationId)  // Use dynamic notificationId
             .putData("smallIcon", "https://my.alfred.edu/zoom/_images/foster-lake.jpg") // Optional Small Icon
             .putData("largeIcon", "https://my.alfred.edu/zoom/_images/foster-lake.jpg") // Optional Large Icon
             .putData("imageUrl", "https://my.alfred.edu/zoom/_images/foster-lake.jpg") // Optional Image URL
@@ -201,14 +231,34 @@ public class PushNotificationServiceImpl implements PushNotificationService {
             .putData("navigationId", user.getUserId().toString()) // Navigation ID (User ID)
             .build();
 
-        try {
-            // Send the message using Firebase
-            String response = FirebaseMessaging.getInstance().send(message);
-            System.out.println("Successfully sent missed login reminder notification: " + response);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    try {
+        // Send the message using Firebase
+        String response = FirebaseMessaging.getInstance().send(message);
+        System.out.println("Successfully sent missed login reminder notification: " + response);
+
+        // Save the notification to the database
+        NotificationEntity record = NotificationEntity.builder()
+                .title("Missed Daily Streak")
+                .description("You missed a day of logging in!")
+                .type("MISSED_LOGIN_REMINDER")
+                .status("SENT")
+                .generatedBy("System")
+                .sendOn(LocalDateTime.now())
+                .audience("User-" + user.getUserId())
+                .actions("View App")
+                .image("https://my.alfred.edu/zoom/_images/foster-lake.jpg")
+                .extraField1("User ID: " + user.getUserId())
+                .extraField2("Streak: Missed")
+                .extraField3("Screen: App, Sub Screen: UserDetails, Value: " + user.getUserId() + ", Type: missed-login") // Detailed info
+                .build();
+
+        notificationRepository.save(record);
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        System.out.println("Failed to send missed login reminder notification: " + e.getMessage());
     }
+}
 
     @Override
 public void sendAdminNotification(AdminNotification adminNotification, String fcmToken) {
@@ -266,4 +316,59 @@ public void sendAdminNotification(AdminNotification adminNotification, String fc
         System.out.println("Failed to send admin notification: " + e.getMessage());
     }
 }
+
+@Override
+public void sendQuizWinnerNotification(User user, Quiz quiz, String fcmToken) {
+    // Prepare the notification
+    Notification notification = Notification.builder()
+            .setTitle("Congratulations! You've Won a Quiz Reward!")
+            .setBody("You have been selected as a winner for the quiz: " + quiz.getQuizName())
+            .setImage("https://my.alfred.edu/zoom/_images/foster-lake.jpg") // Optional image
+            .build();
+
+    String notificationId = "quiz-winner-" + quiz.getQuizId();  // Unique notification ID
+
+    // Prepare the message to send via Firebase Cloud Messaging (FCM)
+    Message message = Message.builder()
+            .setToken(fcmToken)
+            .setNotification(notification)
+            .putData("title", "Quiz Winner Notification")
+            .putData("body", "You have won a reward for completing the quiz: " + quiz.getQuizName())
+            .putData("notificationId", notificationId)
+            .putData("smallIcon", "https://my.alfred.edu/zoom/_images/foster-lake.jpg") // Optional small icon
+            .putData("largeIcon", "https://my.alfred.edu/zoom/_images/foster-lake.jpg") // Optional large icon
+            .putData("imageUrl", "https://my.alfred.edu/zoom/_images/foster-lake.jpg") // Optional image URL
+            .putData("navigationScreen", "Quiz")  // Navigation to the quiz screen in the app
+            .putData("navigationSubScreen", "QuizDetails") // Sub-screen for more details
+            .putData("navigationId", quiz.getQuizId().toString()) // Use quiz ID for navigation
+            .build();
+
+    try {
+        // Send the message using Firebase
+        String response = FirebaseMessaging.getInstance().send(message);
+        System.out.println("Successfully sent winner notification: " + response);
+
+        // Optionally, you can save a notification record in the database (similar to other notifications)
+        NotificationEntity record = NotificationEntity.builder()
+                .title("Congratulations! You've Won a Quiz Reward!")
+                .description("You have been selected as a winner for the quiz: " + quiz.getQuizName())
+                .type("QUIZ_WINNER")
+                .status("SENT")
+                .generatedBy("System")
+                .sendOn(LocalDateTime.now())
+                .audience("User-" + user.getUserId())
+                .actions("View App")
+                .image("https://my.alfred.edu/zoom/_images/foster-lake.jpg")
+                .extraField1("Quiz ID: " + quiz.getQuizId())
+                .extraField2("Winner: " + user.getUserId())
+                .build();
+
+        notificationRepository.save(record);
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        System.out.println("Failed to send winner notification: " + e.getMessage());
+    }
+}
+
 }

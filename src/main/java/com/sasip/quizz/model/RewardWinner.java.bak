@@ -35,14 +35,4 @@ public class RewardWinner {
 
     private LocalDateTime createdAt = LocalDateTime.now();  // When the record was created
     private LocalDateTime updatedAt = LocalDateTime.now();  // When the record was last updated
-
-    public RewardWinner(User user, Reward reward, String status, LocalDateTime claimedOn, String giftDetails) {
-        this.user = user;
-        this.reward = reward;
-        this.status = status;
-        this.claimedOn = claimedOn;
-        this.giftDetails = giftDetails;
-        this.giftStatus = "PENDING";  // Default status if not provided
-    }
-
 }

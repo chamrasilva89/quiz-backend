@@ -10,4 +10,5 @@ public interface PushNotificationService {
     public void sendReminderNotification(Quiz quiz, String fcmToken);
     public void sendMissedLoginReminderNotification(User user, String fcmToken);
     void sendAdminNotification(AdminNotification adminNotification, String fcmToken); // Add this method
+    void sendQuizWinnerNotification(User user, Quiz quiz, String fcmToken); 
 }
