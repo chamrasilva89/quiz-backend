@@ -2,6 +2,7 @@ package com.sasip.quizz.service.impl;
 
 import com.sasip.quizz.exception.ResourceNotFoundException;
 import com.sasip.quizz.model.AdminNotification;
+import com.sasip.quizz.model.Badge;
 import com.sasip.quizz.model.NotificationEntity;
 import com.sasip.quizz.model.NotificationStatus;
 import com.sasip.quizz.model.Quiz;
@@ -11,12 +12,15 @@ import com.sasip.quizz.model.Reward;
 import com.sasip.quizz.model.RewardWinStatus;
 import com.sasip.quizz.model.RewardWinner;
 import com.sasip.quizz.model.User;
+import com.sasip.quizz.model.UserBadge;
 import com.sasip.quizz.model.UserQuizSubmission;
 import com.sasip.quizz.repository.AdminNotificationRepository;
+import com.sasip.quizz.repository.BadgeRepository;
 import com.sasip.quizz.repository.NotificationRepository;
 import com.sasip.quizz.repository.QuizRepository;
 import com.sasip.quizz.repository.RewardRepository;
 import com.sasip.quizz.repository.RewardWinnerRepository;
+import com.sasip.quizz.repository.UserBadgesRepository;
 import com.sasip.quizz.repository.UserQuizSubmissionRepository;
 import com.sasip.quizz.repository.UserRepository;
 import com.sasip.quizz.service.PushNotificationService;
@@ -30,6 +34,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -46,8 +51,10 @@ public class QuizSchedulerServiceImpl implements QuizSchedulerService {
     private RewardWinnerRepository rewardWinnerRepository;
     private final RewardRepository rewardRepository;
     private final NotificationRepository notificationRepository;
+    private final BadgeRepository badgeRepository;
+    private final UserBadgesRepository userBadgesRepository;
 
-    public QuizSchedulerServiceImpl(QuizRepository quizRepository, UserRepository userRepository, PushNotificationService pushNotificationService, AdminNotificationRepository adminNotificationRepository,UserQuizSubmissionRepository userQuizSubmissionRepository,RewardWinnerRepository rewardWinnerRepository,RewardRepository rewardRepository, NotificationRepository notificationRepository) {
+    public QuizSchedulerServiceImpl(QuizRepository quizRepository, UserRepository userRepository, PushNotificationService pushNotificationService, AdminNotificationRepository adminNotificationRepository,UserQuizSubmissionRepository userQuizSubmissionRepository,RewardWinnerRepository rewardWinnerRepository,RewardRepository rewardRepository, NotificationRepository notificationRepository, BadgeRepository badgeRepository,UserBadgesRepository userBadgesRepository) {
         this.quizRepository = quizRepository;
         this.userRepository = userRepository;
         this.pushNotificationService = pushNotificationService;
@@ -56,6 +63,8 @@ public class QuizSchedulerServiceImpl implements QuizSchedulerService {
         this.rewardWinnerRepository = rewardWinnerRepository;   
         this.rewardRepository = rewardRepository;
         this.notificationRepository = notificationRepository;
+        this.badgeRepository = badgeRepository;
+        this.userBadgesRepository = userBadgesRepository;
     }
 
     @Scheduled(cron = "0 * * * * *") // Run every minute
@@ -393,6 +402,202 @@ private NotificationEntity createNotificationForUser(NotificationEntity notifica
             .build();
 }
 */
+//Explorer Badge (Completed First Quiz)
+@Scheduled(cron = "0 0 12 * * *")  // Runs every day at 12 PM. Adjust as necessary.
+@Scheduled(cron = "0 0 12 * * *")  // Runs every day at 12 PM. Adjust as necessary.
+public void checkExplorerBadge() {
+    List<User> users = userRepository.findAll();
+
+    for (User user : users) {
+        long completedQuizzes = userQuizSubmissionRepository.countByUserId(user.getUserId());
+
+        if (completedQuizzes == 1) {  // User has completed their first quiz
+            Badge explorerBadge = badgeRepository.findByName("Explorer")
+                    .orElseThrow(() -> new ResourceNotFoundException("Badge not found"));
+
+            // Check if the user has already earned the badge using the corrected method name
+            if (!userBadgesRepository.existsByUserUserIdAndBadgeId(user.getUserId(), explorerBadge.getId())) {
+                // Insert the badge into user_badges table
+                UserBadge userBadge = new UserBadge();
+                userBadge.setUser(user);
+                userBadge.setBadge(explorerBadge);
+                userBadge.setEarnedAt(LocalDateTime.now());
+
+                userBadgesRepository.save(userBadge);
+            }
+        }
+    }
+}
+//Top Scorer Badge (Quiz Winner)
+// Top Scorer Badge (Quiz Winner)
+@Scheduled(cron = "0 0 12 * * *")  // Runs every day at 12 PM. Adjust as necessary.
+public void checkTopScorerBadge() {
+    List<Quiz> quizzes = quizRepository.findAll();
+
+    for (Quiz quiz : quizzes) {
+        List<UserQuizSubmission> submissions = userQuizSubmissionRepository.findByQuizId(quiz.getQuizId());
+
+        // Find the winner (user with the highest score)
+        UserQuizSubmission winner = submissions.stream()
+                .max(Comparator.comparing(UserQuizSubmission::getTotalScore))
+                .orElseThrow(() -> new ResourceNotFoundException("No submissions found for quiz"));
+
+        // Find the winner's user object
+        User winnerUser = userRepository.findById(winner.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        // Find the "Top Scorer" badge
+        Badge topScorerBadge = badgeRepository.findByName("Top Scorer")
+                .orElseThrow(() -> new ResourceNotFoundException("Badge not found"));
+
+        // Insert the badge into user_badges table
+        UserBadge userBadge = new UserBadge();
+        
+        // Set the entire User and Badge objects
+        userBadge.setUser(winnerUser);  // Set the User object
+        userBadge.setBadge(topScorerBadge);  // Set the Badge object
+        
+        // Set the earnedAt timestamp to now
+        userBadge.setEarnedAt(LocalDateTime.now());
+
+        // Save the UserBadge entry in the database
+        userBadgesRepository.save(userBadge);
+    }
+}
+
+//Speedster Pro Badge (Complete Quiz Within Half Time with All Correct Answers)
+@Scheduled(cron = "0 0 12 * * *")  // Runs every day at 12 PM. Adjust as necessary.
+public void checkSpeedsterProBadge() {
+    List<UserQuizSubmission> submissions = userQuizSubmissionRepository.findAll();
+
+    for (UserQuizSubmission submission : submissions) {
+        // Fetch the Quiz entity using the quizId from the UserQuizSubmission
+    // Convert the String quizId to a Long
+    Long quizIdAsLong = Long.parseLong(submission.getQuizId());
+
+    // Now, use the Long value to fetch the quiz
+    Quiz quiz = quizRepository.findByQuizId(quizIdAsLong)
+            .orElseThrow(() -> new ResourceNotFoundException("Quiz not found with ID: " + submission.getQuizId()));
+
+
+        long quizTimeLimit = quiz.getTimeLimit(); // Assuming timeLimit is in seconds
+
+        // Check if the user finished the quiz within half time and with all correct answers
+        if (submission.getTimeTakenSeconds() <= quizTimeLimit / 2 && submission.getCorrectCount() == submission.getTotalQuestions()) {
+            User user = userRepository.findById(submission.getUserId())
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+            Badge speedsterProBadge = badgeRepository.findByName("Speedster Pro")
+                    .orElseThrow(() -> new ResourceNotFoundException("Badge not found"));
+
+            // Check if the user already has the Speedster Pro badge
+            if (!userBadgesRepository.findByUser_UserIdAndBadge_Id(user.getUserId(), speedsterProBadge.getId()).isPresent()) {
+                // Create a new UserBadge instance and set the necessary fields
+                UserBadge userBadges = new UserBadge();
+                userBadges.setUser(user);  // Set the User object
+                userBadges.setBadge(speedsterProBadge);  // Set the Badge object
+                userBadges.setEarnedAt(LocalDateTime.now());  // Set the earnedAt timestamp to now
+
+                // Save the new badge entry to the database
+                userBadgesRepository.save(userBadges);
+            }
+        }
+    }
+}
+
+
+//Half Centurion Badge (Complete 50 Quizzes)
+@Scheduled(cron = "0 0 12 * * *")  // Runs every day at 12 PM. Adjust as necessary.
+public void checkHalfCenturionBadge() {
+    // Fetch all users
+    List<User> users = userRepository.findAll();
+
+    for (User user : users) {
+        // Count how many quizzes the user has completed
+        long completedQuizzes = userQuizSubmissionRepository.countByUserId(user.getUserId());
+
+        // Check if the user has completed 50 quizzes
+        if (completedQuizzes >= 50) {
+            // Find the "Half Centurion" badge
+            Badge halfCenturionBadge = badgeRepository.findByName("Half Centurion")
+                    .orElseThrow(() -> new ResourceNotFoundException("Badge not found"));
+
+            // Check if the user already has this badge
+            if (!userBadgesRepository.existsByUserUserIdAndBadgeId(user.getUserId(), halfCenturionBadge.getId())) {
+                // Create a new UserBadge instance
+                UserBadge userBadge = new UserBadge();
+                userBadge.setUser(user);  // Set the User entity
+                userBadge.setBadge(halfCenturionBadge);  // Set the Badge entity
+                userBadge.setEarnedAt(LocalDateTime.now());  // Set the earnedAt timestamp to the current time
+
+                // Save the new badge record
+                userBadgesRepository.save(userBadge);
+            }
+        }
+    }
+}
+
+//Streak Starter Badge (Complete 7 Day Streak)
+@Scheduled(cron = "0 0 12 * * *")  // Runs every day at 12 PM. Adjust as necessary.
+public void checkStreakStarterBadge() {
+    // Fetch all users
+    List<User> users = userRepository.findAll();
+
+    for (User user : users) {
+        // Get the streak count (number of consecutive days the user has logged in)
+        long streakDays = user.getStreakCount();
+
+        // Check if the user has completed 7 consecutive days (Streak Starter)
+        if (streakDays >= 7) {
+            // Find the "Streak Starter" badge
+            Badge streakStarterBadge = badgeRepository.findByName("Streak Starter")
+                    .orElseThrow(() -> new ResourceNotFoundException("Badge not found"));
+
+            // Check if the user already has the "Streak Starter" badge
+            if (!userBadgesRepository.existsByUserUserIdAndBadgeId(user.getUserId(), streakStarterBadge.getId())) {
+                // Create a new UserBadge instance
+                UserBadge userBadge = new UserBadge();
+                userBadge.setUser(user);  // Set the User entity
+                userBadge.setBadge(streakStarterBadge);  // Set the Badge entity
+                userBadge.setEarnedAt(LocalDateTime.now());  // Set the earnedAt timestamp to the current time
+
+                // Save the new badge record
+                userBadgesRepository.save(userBadge);
+            }
+        }
+    }
+}
+
+//Streak King Badge (Complete 30 Day Streak)
+@Scheduled(cron = "0 0 12 * * *")  // Runs every day at 12 PM. Adjust as necessary.
+public void checkStreakKingBadge() {
+    // Fetch all users
+    List<User> users = userRepository.findAll();
+
+    for (User user : users) {
+        // Get the streak count (number of consecutive days the user has logged in)
+        long streakDays = user.getStreakCount();
+
+        // Check if the user has completed 30 consecutive days (Streak King)
+        if (streakDays >= 30) {
+            // Find the "Streak King" badge
+            Badge streakKingBadge = badgeRepository.findByName("Streak King")
+                    .orElseThrow(() -> new ResourceNotFoundException("Badge not found"));
+
+            // Check if the user already has the "Streak King" badge
+            if (!userBadgesRepository.existsByUserUserIdAndBadgeId(user.getUserId(), streakKingBadge.getId())) {
+                // Create a new UserBadge instance
+                UserBadge userBadge = new UserBadge();
+                userBadge.setUser(user);  // Set the User entity
+                userBadge.setBadge(streakKingBadge);  // Set the Badge entity
+                userBadge.setEarnedAt(LocalDateTime.now());  // Set the earnedAt timestamp to the current time
+
+                // Save the new badge record
+                userBadgesRepository.save(userBadge);
+            }
+        }
+    }
+}
 
 
 }

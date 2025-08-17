@@ -15,4 +15,6 @@ public interface AlYearModuleService {
 
     // Get all completed modules for a specific AL Year
     List<AlYearModuleResponseDTO> getAllCompletedModulesForAlYear(Long alYearId);
+
+    public AlYearModuleResponseDTO createOrUpdateAlYearModule(AlYearModuleRequestDTO requestDTO);
 }

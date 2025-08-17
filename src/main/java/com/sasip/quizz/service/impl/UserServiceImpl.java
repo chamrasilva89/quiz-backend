@@ -170,18 +170,25 @@ public User registerUser(UserRegistrationRequest request) {
 
 
 
-    @Override
-    public Page<User> filterUsers(UserFilterRequest filterRequest, Pageable pageable) {
-        return userRepository.filterUsersWithPagination(
-                filterRequest.getRole(),
-                filterRequest.getName(),
-                filterRequest.getSchool(),
-                filterRequest.getAlYear(),
-                filterRequest.getDistrict(),
-                filterRequest.getUserStatus(),
-                pageable
-        );
+@Override
+public Page<User> filterUsers(UserFilterRequest filterRequest, Pageable pageable) {
+    // Check if the district is empty, and if so, set it to null
+    String district = filterRequest.getDistrict();
+    if (district != null && district.isEmpty()) {
+        district = null; // Treat empty string as null for "All Island"
     }
+
+    return userRepository.filterUsersWithPagination(
+            filterRequest.getRole(),
+            filterRequest.getName(),
+            filterRequest.getSchool(),
+            filterRequest.getAlYear(),
+            district, // Now district will be null if it was empty
+            filterRequest.getUserStatus(),
+            pageable
+    );
+}
+
 
     @Override
     public void changePassword(Long userId, ChangePasswordRequest request) {

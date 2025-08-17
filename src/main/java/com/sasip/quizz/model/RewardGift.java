@@ -32,5 +32,8 @@ public class RewardGift {
     @Column(nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();  // Timestamp for the last update
 
+    @Column(nullable = false)
+    private Integer points = 0;  // Default points value set to 0
+
     // Optional: Add any other fields if needed, e.g., image URL, etc.
 }

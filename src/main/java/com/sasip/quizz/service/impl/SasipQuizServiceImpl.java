@@ -170,26 +170,31 @@ public Page<SasipQuizListItem> listSasipQuizzesWithCompletion(Long userId, Pagea
         return new SasipQuizStatsDTO(best, avg, completed, total);
     }
 
-    @Override
-    public Page<SasipQuizListItem> listCompletedQuizzesOnly(Long userId, Pageable pageable, String alYear, QuizStatus status) {
-        Specification<Quiz> spec = Specification
-            .where((root, query, cb) -> cb.equal(root.get("quizType"), QuizType.SASIP));
+@Override
+public Page<SasipQuizListItem> listCompletedQuizzesOnly(Long userId, Pageable pageable, String alYear, QuizStatus status) {
+    // 1. Ensure the sorting is done on the correct database field.
+    // The Pageable object should be created with the sort parameter as "s.endTime" (or whatever the field is named in UserQuizSubmission).
+    // For example: PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "s.endTime"))
+    Pageable sortedPageable = pageable;
+    if (pageable.getSort().isUnsorted()) {
+        // If no sort is provided, apply a default sort by completion date descending.
+        sortedPageable = PageRequest.of(
+            pageable.getPageNumber(), 
+            pageable.getPageSize(), 
+            Sort.by(Sort.Direction.DESC, "s.endTime")
+        );
+    }
+    
+    // 2. Call the new, efficient query
+    Page<Object[]> results = quizRepository.findCompletedQuizzesForUser(userId, alYear, status, sortedPageable);
 
-        if (alYear != null && !alYear.isBlank()) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("alYear"), alYear));
-        }
+    // 3. Map the Page<Object[]> to Page<SasipQuizListItem>
+    return results.map(result -> {
+        Quiz quiz = (Quiz) result[0];
+        UserQuizSubmission submission = (UserQuizSubmission) result[1];
 
-        if (status != null) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("quizStatus"), status));
-        }
-
-        Page<Quiz> quizzes = quizRepository.findAll(spec, Pageable.unpaged());
-
-    List<SasipQuizListItem> completedQuizzes = quizzes.getContent().stream()
-        .filter(quiz -> userQuizSubmissionRepository
-            .findByUserIdAndQuizId(userId, String.valueOf(quiz.getQuizId()))
-            .isPresent())
-        .map(quiz -> new SasipQuizListItem(
+        // Map the combined data to your DTO
+        return new SasipQuizListItem(
             quiz.getQuizId(),
             quiz.getQuizName(),
             quiz.getIntro(),
@@ -201,24 +206,17 @@ public Page<SasipQuizListItem> listSasipQuizzesWithCompletion(Long userId, Pagea
             quiz.getQuizStatus(),
             quiz.getScheduledTime(),
             quiz.getDeadline(),
-            true,
+            true, // isCompleted
             quiz.getModuleList(),
             quiz.getRewardIdList(),
             quiz.getQuestionIds() != null ? quiz.getQuestionIds().size() : 0,
-            null, // no completion date
-            0,    // no score
-            0 ,   // no correct answers
+            submission.getEndTime(),      // Completion date from submission
+            (int) submission.getTotalScore(), // Total score from submission
+            submission.getCorrectCount(), // Correct count from submission
             quiz.getQuizType()
-        )).toList();
-
-        int start = (int) pageable.getOffset();
-        int end = Math.min(start + pageable.getPageSize(), completedQuizzes.size());
-        List<SasipQuizListItem> paginated = completedQuizzes.subList(start, end);
-
-        //logService.log("INFO", "SasipQuizServiceImpl", "List Completed Quizzes", "Completed SASIP quizzes listed for userId: " + userId, String.valueOf(userId));
-
-        return new PageImpl<>(paginated, pageable, completedQuizzes.size());
-    }
+        );
+    });
+}
 
     @Override
     public Page<QuizWithQuestionsDTO> filterQuizzesWithQuestions(QuizFilterRequest filter) {
@@ -294,7 +292,7 @@ public Page<SasipQuizListItem> listSasipQuizzesWithCompletion(Long userId, Pagea
             dto.setRewardIds(quiz.getRewardIdList());
 
             boolean completed = userQuizSubmissionRepository
-                .findByUserIdAndQuizId(userId, String.valueOf(quiz.getQuizId()))
+                .findByUserIdAndQuizId(userId, quiz.getQuizId().toString())
                 .isPresent();
             dto.setCompleted(completed);
 

@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,9 +27,11 @@ public class RewardGiftServiceImpl implements RewardGiftService {
         rewardGift.setName(dto.getName());
         rewardGift.setDescription(dto.getDescription());
         rewardGift.setGiftType(dto.getGiftType());
-        
+        rewardGift.setPoints(dto.getPoints() != null ? dto.getPoints() : 0); // handle null
+        rewardGift.setCreatedAt(LocalDateTime.now());
+        rewardGift.setUpdatedAt(LocalDateTime.now());
+
         RewardGift saved = rewardGiftRepository.save(rewardGift);
-        //logService.log("INFO", "RewardGiftServiceImpl", "Create RewardGift", "Created reward gift: " + saved.getName(), "system");
         return toDto(saved);
     }
 
@@ -40,9 +43,10 @@ public class RewardGiftServiceImpl implements RewardGiftService {
         rewardGift.setName(dto.getName());
         rewardGift.setDescription(dto.getDescription());
         rewardGift.setGiftType(dto.getGiftType());
+        rewardGift.setPoints(dto.getPoints() != null ? dto.getPoints() : 0); // handle null
+        rewardGift.setUpdatedAt(LocalDateTime.now());
 
         RewardGift updated = rewardGiftRepository.save(rewardGift);
-        //logService.log("INFO", "RewardGiftServiceImpl", "Update RewardGift", "Updated reward gift: " + updated.getName(), "system");
         return toDto(updated);
     }
 
@@ -52,7 +56,6 @@ public class RewardGiftServiceImpl implements RewardGiftService {
             throw new RuntimeException("RewardGift not found with ID: " + id);
         }
         rewardGiftRepository.deleteById(id);
-        //logService.log("WARN", "RewardGiftServiceImpl", "Delete RewardGift", "Deleted reward gift with ID: " + id, "system");
     }
 
     @Override
@@ -83,7 +86,8 @@ public class RewardGiftServiceImpl implements RewardGiftService {
                 rewardGift.getDescription(),
                 rewardGift.getGiftType(),
                 rewardGift.getCreatedAt(),
-                rewardGift.getUpdatedAt()
+                rewardGift.getUpdatedAt(),
+                rewardGift.getPoints()
         );
     }
 }

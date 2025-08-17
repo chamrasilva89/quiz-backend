@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,19 +26,54 @@ public class AlYearModuleServiceImpl implements AlYearModuleService {
 public AlYearModuleResponseDTO createAlYearModule(AlYearModuleRequestDTO requestDTO) {
     // Create a new AlYearModule entity
     AlYearModule alYearModule = new AlYearModule();
-    alYearModule.setAlYearId(requestDTO.getAlYearId());
+
+    // Set alYearId, moduleId, submoduleId, and isCompleted as received in the request
+    alYearModule.setAlYearId(Long.valueOf(requestDTO.getAlYearId()));  // Convert alYearId to Long
     alYearModule.setModuleId(requestDTO.getModuleId());
-    alYearModule.setSubmoduleId(requestDTO.getSubmoduleId());
+
+    // Set submoduleId to null if it is not present in the request (i.e., null)
+    alYearModule.setSubmoduleId(requestDTO.getSubmoduleId() != null ? requestDTO.getSubmoduleId() : null);
+
+    // Set completion status and timestamp if the quiz is marked as completed
     alYearModule.setIsCompleted(requestDTO.getIsCompleted());
     alYearModule.setCompletedAt(requestDTO.getIsCompleted() ? java.time.LocalDateTime.now() : null);
 
-    // The 'id' field should not be set manually as it is auto-generated
-    // Insert the new AL Year Module
+    // Insert the new AL Year Module entity into the repository (database)
     alYearModule = alYearModuleRepository.save(alYearModule);
 
     // Return the saved entity as a response DTO
     return mapToDTO(alYearModule);
 }
+
+@Override
+public AlYearModuleResponseDTO createOrUpdateAlYearModule(AlYearModuleRequestDTO requestDTO) {
+    // Check if the record exists in the database
+    Optional<AlYearModule> existingRecord = alYearModuleRepository.findByAlYearIdAndModuleIdOptional(requestDTO.getAlYearId(), requestDTO.getModuleId());
+
+    AlYearModule alYearModule;
+    
+    if (existingRecord.isPresent()) {
+        // If record exists, update it
+        alYearModule = existingRecord.get();
+        alYearModule.setIsCompleted(requestDTO.getIsCompleted());
+        alYearModule.setCompletedAt(requestDTO.getIsCompleted() ? java.time.LocalDateTime.now() : null);
+    } else {
+        // If record does not exist, create a new one
+        alYearModule = new AlYearModule();
+        alYearModule.setAlYearId(Long.valueOf(requestDTO.getAlYearId()));  // Convert alYearId to Long
+        alYearModule.setModuleId(requestDTO.getModuleId());
+        alYearModule.setSubmoduleId(requestDTO.getSubmoduleId() != null ? requestDTO.getSubmoduleId() : null);
+        alYearModule.setIsCompleted(requestDTO.getIsCompleted());
+        alYearModule.setCompletedAt(requestDTO.getIsCompleted() ? java.time.LocalDateTime.now() : null);
+    }
+
+    // Save the entity (either insert or update)
+    alYearModule = alYearModuleRepository.save(alYearModule);
+
+    // Return the saved entity as a response DTO
+    return mapToDTO(alYearModule);
+}
+
 
 
     @Override

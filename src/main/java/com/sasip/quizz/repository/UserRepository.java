@@ -1,11 +1,12 @@
 package com.sasip.quizz.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+
 import com.sasip.quizz.model.User;
 
 import java.util.List;
@@ -39,5 +40,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
         Page<User> findByRoleNot(String role, Pageable pageable);
         List<User> findByAlYear(Integer alYear);
 
-
+@Query("SELECT COUNT(u) FROM User u WHERE u.alYear = :alYear AND u.userStatus = :userStatus")
+int countUsersByAlYearAndUserStatus(@Param("alYear") String alYear, @Param("userStatus") String userStatus);
 }

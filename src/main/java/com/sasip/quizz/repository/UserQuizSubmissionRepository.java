@@ -34,4 +34,10 @@ public interface UserQuizSubmissionRepository extends JpaRepository<UserQuizSubm
 
         @Query("SELECT u FROM UserQuizSubmission u WHERE u.quizId = :quizId ORDER BY u.totalScore DESC")
     List<UserQuizSubmission> findByQuizIdOrderByTotalScoreDesc(@Param("quizId") Long quizId);
+
+       @Query("SELECT COUNT(u) FROM UserQuizSubmission u WHERE u.quizId = :quizId")
+    long countCompletedSubmissionsByQuizId(@Param("quizId") Long quizId);
+
+    @Query("SELECT COUNT(u) FROM UserQuizSubmission u WHERE u.userId = :userId")  // Counting the total quizzes completed by a user
+    Long countByUserId(@Param("userId") Long userId);
 }

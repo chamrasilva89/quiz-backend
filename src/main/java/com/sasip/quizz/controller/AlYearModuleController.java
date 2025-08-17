@@ -3,7 +3,6 @@ package com.sasip.quizz.controller;
 import com.sasip.quizz.dto.AlYearModuleRequestDTO;
 import com.sasip.quizz.dto.AlYearModuleResponseDTO;
 import com.sasip.quizz.service.AlYearModuleService;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,18 +18,11 @@ public class AlYearModuleController {
         this.alYearModuleService = alYearModuleService;
     }
 
-    // Create a new completed module
-    @PostMapping
-    public ResponseEntity<?> createAlYearModule(@RequestBody AlYearModuleRequestDTO requestDTO) {
-        AlYearModuleResponseDTO response = alYearModuleService.createAlYearModule(requestDTO);
+    // Create or update a completed module
+    @PostMapping("/createOrUpdate")
+    public ResponseEntity<?> createOrUpdateAlYearModule(@RequestBody AlYearModuleRequestDTO requestDTO) {
+        AlYearModuleResponseDTO response = alYearModuleService.createOrUpdateAlYearModule(requestDTO);
         return ResponseEntity.status(201).body(new ResponseWrapper<>(new ItemsWrapper<>(response)));
-    }
-
-    // Update a completed module
-    @PatchMapping("/{id}")
-    public ResponseEntity<?> updateAlYearModule(@PathVariable Long id, @RequestBody AlYearModuleRequestDTO requestDTO) {
-        AlYearModuleResponseDTO response = alYearModuleService.updateAlYearModule(id, requestDTO);
-        return ResponseEntity.ok(new ResponseWrapper<>(new ItemsWrapper<>(response)));
     }
 
     // Get all completed modules for a specific AL Year

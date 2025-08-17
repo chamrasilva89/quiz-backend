@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface QuizRepository
@@ -59,5 +60,8 @@ public interface QuizRepository
                                                @Param("alYear") String alYear,
                                                @Param("status") QuizStatus status,
                                                Pageable pageable);
+
+    @Query("SELECT q FROM Quiz q WHERE q.quizId = :quizId")
+    Optional<Quiz> findByQuizId(@Param("quizId") Long quizId);  // Updated to Long
 
 }

@@ -17,4 +17,5 @@ public class RewardGiftDTO {
     private String giftType;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Integer points;  // New field added for points
 }
