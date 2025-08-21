@@ -19,5 +19,6 @@ public interface RewardWinnerRepository extends JpaRepository<RewardWinner, Long
     List<RewardWinner> findByStatus(String status);
     Page<RewardWinner> findByUser_userIdAndStatusAndGiftStatus(Long userId, String status, String giftStatus, Pageable pageable);
     Page<RewardWinner> findByUser_userIdAndStatus(Long userId, String status, Pageable pageable);
+     long countByRewardId(Long rewardId);
 }
 

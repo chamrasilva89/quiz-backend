@@ -48,7 +48,7 @@ public class User {
     private String username;
 
     @Column(nullable = false)
-    private String passwordHash; // We will exclude this when returning user details
+    private String passwordHash;
 
     @Column(nullable = false)
     private Integer earnedXp = 0;
@@ -76,16 +76,19 @@ public class User {
     @Column(nullable = false)
     private Integer points = 0;
 
-    // New field to store profile image as Base64 string
     @Column(name = "profile_image_base64", columnDefinition = "LONGTEXT")
     private String profileImageBase64;
 
-    // New field to store FCM token
     @Column(name = "fcm_token", length = 255)
-    private String fcmToken; // FCM token field
+    private String fcmToken;
 
-    // Constructor excluding passwordHash
-    public User(Long userId, String username, String role, String firstName, String lastName, String avatarUrl, String school, Integer alYear, String district, String medium, String phone, String email, Integer earnedXp, Integer streakCount, Double averageScore, Integer totalQuizzesTaken, String parentName, String parentContactNo, LocalDateTime createdDate, LocalDateTime updatedDate, String userStatus, Integer points, String profileImageBase64, String fcmToken) {
+    // --- NEW FIELD ---
+    @Column(nullable = false)
+    private Integer level = 1; // Default level is 1
+    // --- END OF NEW FIELD ---
+
+    // Updated constructor
+    public User(Long userId, String username, String role, String firstName, String lastName, String avatarUrl, String school, Integer alYear, String district, String medium, String phone, String email, Integer earnedXp, Integer streakCount, Double averageScore, Integer totalQuizzesTaken, String parentName, String parentContactNo, LocalDateTime createdDate, LocalDateTime updatedDate, String userStatus, Integer points, String profileImageBase64, String fcmToken, Integer level) {
         this.userId = userId;
         this.username = username;
         this.role = role;
@@ -109,7 +112,8 @@ public class User {
         this.userStatus = userStatus;
         this.points = points;
         this.profileImageBase64 = profileImageBase64;
-        this.fcmToken = fcmToken; // Assigning fcmToken
+        this.fcmToken = fcmToken;
+        this.level = level; // Assigning level
     }
 
     @PrePersist

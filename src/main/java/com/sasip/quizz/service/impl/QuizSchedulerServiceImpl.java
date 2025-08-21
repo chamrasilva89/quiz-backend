@@ -403,8 +403,7 @@ private NotificationEntity createNotificationForUser(NotificationEntity notifica
 }
 */
 //Explorer Badge (Completed First Quiz)
-@Scheduled(cron = "0 0 12 * * *")  // Runs every day at 12 PM. Adjust as necessary.
-@Scheduled(cron = "0 0 12 * * *")  // Runs every day at 12 PM. Adjust as necessary.
+@Scheduled(cron = "0 */5 * * * *")  // Runs every day at 12 PM. Adjust as necessary.
 public void checkExplorerBadge() {
     List<User> users = userRepository.findAll();
 
@@ -415,21 +414,23 @@ public void checkExplorerBadge() {
             Badge explorerBadge = badgeRepository.findByName("Explorer")
                     .orElseThrow(() -> new ResourceNotFoundException("Badge not found"));
 
-            // Check if the user has already earned the badge using the corrected method name
+            // Check if the user has already earned the badge
             if (!userBadgesRepository.existsByUserUserIdAndBadgeId(user.getUserId(), explorerBadge.getId())) {
                 // Insert the badge into user_badges table
                 UserBadge userBadge = new UserBadge();
                 userBadge.setUser(user);
                 userBadge.setBadge(explorerBadge);
                 userBadge.setEarnedAt(LocalDateTime.now());
-
                 userBadgesRepository.save(userBadge);
+
+                // Create and save a notification for the user
+                createAndSaveNotification(user, explorerBadge, "Explorer");
             }
         }
     }
 }
+
 //Top Scorer Badge (Quiz Winner)
-// Top Scorer Badge (Quiz Winner)
 @Scheduled(cron = "0 0 12 * * *")  // Runs every day at 12 PM. Adjust as necessary.
 public void checkTopScorerBadge() {
     List<Quiz> quizzes = quizRepository.findAll();
@@ -440,44 +441,45 @@ public void checkTopScorerBadge() {
         // Find the winner (user with the highest score)
         UserQuizSubmission winner = submissions.stream()
                 .max(Comparator.comparing(UserQuizSubmission::getTotalScore))
-                .orElseThrow(() -> new ResourceNotFoundException("No submissions found for quiz"));
+                .orElse(null); // Use orElse(null) to handle cases with no submissions
 
-        // Find the winner's user object
-        User winnerUser = userRepository.findById(winner.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        if (winner != null) {
+            // Find the winner's user object
+            User winnerUser = userRepository.findById(winner.getUserId())
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        // Find the "Top Scorer" badge
-        Badge topScorerBadge = badgeRepository.findByName("Top Scorer")
-                .orElseThrow(() -> new ResourceNotFoundException("Badge not found"));
+            // Find the "Top Scorer" badge
+            Badge topScorerBadge = badgeRepository.findByName("Top Scorer")
+                    .orElseThrow(() -> new ResourceNotFoundException("Badge not found"));
 
-        // Insert the badge into user_badges table
-        UserBadge userBadge = new UserBadge();
-        
-        // Set the entire User and Badge objects
-        userBadge.setUser(winnerUser);  // Set the User object
-        userBadge.setBadge(topScorerBadge);  // Set the Badge object
-        
-        // Set the earnedAt timestamp to now
-        userBadge.setEarnedAt(LocalDateTime.now());
+            // Check if the user already has this badge for this specific quiz to avoid duplicate notifications
+            if (!userBadgesRepository.existsByUserUserIdAndBadgeId(winnerUser.getUserId(), topScorerBadge.getId())) {
+                // Insert the badge into user_badges table
+                UserBadge userBadge = new UserBadge();
+                userBadge.setUser(winnerUser);
+                userBadge.setBadge(topScorerBadge);
+                userBadge.setEarnedAt(LocalDateTime.now());
+                userBadgesRepository.save(userBadge);
 
-        // Save the UserBadge entry in the database
-        userBadgesRepository.save(userBadge);
+                // Create and save a notification for the user
+                createAndSaveNotification(winnerUser, topScorerBadge, "Top Scorer");
+            }
+        }
     }
 }
 
 //Speedster Pro Badge (Complete Quiz Within Half Time with All Correct Answers)
-@Scheduled(cron = "0 0 12 * * *")  // Runs every day at 12 PM. Adjust as necessary.
+@Scheduled(cron = "0 */7 * * * *")  // Runs every day at 12 PM. Adjust as necessary.
 public void checkSpeedsterProBadge() {
     List<UserQuizSubmission> submissions = userQuizSubmissionRepository.findAll();
 
     for (UserQuizSubmission submission : submissions) {
-        // Fetch the Quiz entity using the quizId from the UserQuizSubmission
-    // Convert the String quizId to a Long
-    Long quizIdAsLong = Long.parseLong(submission.getQuizId());
+        // Convert the String quizId to a Long
+        Long quizIdAsLong = Long.parseLong(submission.getQuizId());
 
-    // Now, use the Long value to fetch the quiz
-    Quiz quiz = quizRepository.findByQuizId(quizIdAsLong)
-            .orElseThrow(() -> new ResourceNotFoundException("Quiz not found with ID: " + submission.getQuizId()));
+        // Now, use the Long value to fetch the quiz
+        Quiz quiz = quizRepository.findById(quizIdAsLong)
+                .orElseThrow(() -> new ResourceNotFoundException("Quiz not found with ID: " + submission.getQuizId()));
 
 
         long quizTimeLimit = quiz.getTimeLimit(); // Assuming timeLimit is in seconds
@@ -491,7 +493,7 @@ public void checkSpeedsterProBadge() {
                     .orElseThrow(() -> new ResourceNotFoundException("Badge not found"));
 
             // Check if the user already has the Speedster Pro badge
-            if (!userBadgesRepository.findByUser_UserIdAndBadge_Id(user.getUserId(), speedsterProBadge.getId()).isPresent()) {
+            if (!userBadgesRepository.existsByUserUserIdAndBadgeId(user.getUserId(), speedsterProBadge.getId())) {
                 // Create a new UserBadge instance and set the necessary fields
                 UserBadge userBadges = new UserBadge();
                 userBadges.setUser(user);  // Set the User object
@@ -500,6 +502,9 @@ public void checkSpeedsterProBadge() {
 
                 // Save the new badge entry to the database
                 userBadgesRepository.save(userBadges);
+
+                // Create and save a notification for the user
+                createAndSaveNotification(user, speedsterProBadge, "Speedster Pro");
             }
         }
     }
@@ -532,22 +537,25 @@ public void checkHalfCenturionBadge() {
 
                 // Save the new badge record
                 userBadgesRepository.save(userBadge);
+
+                // Create and save a notification for the user
+                createAndSaveNotification(user, halfCenturionBadge, "Half Centurion");
             }
         }
     }
 }
 
 //Streak Starter Badge (Complete 7 Day Streak)
-@Scheduled(cron = "0 0 12 * * *")  // Runs every day at 12 PM. Adjust as necessary.
+@Scheduled(cron = "0 */5 * * * *")  // Runs every day at 12 PM. Adjust as necessary.
 public void checkStreakStarterBadge() {
     // Fetch all users
     List<User> users = userRepository.findAll();
 
     for (User user : users) {
-        // Get the streak count (number of consecutive days the user has logged in)
+        // Get the streak count
         long streakDays = user.getStreakCount();
 
-        // Check if the user has completed 7 consecutive days (Streak Starter)
+        // Check if the user has completed 7 consecutive days
         if (streakDays >= 7) {
             // Find the "Streak Starter" badge
             Badge streakStarterBadge = badgeRepository.findByName("Streak Starter")
@@ -557,12 +565,13 @@ public void checkStreakStarterBadge() {
             if (!userBadgesRepository.existsByUserUserIdAndBadgeId(user.getUserId(), streakStarterBadge.getId())) {
                 // Create a new UserBadge instance
                 UserBadge userBadge = new UserBadge();
-                userBadge.setUser(user);  // Set the User entity
-                userBadge.setBadge(streakStarterBadge);  // Set the Badge entity
-                userBadge.setEarnedAt(LocalDateTime.now());  // Set the earnedAt timestamp to the current time
-
-                // Save the new badge record
+                userBadge.setUser(user);
+                userBadge.setBadge(streakStarterBadge);
+                userBadge.setEarnedAt(LocalDateTime.now());
                 userBadgesRepository.save(userBadge);
+
+                // Create and save a notification for the user
+                createAndSaveNotification(user, streakStarterBadge, "Streak Starter");
             }
         }
     }
@@ -575,10 +584,10 @@ public void checkStreakKingBadge() {
     List<User> users = userRepository.findAll();
 
     for (User user : users) {
-        // Get the streak count (number of consecutive days the user has logged in)
+        // Get the streak count
         long streakDays = user.getStreakCount();
 
-        // Check if the user has completed 30 consecutive days (Streak King)
+        // Check if the user has completed 30 consecutive days
         if (streakDays >= 30) {
             // Find the "Streak King" badge
             Badge streakKingBadge = badgeRepository.findByName("Streak King")
@@ -588,17 +597,113 @@ public void checkStreakKingBadge() {
             if (!userBadgesRepository.existsByUserUserIdAndBadgeId(user.getUserId(), streakKingBadge.getId())) {
                 // Create a new UserBadge instance
                 UserBadge userBadge = new UserBadge();
-                userBadge.setUser(user);  // Set the User entity
-                userBadge.setBadge(streakKingBadge);  // Set the Badge entity
-                userBadge.setEarnedAt(LocalDateTime.now());  // Set the earnedAt timestamp to the current time
-
-                // Save the new badge record
+                userBadge.setUser(user);
+                userBadge.setBadge(streakKingBadge);
+                userBadge.setEarnedAt(LocalDateTime.now());
                 userBadgesRepository.save(userBadge);
+
+                // Create and save a notification for the user
+                createAndSaveNotification(user, streakKingBadge, "Streak King");
             }
         }
     }
 }
 
+/**
+ * Helper method to create and save a notification for a user who has earned a badge.
+ *
+ * @param user      The user who earned the badge.
+ * @param badge     The badge that was earned.
+ * @param badgeName The name of the badge.
+ */
+private void createAndSaveNotification(User user, Badge badge, String badgeName) {
+    NotificationEntity notification = new NotificationEntity();
+    notification.setTitle("Congratulations!");
+    notification.setDescription("You've earned the " + badgeName + " badge.");
+    notification.setType("ACHIEVEMENT");
+    notification.setStatus("SENT");
+    notification.setGeneratedBy("SYSTEM");
+    notification.setSendOn(LocalDateTime.now());
+    notification.setAudience(String.valueOf(user.getUserId()));
+    notification.setActions("Screen: Main, Sub screen: Profile, Type: achievement"); // Main navigation action
+    notification.setImage(badge.getIconUrl()); // Assuming your Badge entity has a getIconUrl() method
+
+    // Add extra details for the notification
+    notification.setExtraField1("Badge Earned: " + badgeName);
+    notification.setExtraField2(badge.getIconUrl()); // Storing the icon URL in an extra field as well
+
+    // UPDATED: Add structured navigation details to extraField3
+    String navigationDetails = String.format("Screen: App, Sub Screen: UserDetails, Value: %d, Type: ACHIEVEMENT", user.getUserId());
+    notification.setExtraField3(navigationDetails);
+
+    notificationRepository.save(notification);
+}
+
+    @Scheduled(cron = "0 0 * * * *") // Runs at the beginning of every hour
+    public void updateUserLevels() {
+        List<User> users = userRepository.findAll();
+
+        for (User user : users) {
+            int newLevel = calculateLevel(user.getEarnedXp());
+
+            // Update the user only if their level has changed
+            if (user.getLevel() != newLevel) {
+                user.setLevel(newLevel);
+                userRepository.save(user);
+
+                // --- NEW ---
+                // Send a notification to the user about their level up!
+                createAndSaveLevelUpNotification(user, newLevel);
+                // --- END NEW ---
+            }
+        }
+    }
+
+    /**
+     * Helper method to create and save a notification for a user who has leveled up.
+     *
+     * @param user     The user who leveled up.
+     * @param newLevel The new level the user has reached.
+     */
+    private void createAndSaveLevelUpNotification(User user, int newLevel) {
+        NotificationEntity notification = new NotificationEntity();
+        notification.setTitle("Level Up!");
+        notification.setDescription("Congratulations! You've reached Level " + newLevel + ".");
+        notification.setType("LEVEL_UP");
+        notification.setStatus("SENT");
+        notification.setGeneratedBy("SYSTEM");
+        notification.setSendOn(LocalDateTime.now());
+        notification.setAudience(String.valueOf(user.getUserId()));
+        notification.setActions("Screen: Main, Sub screen: Profile, Type: achievement"); // Same navigation
+        notification.setImage("https://example.com/icons/levelup.png"); // A generic level-up icon URL
+
+        // Add extra details for structured data
+        String navigationDetails = String.format("Screen: App, Sub Screen: UserDetails, Value: %d, Type: ACHIEVEMENT", user.getUserId());
+        notification.setExtraField1("Level Reached: " + newLevel);
+        notification.setExtraField3(navigationDetails);
+
+        notificationRepository.save(notification);
+    }
+
+    /**
+     * Calculates the user's level based on their earned XP.
+     *
+     * @param earnedXp The total earned XP of the user.
+     * @return The calculated level.
+     */
+    private int calculateLevel(int earnedXp) {
+        if (earnedXp > 400) {
+            return 5;
+        } else if (earnedXp > 300) {
+            return 4;
+        } else if (earnedXp > 200) {
+            return 3;
+        } else if (earnedXp > 100) {
+            return 2;
+        } else {
+            return 1;
+        }
+    }
 
 }
 

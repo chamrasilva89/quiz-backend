@@ -21,18 +21,17 @@ public class LeaderboardServiceImpl implements LeaderboardService {
 
     private final LeaderboardRepository leaderboardRepository;
     private final MonthlyLeaderboardRepository monthlyLeaderboardRepository;
-    private final UserRepository userRepository; // Inject the user repository
+    private final UserRepository userRepository;
 
     @Autowired
-    public LeaderboardServiceImpl(LeaderboardRepository leaderboardRepository, 
-                                  MonthlyLeaderboardRepository monthlyLeaderboardRepository, 
+    public LeaderboardServiceImpl(LeaderboardRepository leaderboardRepository,
+                                  MonthlyLeaderboardRepository monthlyLeaderboardRepository,
                                   UserRepository userRepository) {
         this.leaderboardRepository = leaderboardRepository;
-        this.monthlyLeaderboardRepository = monthlyLeaderboardRepository;  // Ensure this is properly injected
+        this.monthlyLeaderboardRepository = monthlyLeaderboardRepository;
         this.userRepository = userRepository;
     }
 
-    
     @Override
     public Page<LeaderboardResponse> getLeaderboard(LeaderboardFilterRequest request, Pageable pageable) {
         Page<?> leaderboardPage;
@@ -41,17 +40,22 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         String school = request.getSchool();
         String month = request.getMonth();
 
+        // --- UPDATED LOGIC ---
+        // Check if the filter strings are null or blank
         boolean isMonthly = (month != null && !month.isBlank());
+        boolean hasDistrictFilter = (district != null && !district.isBlank());
+        boolean hasSchoolFilter = (school != null && !school.isBlank());
+        // --- END OF UPDATE ---
 
-        // Logic to fetch the leaderboard page based on filters
+        // Logic to fetch the leaderboard page based on the presence of filters
         if (isMonthly) {
-            if (district != null && school != null) {
+            if (hasDistrictFilter && hasSchoolFilter) {
                 leaderboardPage = monthlyLeaderboardRepository.findByMonthAndAlYearAndDistrictAndSchool(
                         month, alYear, district, school, pageable);
-            } else if (district != null) {
+            } else if (hasDistrictFilter) {
                 leaderboardPage = monthlyLeaderboardRepository.findByMonthAndAlYearAndDistrict(
                         month, alYear, district, pageable);
-            } else if (school != null) {
+            } else if (hasSchoolFilter) {
                 leaderboardPage = monthlyLeaderboardRepository.findByMonthAndAlYearAndSchool(
                         month, alYear, school, pageable);
             } else {
@@ -59,13 +63,13 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                         month, alYear, pageable);
             }
         } else {
-            if (district != null && school != null) {
+            if (hasDistrictFilter && hasSchoolFilter) {
                 leaderboardPage = leaderboardRepository.findByAlYearAndDistrictAndSchoolOrderByTotalPointsDesc(
                         alYear, district, school, pageable);
-            } else if (district != null) {
+            } else if (hasDistrictFilter) {
                 leaderboardPage = leaderboardRepository.findByAlYearAndDistrictOrderByTotalPointsDesc(
                         alYear, district, pageable);
-            } else if (school != null) {
+            } else if (hasSchoolFilter) {
                 leaderboardPage = leaderboardRepository.findByAlYearAndSchoolOrderByTotalPointsDesc(
                         alYear, school, pageable);
             } else {
@@ -77,7 +81,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         List<LeaderboardResponse> responseList = new ArrayList<>();
         int startRank = pageable.getPageNumber() * pageable.getPageSize() + 1;
 
-        List<?> entries = ((Page<?>) leaderboardPage).getContent();
+        List<?> entries = leaderboardPage.getContent();
         for (int i = 0; i < entries.size(); i++) {
             Object entry = entries.get(i);
             LeaderboardResponse res = new LeaderboardResponse();
@@ -91,11 +95,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                 res.setDistrict(lb.getDistrict());
                 res.setAlYear(lb.getAlYear());
                 res.setTotalPoints(lb.getTotalPoints());
-
-                // Fetch avatarUrl from the User table
                 res.setAvatarUrl(user.getAvatarUrl());
-
-                // Add the profile image as a Base64 string
                 res.setProfileImageBase64(user.getProfileImageBase64());
             } else if (entry instanceof MonthlyLeaderboard mlb) {
                 User user = userRepository.findByUsername(mlb.getUsername())
@@ -106,8 +106,6 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                 res.setDistrict(mlb.getDistrict());
                 res.setAlYear(mlb.getAlYear());
                 res.setTotalPoints(mlb.getTotalPoints());
-
-                // Add the profile image as a Base64 string
                 res.setProfileImageBase64(user.getProfileImageBase64());
                 res.setAvatarUrl(user.getAvatarUrl());
             }
@@ -116,7 +114,6 @@ public class LeaderboardServiceImpl implements LeaderboardService {
             responseList.add(res);
         }
 
-        return new PageImpl<>(responseList, pageable, ((Page<?>) leaderboardPage).getTotalElements());
+        return new PageImpl<>(responseList, pageable, leaderboardPage.getTotalElements());
     }
-
 }

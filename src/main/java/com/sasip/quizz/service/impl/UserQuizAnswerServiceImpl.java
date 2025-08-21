@@ -1,6 +1,7 @@
 package com.sasip.quizz.service.impl;
 
 import com.sasip.quizz.dto.QuestionResultWithDetails;
+import com.sasip.quizz.dto.QuizCompletionStatusDTO;
 import com.sasip.quizz.dto.QuizSubmissionRequest;
 import com.sasip.quizz.dto.QuizSubmissionResult;
 import com.sasip.quizz.dto.SummaryStatsDTO;
@@ -417,4 +418,9 @@ public SummaryStatsDTO getUserQuizSummary(Long userId) {
     return summaryStatsDTO;
 }
 
+    @Override
+    public QuizCompletionStatusDTO checkQuizCompletionStatus(Long userId, String quizId) {
+        boolean hasSubmitted = userQuizSubmissionRepository.existsByUserIdAndQuizId(userId, quizId);
+        return new QuizCompletionStatusDTO(hasSubmitted);
+    }
 }

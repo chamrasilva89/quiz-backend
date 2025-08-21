@@ -1,17 +1,24 @@
 package com.sasip.quizz.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sasip.quizz.dto.*;
 import com.sasip.quizz.exception.BadRequestException;
 import com.sasip.quizz.exception.ResourceNotFoundException;
 import com.sasip.quizz.model.User;
+import com.sasip.quizz.model.UserBadge;
+import com.sasip.quizz.repository.UserBadgesRepository;
 import com.sasip.quizz.repository.UserRepository;
 import com.sasip.quizz.service.UserService;
 import com.sasip.quizz.service.LogService;
 import com.sasip.quizz.service.OtpService;
+import com.sasip.quizz.service.PerformanceChartService;
 import com.sasip.quizz.security.JwtUtil;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -37,7 +44,13 @@ public class UserServiceImpl implements UserService {
     private final JwtUtil jwtUtil;
     private final LogService logService;
     @Autowired private OtpService otpService;
-    
+    @Autowired
+    private UserBadgesRepository userBadgesRepository;
+      @Autowired
+    private ObjectMapper objectMapper; 
+    @Autowired
+private PerformanceChartService performanceChartService;
+
     private final Map<String, String> passwordCache = new ConcurrentHashMap<>();
     public UserServiceImpl(UserRepository userRepository,
                            BCryptPasswordEncoder passwordEncoder,
@@ -130,7 +143,7 @@ public User registerUser(UserRegistrationRequest request) {
     }
 
     // Update UserServiceImpl.java login method to return userId and log it
-    @Override
+ @Override
     public LoginResponse login(LoginRequest request) {
         logger.info("Login attempt for username: {}", request.getUsername());
 
@@ -147,27 +160,43 @@ public User registerUser(UserRegistrationRequest request) {
             throw new BadCredentialsException("Invalid username or password");
         }
 
-        // Create a new User object excluding passwordHash and using the new constructor
-        User userDetails = new User(user.getUserId(), user.getUsername(), user.getRole(), user.getFirstName(), user.getLastName(), user.getAvatarUrl(), user.getSchool(), user.getAlYear(), user.getDistrict(), user.getMedium(), user.getPhone(), user.getEmail(), user.getEarnedXp(), user.getStreakCount(), user.getAverageScore(), user.getTotalQuizzesTaken(), user.getParentName(), user.getParentContactNo(), user.getCreatedDate(), user.getUpdatedDate(), user.getUserStatus(), user.getPoints(),user.getProfileImageBase64(),user.getFcmToken());
+        // Create a new User object excluding passwordHash
+        User userDetails = new User(user.getUserId(), user.getUsername(), user.getRole(), user.getFirstName(), user.getLastName(), user.getAvatarUrl(), user.getSchool(), user.getAlYear(), user.getDistrict(), user.getMedium(), user.getPhone(), user.getEmail(), user.getEarnedXp(), user.getStreakCount(), user.getAverageScore(), user.getTotalQuizzesTaken(), user.getParentName(), user.getParentContactNo(), user.getCreatedDate(), user.getUpdatedDate(), user.getUserStatus(), user.getPoints(), user.getProfileImageBase64(), user.getFcmToken(),user.getLevel());
+
+        // --- NEW LOGIC TO FETCH BADGES ---
+        List<UserBadge> userBadges = userBadgesRepository.findByUserUserId(user.getUserId());
+        List<BadgeDTO> earnedBadges = userBadges.stream()
+                .map(userBadge -> {
+                    BadgeDTO badgeDTO = new BadgeDTO();
+                    badgeDTO.setId(userBadge.getBadge().getId());
+                    badgeDTO.setName(userBadge.getBadge().getName());
+                    badgeDTO.setDescription(userBadge.getBadge().getDescription());
+                    badgeDTO.setIconUrl(userBadge.getBadge().getIconUrl());
+                    badgeDTO.setEarnedAt(userBadge.getEarnedAt());
+                    return badgeDTO;
+                })
+                .collect(Collectors.toList());
+        // --- END OF NEW LOGIC ---
 
         String token = jwtUtil.generateToken(user.getUsername());
         logger.info("Login successful for username: {}", request.getUsername());
 
         logService.log(
-            "INFO",
-            "UserServiceImpl",
-            "Login",
-            "lOGIN TO system",
-            "User logged in successfully",
-            user.getUsername(),
-            null,
-            "{\"userId\":\"" + user.getUserId() + "\"}",
-            "User",
-            "Auth"
+                "INFO",
+                "UserServiceImpl",
+                "Login",
+                "lOGIN TO system",
+                "User logged in successfully",
+                user.getUsername(),
+                null,
+                "{\"userId\":\"" + user.getUserId() + "\"}",
+                "User",
+                "Auth"
         );
-        return LoginResponse.forUser(token, user.getUserId(), userDetails);
-    }
 
+        // Pass the earnedBadges list to the LoginResponse
+        return LoginResponse.forUser(token, user.getUserId(), userDetails, earnedBadges);
+    }
 
 
 @Override
@@ -208,10 +237,61 @@ public Page<User> filterUsers(UserFilterRequest filterRequest, Pageable pageable
         //logService.log("INFO", "UserServiceImpl", "Change Password", "Password changed for user: " + user.getUsername(), user.getUsername());
     }
 
-    @Override
-    public User getUserById(Long userId) {
-        return userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+      @Override
+    public Map<String, Object> getUserProfileById(Long userId) {
+        // 1. Fetch the user details
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+
+        // Create a userDetails object without the password hash for security
+        User userDetails = new User(
+            user.getUserId(), user.getUsername(), user.getRole(), user.getFirstName(), 
+            user.getLastName(), user.getAvatarUrl(), user.getSchool(), user.getAlYear(), 
+            user.getDistrict(), user.getMedium(), user.getPhone(), user.getEmail(), 
+            user.getEarnedXp(), user.getStreakCount(), user.getAverageScore(), 
+            user.getTotalQuizzesTaken(), user.getParentName(), user.getParentContactNo(), 
+            user.getCreatedDate(), user.getUpdatedDate(), user.getUserStatus(), 
+            user.getPoints(), user.getProfileImageBase64(), user.getFcmToken(), user.getLevel()
+        );
+        
+        // 2. Fetch the user's earned badges
+        List<UserBadge> userBadges = userBadgesRepository.findByUserUserId(userId);
+        List<BadgeDTO> earnedBadges = userBadges.stream()
+                .map(userBadge -> {
+                    BadgeDTO badgeDTO = new BadgeDTO();
+                    badgeDTO.setId(userBadge.getBadge().getId());
+                    badgeDTO.setName(userBadge.getBadge().getName());
+                    badgeDTO.setDescription(userBadge.getBadge().getDescription());
+                    badgeDTO.setIconUrl(userBadge.getBadge().getIconUrl());
+                    badgeDTO.setEarnedAt(userBadge.getEarnedAt());
+                    return badgeDTO;
+                })
+                .collect(Collectors.toList());
+
+        // 3. Fetch the performance charts
+        PerformanceChartsDTO performanceCharts = performanceChartService.getPerformanceChartsForUser(userId);
+
+        // 4. Convert the userDetails object to a Map to create a flat structure
+        Map<String, Object> userProfileMap = objectMapper.convertValue(userDetails, new TypeReference<>() {});
+        // --- NEW LOGIC TO CALCULATE SPENT XP ---
+        int xpSpent = getXpSpentForLevel(user.getLevel());
+        userProfileMap.put("xpSpentOnLevels", xpSpent);
+        //
+        // 5. Add the other complex objects to the map
+        userProfileMap.put("earnedBadges", earnedBadges);
+        userProfileMap.put("performanceCharts", performanceCharts);
+        //
+        return userProfileMap;
+    }
+
+    private int getXpSpentForLevel(int currentLevel) {
+        // A user at Level 1 hasn't spent any XP to pass a level yet.
+        if (currentLevel <= 1) {
+            return 0;
+        }
+        // For any level above 1, the cost is 100 XP for each level they have passed.
+        // e.g., Level 2 has passed Level 1 (cost 100), Level 3 has passed Levels 1 & 2 (cost 200).
+        return (currentLevel - 1) * 100;
     }
 
     @Override

@@ -42,4 +42,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
 @Query("SELECT COUNT(u) FROM User u WHERE u.alYear = :alYear AND u.userStatus = :userStatus")
 int countUsersByAlYearAndUserStatus(@Param("alYear") String alYear, @Param("userStatus") String userStatus);
+
+    @Query("SELECT DISTINCT ub.user FROM UserBadge ub")
+    Page<User> findUsersWithBadges(Pageable pageable);
 }

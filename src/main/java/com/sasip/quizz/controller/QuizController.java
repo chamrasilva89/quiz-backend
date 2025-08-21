@@ -4,6 +4,7 @@ import com.sasip.quizz.dto.ApiResponse;
 import com.sasip.quizz.dto.DynamicQuizRequest;
 import com.sasip.quizz.dto.MyQuizRequest;
 import com.sasip.quizz.dto.QuestionResultWithDetails;
+import com.sasip.quizz.dto.QuizCompletionStatusDTO;
 import com.sasip.quizz.dto.QuizRequest;
 import com.sasip.quizz.dto.QuizResponse;
 import com.sasip.quizz.dto.QuizSubmissionRequest;
@@ -306,5 +307,22 @@ public ResponseEntity<ApiResponse<Map<String,Object>>> startQuiz(
         
         ScoreboardResponseDTO response = quizService.getQuizScoreboard(quizId, page, size);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{quizId}/completion-status/{userId}")
+    public ResponseEntity<ApiResponse<?>> getQuizCompletionStatus(
+            @PathVariable String quizId,
+            @PathVariable Long userId) {
+
+        // Get the status object from the service
+        QuizCompletionStatusDTO status = userQuizAnswerService.checkQuizCompletionStatus(userId, quizId);
+
+        // --- UPDATED RESPONSE FORMAT ---
+        // Wrap the single status object in a map and list
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("items", List.of(status));
+        // --- END OF UPDATE ---
+
+        return ResponseEntity.ok(new ApiResponse<>(responseData));
     }
 }

@@ -57,6 +57,6 @@ public class BadgeServiceImpl implements BadgeService {
     }
 
     private BadgeDTO toDto(Badge b) {
-        return new BadgeDTO(b.getId(), b.getName(), b.getDescription(), b.getIconUrl());
+        return new BadgeDTO(b.getId(), b.getName(), b.getDescription(), b.getIconUrl(),b.getCreatedAt());
     }
 }

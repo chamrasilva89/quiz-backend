@@ -6,6 +6,7 @@ import com.sasip.quizz.dto.ChangePasswordRequestWithOtp;
 import com.sasip.quizz.dto.ForgotPasswordConfirmRequest;
 import com.sasip.quizz.dto.OtpVerificationRequest;
 import com.sasip.quizz.dto.UserFilterRequest;
+import com.sasip.quizz.dto.UserProfileDTO;
 import com.sasip.quizz.dto.UserRegistrationRequest;
 import com.sasip.quizz.dto.UserUpdateRequest;
 import com.sasip.quizz.exception.BadRequestException;
@@ -148,24 +149,23 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<?>> getUserById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<?>> getUserProfileById(@PathVariable Long id) {
         try {
-            User user = userService.getUserById(id);
+            // The service now returns a Map<String, Object>
+            Map<String, Object> userProfile = userService.getUserProfileById(id);
 
-            // Wrap user in a list, even if it's just one item
-            Map<String, Object> response = new HashMap<>();
-            response.put("items", List.of(user));  // Ensure items is a list
+            // Wrap the single profile object in a map and list
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("items", List.of(userProfile));
 
-            return ResponseEntity.ok(new ApiResponse<>(response));
+            return ResponseEntity.ok(new ApiResponse<>(responseData));
+
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new ApiResponse<>(e.getMessage(), 404));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse<>("Failed to fetch user details", 500));
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(e.getMessage(), 400));
         }
     }
-
     @PatchMapping("/{id}/daily-streak")
     public ResponseEntity<ApiResponse<?>> updateUserDailyStreak(@PathVariable Long id) {
         try {
@@ -189,10 +189,21 @@ public class UserController {
             // Calling the service to claim the reward
             RewardWinner rewardWinner = rewardService.claimRewardlist(userId, rewardId);
             return ResponseEntity.ok(new ApiResponse<>(Map.of("items", rewardWinner)));
-        } catch (Exception e) {
-            // Return an error response if something goes wrong
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>("Failed to claim reward", 500));
+            
+        } catch (IllegalStateException e) {
+            // --- CATCH SPECIFIC USER ERRORS ---
+            // This will catch "You have already claimed this reward." 
+            // and "Sorry, this reward has reached its claim limit."
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(e.getMessage(), 400));
+                    
+        } catch (RuntimeException e) {
+            // --- CATCH UNEXPECTED ERRORS ---
+            // This will catch "Reward not found" or other unexpected issues.
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>("An unexpected error occurred: " + e.getMessage(), 500));
         }
     }
 

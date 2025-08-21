@@ -1,69 +1,45 @@
 package com.sasip.quizz.dto;
 
-import com.sasip.quizz.model.Reward;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.sasip.quizz.model.RewardWinStatus;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class RewardDetail {
-    private Reward reward;
-    private String status; // "NOTELIGIBLE", "ELIGIBLE", "CLAIMED", "LOCKED"
-    private double score;  // Used for SASIP_QUIZ or other scoring
-    private Integer currentPoints; // Current points or streak count
-    private Integer requiredPoints; // Required points for the reward
+    // This field will now be of our new DTO type
+    private RewardWithGiftDTO reward;
 
-    // Constructor for sending details when score is available
-    public RewardDetail(Reward reward, String status, double score) {
+    // The rest of the fields remain the same
+    private RewardWinStatus status;
+    private Double score;
+    private Integer currentPoints;
+    private Integer requiredPoints;
+
+    // --- CONSTRUCTORS ---
+
+    // A general-purpose constructor
+    public RewardDetail(RewardWithGiftDTO reward, RewardWinStatus status) {
         this.reward = reward;
         this.status = status;
-        this.score = score;
     }
-
-    // Constructor for sending reward details even without score, showing progress
-    public RewardDetail(Reward reward, int currentPoints, int requiredPoints, RewardWinStatus status) {
+    
+    // You can keep specific constructors if needed, or use the general one
+    public RewardDetail(RewardWithGiftDTO reward, Integer currentPoints, Integer requiredPoints, RewardWinStatus status) {
         this.reward = reward;
         this.currentPoints = currentPoints;
         this.requiredPoints = requiredPoints;
-        this.status = status.name(); // Convert enum to string (e.g., "NOTELIGIBLE")
-        this.score = 0;
-    }
-
-    // Getters and Setters
-    public Reward getReward() {
-        return reward;
-    }
-
-    public void setReward(Reward reward) {
-        this.reward = reward;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
         this.status = status;
     }
 
-    public double getScore() {
-        return score;
-    }
-
-    public void setScore(double score) {
-        this.score = score;
-    }
-
-    public Integer getCurrentPoints() {
-        return currentPoints;
-    }
-
-    public void setCurrentPoints(Integer currentPoints) {
-        this.currentPoints = currentPoints;
-    }
-
-    public Integer getRequiredPoints() {
-        return requiredPoints;
-    }
-
-    public void setRequiredPoints(Integer requiredPoints) {
-        this.requiredPoints = requiredPoints;
-    }
+    // --- GETTERS AND SETTERS ---
+    
+    public RewardWithGiftDTO getReward() { return reward; }
+    public void setReward(RewardWithGiftDTO reward) { this.reward = reward; }
+    public RewardWinStatus getStatus() { return status; }
+    public void setStatus(RewardWinStatus status) { this.status = status; }
+    public Double getScore() { return score; }
+    public void setScore(Double score) { this.score = score; }
+    public Integer getCurrentPoints() { return currentPoints; }
+    public void setCurrentPoints(Integer currentPoints) { this.currentPoints = currentPoints; }
+    public Integer getRequiredPoints() { return requiredPoints; }
+    public void setRequiredPoints(Integer requiredPoints) { this.requiredPoints = requiredPoints; }
 }

@@ -40,4 +40,7 @@ public interface UserQuizSubmissionRepository extends JpaRepository<UserQuizSubm
 
     @Query("SELECT COUNT(u) FROM UserQuizSubmission u WHERE u.userId = :userId")  // Counting the total quizzes completed by a user
     Long countByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT CASE WHEN COUNT(u) > 0 THEN TRUE ELSE FALSE END FROM UserQuizSubmission u WHERE u.userId = :userId AND u.quizId = :quizId")
+    boolean existsByUserIdAndQuizId(@Param("userId") Long userId, @Param("quizId") String quizId);
 }
