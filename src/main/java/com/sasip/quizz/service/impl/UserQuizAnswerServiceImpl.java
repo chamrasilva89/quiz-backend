@@ -28,6 +28,7 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -51,7 +52,7 @@ public class UserQuizAnswerServiceImpl implements UserQuizAnswerService {
     @Autowired
     private UserQuizSubmissionRepository userQuizSubmissionRepository;
     
-    @Override
+ /*    @Override
     public QuizSubmissionResult submitQuizAnswers(QuizSubmissionRequest request) {
         // 1) Convert userId once
         Long userIdLong;
@@ -175,7 +176,101 @@ public class UserQuizAnswerServiceImpl implements UserQuizAnswerService {
         submissionResult.setPoints(rawScore);
         return submissionResult;
         //
+    }*/
+
+@Override
+public QuizSubmissionResult submitQuizAnswers(QuizSubmissionRequest request) {
+    // 1) Initial setup and user fetching (no change)
+    Long userIdLong = Long.valueOf(request.getUserId());
+    User user = userRepository.findById(userIdLong)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+    // 2) Duplicate submission check (no change)
+    boolean alreadyAnswered = answerRepository
+            .existsByUserIdAndQuizId(request.getUserId(), request.getQuizId());
+    if (alreadyAnswered) {
+        throw new DuplicateSubmissionException("You have already submitted this quiz.");
     }
+    // --- END OF UPDATE --
+
+    // 3) Process answers and calculate rawScore (leaderboard update removed from loop)
+    List<QuizSubmissionResult.QuestionResult> results = new ArrayList<>();
+    int rawScore = 0;
+    for (QuizSubmissionRequest.AnswerSubmission answer : request.getAnswers()) {
+        Question question = questionRepository.findById(answer.getQuestionId())
+                .orElseThrow(() -> new RuntimeException("Question not found"));
+
+        boolean isCorrect = question.getCorrectAnswerId().equals(answer.getSubmittedAnswerId());
+        int points = isCorrect ? getPointsForDifficulty(question.getDifficultyLevel()) : 0;
+        rawScore += points;
+
+        // Save individual answer record (no change)
+        UserQuizAnswer ua = new UserQuizAnswer();
+        // ... set fields for ua ...
+        answerRepository.save(ua);
+
+        // Build per-question result DTO (no change)
+        QuizSubmissionResult.QuestionResult qr = new QuizSubmissionResult.QuestionResult();
+        // ... set fields for qr ...
+        results.add(qr);
+    }
+
+    // 4) Calculate final scores
+    int earnedXp = request.getAnswers().size();
+    int timeTaken = request.getTimeTakenSeconds();
+    Quiz quiz = quizRepository.findById(Long.valueOf(request.getQuizId()))
+            .orElseThrow(() -> new RuntimeException("Quiz not found"));
+    int maxTime = quiz.getTimeLimit() > 0 ? quiz.getTimeLimit() : MAX_TIME_SECONDS;
+
+    double timeRatio = (double) (maxTime - timeTaken) / maxTime;
+    double speedBonus = timeRatio * rawScore * SPEED_FACTOR;
+    double roundedBonus = Math.round(speedBonus * 100.0) / 100.0;
+    double totalScore = rawScore + roundedBonus;
+    double roundedTotalScore = Math.round(totalScore * 100.0) / 100.0;
+    String grade = calculateGrade(roundedTotalScore);
+
+    // --- NEW: Update Leaderboards here, using the final totalScore ---
+    int totalScoreForLeaderboard = (int) Math.round(roundedTotalScore);
+    upsertLeaderboard(userIdLong, user.getUsername(), user.getSchool(), user.getDistrict(), user.getAlYear(), totalScoreForLeaderboard);
+    upsertMonthlyLeaderboard(userIdLong, user.getUsername(), user.getSchool(), user.getDistrict(), user.getAlYear(), totalScoreForLeaderboard);
+    // --- END OF NEW LOGIC ---
+
+    // 5) Update submission summary record (no change)
+    UserQuizSubmission summary = submissionRepo
+        .findByUserIdAndQuizId(userIdLong, request.getQuizId())
+        .orElseThrow(() -> new RuntimeException("Submission record not found. Did you call /start?"));
+    // ... set fields for summary ...
+    summary.setTotalScore(roundedTotalScore);
+    submissionRepo.save(summary);
+
+    // 6) Update user's cumulative stats (no change)
+    user.setEarnedXp(user.getEarnedXp() + earnedXp);
+    user.setPoints(user.getPoints() + rawScore);
+    userRepository.save(user);
+
+    // 7) Build and return final DTO (no change)
+    QuizSubmissionResult submissionResult = new QuizSubmissionResult();
+    // ... set fields for submissionResult ...
+    submissionResult.setTotalScore(roundedTotalScore);
+    
+    return submissionResult;
+}
+
+private int getPointsForDifficulty(String difficultyLevel) {
+    if (difficultyLevel == null) {
+        return 10; // Default to easy if not set
+    }
+    switch (difficultyLevel.toLowerCase()) {
+        case "easy":
+            return 10;
+        case "medium":
+            return 15;
+        case "hard":
+            return 20;
+        default:
+            return 10; // Default case
+    }
+   } 
 
     private void upsertLeaderboard(Long userId, String username,
                                    String school, String district,
@@ -276,29 +371,46 @@ public QuizSubmissionResult getQuizSubmissionResult(String userId, String quizId
     @Override
     public void startQuizSession(String userId, String quizId) {
         Long uid = Long.valueOf(userId);
+        Long qid = Long.valueOf(quizId);
 
-        // Fetch existing or create new submission record
+        // --- NEW VALIDATION LOGIC ---
+        // 1. Fetch the quiz details
+        Quiz quiz = quizRepository.findById(qid)
+                .orElseThrow(() -> new ResourceNotFoundException("Quiz not found with ID: " + quizId));
+
+        // 2. Perform the time check using ZonedDateTime
+        ZonedDateTime now = ZonedDateTime.now();
+
+        if (quiz.getScheduledTime() != null && now.isBefore(quiz.getScheduledTime())) {
+            throw new IllegalStateException("This quiz has not started yet. Please check the schedule.");
+        }
+
+        if (quiz.getDeadline() != null && now.isAfter(quiz.getDeadline())) {
+            throw new IllegalStateException("This quiz has already ended.");
+        }
+        // --- END OF VALIDATION ---
+
+        // Fetch existing or create new submission record (original logic)
         UserQuizSubmission sub = submissionRepo
-            .findByUserIdAndQuizId(uid, quizId)
-            .orElseGet(() -> {
-                UserQuizSubmission n = new UserQuizSubmission();
-                n.setUserId(uid);
-                n.setQuizId(quizId);
-                // set placeholders for required columns
-                n.setEndTime(LocalDateTime.now());
-                n.setTimeTakenSeconds(0);
-                n.setTotalQuestions(0);
-                n.setCorrectCount(0);
-                n.setWrongCount(0);
-                n.setRawScore(0);
-                n.setSpeedBonus(0.0);
-                n.setTotalScore(0.0);
-                return n;
-            });
+                .findByUserIdAndQuizId(uid, quizId)
+                .orElseGet(() -> {
+                    UserQuizSubmission n = new UserQuizSubmission();
+                    n.setUserId(uid);
+                    n.setQuizId(quizId);
+                    // set placeholders for required columns
+                    n.setEndTime(LocalDateTime.now()); // This can remain LocalDateTime
+                    n.setTimeTakenSeconds(0);
+                    n.setTotalQuestions(0);
+                    n.setCorrectCount(0);
+                    n.setWrongCount(0);
+                    n.setRawScore(0);
+                    n.setSpeedBonus(0.0);
+                    n.setTotalScore(0.0);
+                    return n;
+                });
 
         // Always update start time to now
-        sub.setStartTime(LocalDateTime.now());
-        // createdAt is typically auto-populated by DB default
+        sub.setStartTime(LocalDateTime.now()); // This can remain LocalDateTime
         submissionRepo.save(sub);
     }
 

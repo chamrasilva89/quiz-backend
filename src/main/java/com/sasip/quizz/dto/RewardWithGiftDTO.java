@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 @Data
 @NoArgsConstructor
@@ -22,8 +23,8 @@ public class RewardWithGiftDTO {
     private Integer maxQuantity;
     private String type;
     private String status;
-    private LocalDateTime validFrom;
-    private LocalDateTime validTo;
+    private ZonedDateTime validFrom;
+    private ZonedDateTime validTo;
     private boolean claimable;
     private String giftType;
     private String giftDetails;

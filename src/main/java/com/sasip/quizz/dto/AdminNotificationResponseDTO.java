@@ -2,6 +2,7 @@ package com.sasip.quizz.dto;
 
 import com.sasip.quizz.model.AdminNotification;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 public class AdminNotificationResponseDTO {
 
@@ -11,7 +12,7 @@ public class AdminNotificationResponseDTO {
     private String type;
     private String status;
     private String generatedBy;
-    private LocalDateTime publishOn;
+    private ZonedDateTime publishOn;
     private String audience;
     private String actions;
     private String image;
@@ -53,8 +54,8 @@ public class AdminNotificationResponseDTO {
     public void setStatus(String status) { this.status = status; }
     public String getGeneratedBy() { return generatedBy; }
     public void setGeneratedBy(String generatedBy) { this.generatedBy = generatedBy; }
-    public LocalDateTime getPublishOn() { return publishOn; }
-    public void setPublishOn(LocalDateTime publishOn) { this.publishOn = publishOn; }
+    public ZonedDateTime getPublishOn() { return publishOn; }
+    public void setPublishOn(ZonedDateTime publishOn) { this.publishOn = publishOn; }
     public String getAudience() { return audience; }
     public void setAudience(String audience) { this.audience = audience; }
     public String getActions() { return actions; }

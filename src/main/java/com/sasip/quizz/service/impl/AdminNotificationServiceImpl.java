@@ -13,6 +13,7 @@ import com.sasip.quizz.service.AdminNotificationService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -51,7 +52,7 @@ public class AdminNotificationServiceImpl implements AdminNotificationService {
 
     @Override
     public List<AdminNotificationResponseDTO> getNotificationsForToday() {
-        LocalDateTime today = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
+        ZonedDateTime today = ZonedDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
         List<AdminNotification> notifications = adminNotificationRepository.findByPublishOnAndStatus(today, "Pending");
         
         return notifications.stream()

@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime; // Import ZonedDateTime
 import java.util.List;
 import java.util.Optional;
 
@@ -21,7 +21,7 @@ public interface QuizRepository
   extends JpaRepository<Quiz, Long>, JpaSpecificationExecutor<Quiz> {
 
     // Default method to find quizzes by scheduled time
-    List<Quiz> findByScheduledTime(LocalDateTime scheduledTime);
+    List<Quiz> findByScheduledTime(ZonedDateTime scheduledTime);
 
     // Find quizzes by quizType with pagination
     Page<Quiz> findByQuizType(QuizType quizType, Pageable pageable);
@@ -32,20 +32,20 @@ public interface QuizRepository
     @Query("SELECT COUNT(q) FROM Quiz q WHERE q.quizType = 'SASIP'")
     Long countAllSasipQuizzes();
 
-    List<Quiz> findByScheduledTimeBefore(LocalDateTime currentTime);
-    List<Quiz> findByScheduledTimeBeforeAndNotificationStatus(LocalDateTime currentTime, NotificationStatus status);
-    List<Quiz> findByDeadlineBeforeAndNotificationStatus(LocalDateTime deadline, NotificationStatus status);
+    List<Quiz> findByScheduledTimeBefore(ZonedDateTime currentTime);
+    List<Quiz> findByScheduledTimeBeforeAndNotificationStatus(ZonedDateTime currentTime, NotificationStatus status);
+    List<Quiz> findByDeadlineBeforeAndNotificationStatus(ZonedDateTime deadline, NotificationStatus status);
     
     // Add this method to find quizzes by deadline before the current time and quiz status as ACTIVE
-    List<Quiz> findByDeadlineBeforeAndQuizStatus(LocalDateTime deadline, QuizStatus quizStatus);
+    List<Quiz> findByDeadlineBeforeAndQuizStatus(ZonedDateTime deadline, QuizStatus quizStatus);
 
     // Method to find active quizzes for a given academic year
     @Query("SELECT q FROM Quiz q WHERE q.alYear = :alYear " +
-           "AND q.quizStatus = 'ACTIVE' " + // Correct attribute name is 'quizStatus', not 'status'
+           "AND q.quizStatus = 'ACTIVE' " +
            "AND q.scheduledTime <= :currentDate " +
            "AND q.deadline >= :currentDate")
     List<Quiz> findActiveQuizzesForYear(@Param("alYear") String alYear, 
-                                        @Param("currentDate") LocalDateTime currentDate);
+                                        @Param("currentDate") ZonedDateTime currentDate);
 
 
     @Query(value = "SELECT q, s FROM Quiz q JOIN UserQuizSubmission s ON CAST(q.quizId AS string) = s.quizId " +
@@ -62,6 +62,6 @@ public interface QuizRepository
                                                Pageable pageable);
 
     @Query("SELECT q FROM Quiz q WHERE q.quizId = :quizId")
-    Optional<Quiz> findByQuizId(@Param("quizId") Long quizId);  // Updated to Long
+    Optional<Quiz> findByQuizId(@Param("quizId") Long quizId);
 
 }

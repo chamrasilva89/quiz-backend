@@ -87,27 +87,62 @@ public class QuestionServiceImpl implements QuestionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Question not found with ID: " + questionId));
     }
 
-    @Override
-    public Question updateQuestionPartial(Long id, QuestionPatchRequest request) {
-        Question question = questionRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Not found"));
+@Override
+public Question updateQuestionPartial(Long id, QuestionPatchRequest request) {
+    // 1. Fetch the existing question from the database
+    Question question = questionRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Question not found with ID: " + id));
 
-        if (request.getQuestionText() != null)
-            question.setQuestionText(request.getQuestionText());
-
-        if (request.getExplanation() != null)
-            question.setExplanation(request.getExplanation());
-
-        if (request.getStatus() != null)
-            question.setStatus(request.getStatus());
-
-        if (request.getCorrectAnswerId() != null)
-            question.setCorrectAnswerId(request.getCorrectAnswerId());
-
-        Question updated = questionRepository.save(question);
-        //logService.log("INFO", "QuestionServiceImpl", "Update Question", "Updated question ID: " + updated.getQuestionId(), "system");
-        return updated;
+    // 2. Conditionally update each field only if a new value is provided
+    if (request.getQuestionText() != null && !request.getQuestionText().isBlank()) {
+        question.setQuestionText(request.getQuestionText());
     }
+    if (request.getExplanation() != null) {
+        question.setExplanation(request.getExplanation());
+    }
+    if (request.getStatus() != null && !request.getStatus().isBlank()) {
+        question.setStatus(request.getStatus());
+    }
+    if (request.getCorrectAnswerId() != null) {
+        question.setCorrectAnswerId(request.getCorrectAnswerId());
+    }
+    if (request.getAlYear() != null) {
+        question.setAlYear(request.getAlYear());
+    }
+    if (request.getOptions() != null && !request.getOptions().isEmpty()) {
+        question.setOptions(request.getOptions());
+    }
+    if (request.getSubject() != null) {
+        question.setSubject(request.getSubject());
+    }
+    if (request.getType() != null) {
+        question.setType(request.getType());
+    }
+    if (request.getSubType() != null) {
+        question.setSubType(request.getSubType());
+    }
+    if (request.getPoints() != null) {
+        question.setPoints(request.getPoints());
+    }
+    if (request.getDifficultyLevel() != null) {
+        question.setDifficultyLevel(request.getDifficultyLevel());
+    }
+    if (request.getMaxTimeSec() != null) {
+        question.setMaxTimeSec(request.getMaxTimeSec());
+    }
+    if (request.getHasAttachment() != null) {
+        question.setHasAttachment(request.getHasAttachment());
+    }
+    if (request.getModule() != null) {
+        question.setModule(request.getModule());
+    }
+    if (request.getSubmodule() != null) {
+        question.setSubmodule(request.getSubmodule());
+    }
+
+    // 3. Save the updated question
+    return questionRepository.save(question);
+}
 
     @Override
     public Page<Question> getFilteredQuestions(QuestionFilterRequest request, Pageable pageable) {

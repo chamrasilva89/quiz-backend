@@ -4,6 +4,7 @@ import com.sasip.quizz.model.QuizStatus;
 import com.sasip.quizz.model.QuizType;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -22,8 +23,8 @@ public class SasipQuizListItem {
     private String alYear;
     private int attemptsAllowed;
     private QuizStatus quizStatus;
-    private LocalDateTime scheduledTime;
-    private LocalDateTime deadline;
+    private ZonedDateTime  scheduledTime;
+    private ZonedDateTime  deadline;
     private boolean completed;
 
     // Newly added fields

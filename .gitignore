@@ -32,6 +32,9 @@ build/
 ### VS Code ###
 .vscode/
 
+### git ###
+.git/
+
 application.properties
 
 # Firebase Admin SDK credentials file (do not commit to the repository)

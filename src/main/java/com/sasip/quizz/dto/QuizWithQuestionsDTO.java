@@ -4,6 +4,7 @@ import com.sasip.quizz.model.QuizStatus;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @Data
@@ -16,8 +17,8 @@ public class QuizWithQuestionsDTO {
     private int timeLimit;
     private String alYear;
     private List<String> moduleList;
-    private LocalDateTime scheduledTime;
-    private LocalDateTime deadline;
+    private ZonedDateTime  scheduledTime;
+    private ZonedDateTime  deadline;
     private int totalQuestions;
     private Integer attemptsAllowed;
     private int passAccuracy;

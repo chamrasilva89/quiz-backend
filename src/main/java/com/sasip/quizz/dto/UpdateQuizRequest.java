@@ -1,6 +1,7 @@
 package com.sasip.quizz.dto;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 import com.sasip.quizz.model.QuizStatus;
@@ -19,8 +20,8 @@ public class UpdateQuizRequest {
     private Integer passAccuracy;
     private String alYear;
     private Integer attemptsAllowed;
-    private LocalDateTime scheduledTime;
-    private LocalDateTime deadline;
+    private ZonedDateTime  scheduledTime;
+    private ZonedDateTime  deadline;
     private List<Long> questionIds;
     private QuizType quizType;
     private Long userId;

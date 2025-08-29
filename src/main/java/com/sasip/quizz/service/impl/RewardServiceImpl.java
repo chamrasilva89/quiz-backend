@@ -5,6 +5,7 @@ import com.sasip.quizz.dto.RewardDTO;
 import com.sasip.quizz.dto.RewardDetail;
 import com.sasip.quizz.dto.RewardResponse;
 import com.sasip.quizz.dto.RewardWithGiftDTO;
+import com.sasip.quizz.exception.ResourceNotFoundException;
 import com.sasip.quizz.model.Quiz;
 import com.sasip.quizz.model.Reward;
 import com.sasip.quizz.model.RewardGift;
@@ -24,7 +25,6 @@ import com.sasip.quizz.service.RewardService;
 
 import jakarta.transaction.Transactional;
 
-import com.sasip.quizz.service.LogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +33,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -66,7 +67,7 @@ public class RewardServiceImpl implements RewardService {
         }
         reward.setValidFrom(dto.getValidFrom());
         reward.setValidTo(dto.getValidTo());
-        reward.setClaimable(dto.isClaimable());
+        reward.setClaimable(dto.getClaimable());
         reward.setGiftType(dto.getGiftType());        // Set giftType
         reward.setGiftDetails(dto.getGiftDetails());  // Set giftDetails
 
@@ -77,29 +78,53 @@ public class RewardServiceImpl implements RewardService {
 
     @Override
     public RewardDTO updateReward(Long id, RewardDTO dto) {
+        // 1. Fetch the existing reward from the database
         Reward reward = rewardRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Reward not found with ID: " + id));
 
-        reward.setName(dto.getName());
-        reward.setDescription(dto.getDescription());
-        reward.setPoints(dto.getPoints());
-        reward.setIconUrl(dto.getIconUrl());
-        reward.setMaxQuantity(dto.getMaxQuantity());
+        // 2. Conditionally update each field only if a new value is provided in the DTO
+        if (dto.getName() != null && !dto.getName().isBlank()) {
+            reward.setName(dto.getName());
+        }
+        if (dto.getDescription() != null) {
+            reward.setDescription(dto.getDescription());
+        }
+        if (dto.getPoints() != null) {
+            reward.setPoints(dto.getPoints());
+        }
+        if (dto.getIconUrl() != null) {
+            reward.setIconUrl(dto.getIconUrl());
+        }
+        if (dto.getMaxQuantity() != null) {
+            reward.setMaxQuantity(dto.getMaxQuantity());
+        }
         if (dto.getType() != null) {
             reward.setType(RewardType.valueOf(dto.getType()));
         }
         if (dto.getStatus() != null) {
             reward.setStatus(RewardStatus.valueOf(dto.getStatus()));
         }
-        reward.setValidFrom(dto.getValidFrom());
-        reward.setValidTo(dto.getValidTo());
-        reward.setClaimable(dto.isClaimable());
-        reward.setGiftType(dto.getGiftType());        // Update giftType
-        reward.setGiftDetails(dto.getGiftDetails());  // Update giftDetails
+        if (dto.getValidFrom() != null) {
+            reward.setValidFrom(dto.getValidFrom());
+        }
+        if (dto.getValidTo() != null) {
+            reward.setValidTo(dto.getValidTo());
+        }
+    // --- FIX: Use getClaimable() for Boolean type ---
+        if (dto.getClaimable() != null) {
+            reward.setClaimable(dto.getClaimable());
+        }
+        // --- END OF FIX ---
+        if (dto.getGiftType() != null) {
+            reward.setGiftType(dto.getGiftType());
+        }
+        if (dto.getGiftDetails() != null) {
+            reward.setGiftDetails(dto.getGiftDetails());
+        }
 
+        // 3. Save the updated reward and return the DTO
         Reward updated = rewardRepository.save(reward);
-        //logService.log("INFO", "RewardServiceImpl", "Update Reward", "Updated reward: " + updated.getName(), "system");
-        return toDto(updated);
+        return toDto(updated); // Assuming you have a toDto helper method
     }
 
     @Override
@@ -125,21 +150,26 @@ public class RewardServiceImpl implements RewardService {
     }
 
     private RewardDTO toDto(Reward reward) {
-        return new RewardDTO(
-                reward.getId(),
-                reward.getName(),
-                reward.getDescription(),
-                reward.getPoints(),
-                reward.getIconUrl(),
-                reward.getMaxQuantity(),
-                reward.getType() != null ? reward.getType().name() : null,
-                reward.getStatus() != null ? reward.getStatus().name() : null,
-                reward.getValidFrom(),
-                reward.getValidTo(),
-                reward.isClaimable(),
-                reward.getGiftType(),      // Include giftType in the DTO
-                reward.getGiftDetails()    // Include giftDetails in the DTO
-        );
+        RewardDTO dto = new RewardDTO();
+        dto.setId(reward.getId());
+        dto.setName(reward.getName());
+        dto.setDescription(reward.getDescription());
+        dto.setPoints(reward.getPoints());
+        dto.setIconUrl(reward.getIconUrl());
+        dto.setMaxQuantity(reward.getMaxQuantity());
+        if (reward.getType() != null) {
+            dto.setType(reward.getType().name());
+        }
+        if (reward.getStatus() != null) {
+            dto.setStatus(reward.getStatus().name());
+        }
+        dto.setValidFrom(reward.getValidFrom());
+        dto.setValidTo(reward.getValidTo());
+        dto.setClaimable(reward.isClaimable()); // Use isClaimable() from the Reward entity
+        dto.setGiftType(reward.getGiftType());
+        dto.setGiftDetails(reward.getGiftDetails());
+        
+        return dto;
     }
 
     @Override
@@ -191,37 +221,68 @@ public class RewardServiceImpl implements RewardService {
 @Override
 @Transactional // Make the method transactional to ensure data consistency
 public RewardWinner claimRewardlist(Long userId, Long rewardId) {
-    // 1. Find the reward, otherwise fail early
+    // 1. Fetch the necessary entities
     Reward reward = rewardRepository.findById(rewardId)
-            .orElseThrow(() -> new RuntimeException("Reward not found with ID: " + rewardId));
+            .orElseThrow(() -> new ResourceNotFoundException("Reward not found with ID: " + rewardId));
+    
+    User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
     // 2. Check if this specific user has already claimed this reward
     if (rewardWinnerRepository.findByUser_userIdAndReward_Id(userId, rewardId).isPresent()) {
         throw new IllegalStateException("You have already claimed this reward.");
     }
 
-    // 3. Check if the reward has a defined claim limit
+    // 3. Check for overall reward claim limits
     if (reward.getMaxQuantity() != null && reward.getMaxQuantity() > 0) {
-        // Get the current number of winners for this reward
         long currentClaims = rewardWinnerRepository.countByRewardId(rewardId);
-        
-        // If the number of claims has reached the maximum, throw an exception
         if (currentClaims >= reward.getMaxQuantity()) {
             throw new IllegalStateException("Sorry, this reward has reached its claim limit.");
         }
     }
 
-    // 4. If all checks pass, create the new winner record
+    // --- NEW LOGIC: Check eligibility for CLAIM_POINTS rewards ---
+    if (reward.getType() == RewardType.CLAIM_POINTS) {
+        if (user.getPoints() < reward.getPoints()) {
+            throw new IllegalStateException("You do not have enough points to claim this reward.");
+        }
+        // Deduct points from the user for claiming the reward
+        user.setPoints(user.getPoints() - reward.getPoints());
+    }
+    // --- END OF NEW LOGIC ---
+
+    // 4. Handle the gift associated with the reward
+    if (reward.getGiftDetails() != null && !reward.getGiftDetails().isBlank()) {
+        try {
+            long giftId = Long.parseLong(reward.getGiftDetails());
+            RewardGift gift = rewardGiftRepository.findById(giftId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Associated gift not found with ID: " + giftId));
+
+            // --- NEW LOGIC: Award points if the gift type is "points" ---
+            if ("points".equalsIgnoreCase(gift.getGiftType())) {
+                user.setPoints(user.getPoints() + gift.getPoints());
+            }
+            // --- END OF NEW LOGIC ---
+
+        } catch (NumberFormatException e) {
+            // Log this event, as it indicates a data configuration issue
+            System.err.println("Could not parse giftId from reward's giftDetails: " + reward.getGiftDetails());
+        }
+    }
+    
+    // 5. Save the updated user object with new point totals
+    userRepository.save(user);
+
+    // 6. Create the new winner record
     RewardWinner newRewardWinner = new RewardWinner();
-    newRewardWinner.setUser(userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId)));
+    newRewardWinner.setUser(user);
     newRewardWinner.setReward(reward);
     newRewardWinner.setStatus("CLAIMED");
     newRewardWinner.setClaimedOn(LocalDateTime.now());
     newRewardWinner.setGiftDetails(reward.getGiftDetails());
-    newRewardWinner.setGiftStatus("PENDING");
+    newRewardWinner.setGiftStatus("CLAIMED"); // For point-based gifts, the status is immediately CLAIMED
 
-    // 5. Save and return the new record
+    // 7. Save and return the new record
     return rewardWinnerRepository.save(newRewardWinner);
 }
 
@@ -281,7 +342,7 @@ private int getUserQuizSubmissionScore(Long userId, Reward reward) {
     // 2. Find all currently active quizzes for that user's academic year
     List<Quiz> activeQuizzes = quizRepository.findActiveQuizzesForYear(
             String.valueOf(user.getAlYear()),
-            LocalDateTime.now()
+            ZonedDateTime.now()
     );
 
     // 3. Find the specific quiz that is linked to this reward
@@ -353,32 +414,39 @@ private boolean claimRewardForUser(Long userId, Reward reward) {
     public boolean isUserEligibleForDailyStreakReward(Long userId, Reward reward) {
         int streakCount = getUserStreakCount(userId);
 
+        // --- FIX: Use ZonedDateTime for comparison ---
+        ZonedDateTime now = ZonedDateTime.now();
         return reward.getStatus() == RewardStatus.ACTIVE &&
-               LocalDateTime.now().isAfter(reward.getValidFrom()) &&
-               LocalDateTime.now().isBefore(reward.getValidTo()) &&
-               streakCount == reward.getPoints(); // Reward eligible if streak matches points
+               now.isAfter(reward.getValidFrom()) &&
+               now.isBefore(reward.getValidTo()) &&
+               streakCount == reward.getPoints();
     }
 
     @Override
     public boolean isUserEligibleForClaimPointsReward(Long userId, Reward reward) {
         int currentPoints = getUserPoints(userId);
+
+        // --- FIX: Use ZonedDateTime for comparison ---
+        ZonedDateTime now = ZonedDateTime.now();
         return reward.getStatus() == RewardStatus.ACTIVE &&
-               LocalDateTime.now().isAfter(reward.getValidFrom()) &&
-               LocalDateTime.now().isBefore(reward.getValidTo()) &&
-               currentPoints == reward.getPoints(); // Reward eligible if points match
+               now.isAfter(reward.getValidFrom()) &&
+               now.isBefore(reward.getValidTo()) &&
+               currentPoints == reward.getPoints();
     }
 
     @Override
     public boolean isUserEligibleForSasipQuizReward(Long userId, Reward reward) {
+        // --- FIX: Use ZonedDateTime for comparison ---
+        ZonedDateTime now = ZonedDateTime.now();
         return reward.getStatus() == RewardStatus.ACTIVE &&
-               LocalDateTime.now().isAfter(reward.getValidFrom()) &&
-               LocalDateTime.now().isBefore(reward.getValidTo()) &&
+               now.isAfter(reward.getValidFrom()) &&
+               now.isBefore(reward.getValidTo()) &&
                isUserQuizEligible(userId, reward);
     }
 
     private boolean isUserQuizEligible(Long userId, Reward reward) {
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
-        List<Quiz> activeQuizzes = quizRepository.findActiveQuizzesForYear(String.valueOf(user.getAlYear()), LocalDateTime.now());
+        List<Quiz> activeQuizzes = quizRepository.findActiveQuizzesForYear(String.valueOf(user.getAlYear()), ZonedDateTime.now());
 
         for (Quiz quiz : activeQuizzes) {
             if (quiz.getQuizId().equals(reward.getGiftType())) {
@@ -398,39 +466,36 @@ private RewardDetail getUserQuizSubmissionStatus(Long userId, Reward reward, Rew
     User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
 
+    // --- FIX: Use ZonedDateTime for the query ---
     List<Quiz> activeQuizzes = quizRepository.findActiveQuizzesForYear(
             String.valueOf(user.getAlYear()),
-            LocalDateTime.now()
+            ZonedDateTime.now() // Use the timezone-aware current time
     );
+    // --- END OF FIX ---
 
-    // 1. Create the nested reward object first, assuming no gift in this context.
-    // The main method will fetch and set the actual gift.
+    // Create the nested reward object first. The main method will set the actual gift.
     RewardWithGiftDTO rewardWithGift = RewardWithGiftDTO.from(reward, null);
 
-    // 2. Create the main RewardDetail object
+    // Create the main RewardDetail object
     RewardDetail detail = new RewardDetail(rewardWithGift, status);
-    detail.setRequiredPoints(reward.getPoints()); // Set required points
+    detail.setRequiredPoints(reward.getPoints());
 
     // Loop through active quizzes to find the user's score
     for (Quiz quiz : activeQuizzes) {
-        // Use String.valueOf() for a safe comparison
         if (String.valueOf(quiz.getQuizId()).equals(reward.getGiftType())) {
             Optional<UserQuizSubmission> submission = userQuizSubmissionRepository
                     .findByUserIdAndQuizId(userId, String.valueOf(quiz.getQuizId()));
 
             if (submission.isPresent()) {
-                // If submitted, set the score
                 detail.setScore(submission.get().getTotalScore());
             } else {
-                // If not submitted, score is 0
                 detail.setScore(0.0);
             }
-            // Return the detail as soon as the matching quiz is found and processed
             return detail;
         }
     }
 
-    // If no matching quiz was found after checking all active quizzes, the score is 0
+    // If no matching quiz was found, the score is 0
     detail.setScore(0.0);
     return detail;
 }
@@ -489,9 +554,10 @@ private RewardWinStatus getRewardStatusForUser(Long userId, Reward reward) {
     // --- STEP 3: If no specific eligibility logic matches, check general conditions ---
 
     // Check if the reward is active and within its valid date range
+   ZonedDateTime now = ZonedDateTime.now();
     if (reward.getStatus() == RewardStatus.ACTIVE &&
-        LocalDateTime.now().isAfter(reward.getValidFrom()) &&
-        LocalDateTime.now().isBefore(reward.getValidTo())) {
+        now.isAfter(reward.getValidFrom()) &&
+        now.isBefore(reward.getValidTo())) {
         return RewardWinStatus.ELIGIBLE;
     }
 

@@ -3,6 +3,7 @@ package com.sasip.quizz.dto;
 import com.sasip.quizz.model.Quiz; // Assuming QuizStatus is also in this package or model
 import com.sasip.quizz.model.QuizStatus; // Assuming QuizStatus is also in this package or model
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 public class SasipQuizSummary {
@@ -15,8 +16,8 @@ public class SasipQuizSummary {
     private int passAccuracy;
     private String alYear;
     private int attemptsAllowed;
-    private LocalDateTime scheduledTime;
-    private LocalDateTime deadline;
+    private ZonedDateTime  scheduledTime;
+    private ZonedDateTime  deadline;
     private List<Long> rewardIds;
     private QuizStatus quizStatus;
 
@@ -75,11 +76,11 @@ public class SasipQuizSummary {
         return attemptsAllowed;
     }
 
-    public LocalDateTime getScheduledTime() {
+    public ZonedDateTime  getScheduledTime() {
         return scheduledTime;
     }
 
-    public LocalDateTime getDeadline() {
+    public ZonedDateTime  getDeadline() {
         return deadline;
     }
 
@@ -129,11 +130,11 @@ public class SasipQuizSummary {
         this.attemptsAllowed = attemptsAllowed;
     }
 
-    public void setScheduledTime(LocalDateTime scheduledTime) {
+    public void setScheduledTime(ZonedDateTime  scheduledTime) {
         this.scheduledTime = scheduledTime;
     }
 
-    public void setDeadline(LocalDateTime deadline) {
+    public void setDeadline(ZonedDateTime  deadline) {
         this.deadline = deadline;
     }
 

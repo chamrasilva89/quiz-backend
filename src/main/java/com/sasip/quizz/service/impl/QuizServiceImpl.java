@@ -46,14 +46,17 @@ public class QuizServiceImpl implements QuizService {
         quiz.setPassAccuracy(request.getPassAccuracy());
         quiz.setTimeLimit(request.getTimeLimit());
         quiz.setXp(request.getXp());
+        
+        // This will now work correctly as both are ZonedDateTime
         quiz.setScheduledTime(request.getScheduledTime());
         quiz.setDeadline(request.getDeadline());
+
         quiz.setAlYear(request.getAlYear());
         quiz.setQuestionIds(request.getQuestionIds());
         quiz.setQuizType(QuizType.valueOf(request.getQuizType().toUpperCase()));
         quiz.setQuizStatus(QuizStatus.valueOf(request.getQuizStatus().toUpperCase()));
+        
         Quiz saved = quizRepository.save(quiz);
-        //logService.log("INFO", "QuizServiceImpl", "Create Quiz", "Quiz created: " + saved.getQuizName(), null);
         return saved;
     }
 

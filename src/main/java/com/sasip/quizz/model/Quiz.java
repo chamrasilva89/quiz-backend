@@ -1,6 +1,7 @@
 package com.sasip.quizz.model;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -48,8 +49,8 @@ public class Quiz {
     private String alYear;
     private int attemptsAllowed;
 
-    private LocalDateTime scheduledTime;
-    private LocalDateTime deadline;
+   private ZonedDateTime scheduledTime;
+    private ZonedDateTime deadline;
 
     @Column(name = "question_ids", columnDefinition = "json")
     private String questionIdsJson;

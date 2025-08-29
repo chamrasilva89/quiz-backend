@@ -1,13 +1,14 @@
 package com.sasip.quizz.dto;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 public class AdminNotificationRequestDTO {
     private String title;
     private String description;
     private String type;  // "push" or "app"
     private String audience;  // "individual", "all", "AL-year-1"
-    private LocalDateTime publishOn;
+    private ZonedDateTime publishOn;
     private String actions;
     private String image;
     private String extraField1;
@@ -52,11 +53,11 @@ public class AdminNotificationRequestDTO {
         this.audience = audience;
     }
 
-    public LocalDateTime getPublishOn() {
+    public ZonedDateTime getPublishOn() {
         return publishOn;
     }
 
-    public void setPublishOn(LocalDateTime publishOn) {
+    public void setPublishOn(ZonedDateTime publishOn) {
         this.publishOn = publishOn;
     }
 

@@ -1,16 +1,13 @@
 package com.sasip.quizz.dto;
 
-import jakarta.validation.constraints.*;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
-
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime; // Import ZonedDateTime
 import java.util.List;
 
 @Data
 public class QuizRequest {
-    @NotBlank(message = "Quiz name is required")
     private String quizName;
-
     private String intro;
     private List<String> moduleList;
     private List<Long> rewardIdList;
@@ -18,21 +15,13 @@ public class QuizRequest {
     private int passAccuracy;
     private int timeLimit;
     private int xp;
-    private LocalDateTime scheduledTime;
-    private LocalDateTime deadline;
-    private String alYear;
-    private String quizStatus; // Accepts DRAFT, PUBLISHED, etc.
-
-
-    private List<Long> questionIds; // Just pass IDs, not full Question objects
-
-    private String quizType;
     
-    public String getQuizType() {
-        return quizType;
-    }
+    // Use ZonedDateTime to be consistent with the Quiz entity
+    private ZonedDateTime scheduledTime;
+    private ZonedDateTime deadline;
 
-    public void setQuizType(String quizType) {
-        this.quizType = quizType;
-    }
+    private String alYear;
+    private List<Long> questionIds;
+    private String quizType;
+    private String quizStatus;
 }

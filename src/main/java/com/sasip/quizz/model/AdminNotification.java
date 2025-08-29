@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 @Entity
 @Table(name = "admin_notifications")
@@ -33,7 +34,7 @@ public class AdminNotification {
     private String generatedBy; // Admin who created the notification
 
     @Column(nullable = false)
-    private LocalDateTime publishOn; // The date when the notification will be sent
+    private ZonedDateTime publishOn; // The date when the notification will be sent
 
     @Column(nullable = false)
     private String audience; // E.g., "individual", "all", "AL-year-1"
@@ -51,7 +52,7 @@ public class AdminNotification {
     @PrePersist
     protected void onCreate() {
         if (this.publishOn == null) {
-            this.publishOn = LocalDateTime.now();
+            this.publishOn = ZonedDateTime.now();
         }
     }
 }

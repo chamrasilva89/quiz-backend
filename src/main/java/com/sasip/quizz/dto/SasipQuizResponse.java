@@ -1,6 +1,7 @@
 package com.sasip.quizz.dto;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 import com.sasip.quizz.model.Quiz;
 import com.sasip.quizz.model.QuizStatus;
@@ -15,8 +16,8 @@ public class SasipQuizResponse {
     private int passAccuracy;
     private int alYear;
     private int attemptsAllowed;
-    private LocalDateTime scheduledTime;
-    private LocalDateTime deadline;
+    private ZonedDateTime  scheduledTime;
+    private ZonedDateTime  deadline;
     private List<Long> rewardIds;
     private List<QuestionWithoutAnswerDTO> questions;
     private QuizStatus quizStatus;
@@ -106,19 +107,19 @@ public class SasipQuizResponse {
         this.attemptsAllowed = attemptsAllowed;
     }
 
-    public LocalDateTime getScheduledTime() {
+    public ZonedDateTime  getScheduledTime() {
         return scheduledTime;
     }
 
-    public void setScheduledTime(LocalDateTime scheduledTime) {
+    public void setScheduledTime(ZonedDateTime  scheduledTime) {
         this.scheduledTime = scheduledTime;
     }
 
-    public LocalDateTime getDeadline() {
+    public ZonedDateTime  getDeadline() {
         return deadline;
     }
 
-    public void setDeadline(LocalDateTime deadline) {
+    public void setDeadline(ZonedDateTime  deadline) {
         this.deadline = deadline;
     }
 

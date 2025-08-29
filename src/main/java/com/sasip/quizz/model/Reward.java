@@ -1,6 +1,7 @@
 package com.sasip.quizz.model;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -36,9 +37,8 @@ public class Reward {
     @Enumerated(EnumType.STRING)
     private RewardStatus status = RewardStatus.ACTIVE;
 
-    private LocalDateTime validFrom;
-
-    private LocalDateTime validTo;
+    private ZonedDateTime validFrom;
+    private ZonedDateTime validTo;
 
     private boolean claimable = false;
 

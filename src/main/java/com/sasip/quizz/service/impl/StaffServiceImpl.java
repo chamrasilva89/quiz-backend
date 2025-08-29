@@ -114,49 +114,56 @@ public class StaffServiceImpl implements StaffService {
     }
 
     @Override
-    public LoginResponse login(LoginRequest request) {
-        logger.info("Login attempt for staff username: {}", request.getUsername());
+public LoginResponse login(LoginRequest request) {
+    logger.info("Login attempt for staff username: {}", request.getUsername());
 
-        Staff staff = staffRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> {
-                    logger.warn("Login failed: staff not found for username {}", request.getUsername());
-                    return new BadCredentialsException("Invalid username or password");
-                });
+    Staff staff = staffRepository.findByUsername(request.getUsername())
+            .orElseThrow(() -> {
+                logger.warn("Login failed: staff not found for username {}", request.getUsername());
+                return new BadCredentialsException("Invalid username or password");
+            });
 
-        boolean passwordMatches = passwordEncoder.matches(request.getPassword(), staff.getPasswordHash());
-        if (!passwordMatches) {
-            logger.warn("Login failed: incorrect password for username {}", request.getUsername());
-            throw new BadCredentialsException("Invalid username or password");
-        }
-
-        Role role = roleRepository.findByName(staff.getRole())
-                .orElseThrow(() -> {
-                    logger.warn("Login failed: role not found for role name {}", staff.getRole());
-                    return new RuntimeException("Role not found");
-                });
-
-        List<String> permissions = rolePermissionRepository.findPermissionsByRole(role.getId());
-        String token = jwtUtil.generateToken(staff.getUsername());
-        logger.info("Login successful for staff username: {}", request.getUsername());
-
-        // Create a new Staff object excluding passwordHash and using the new constructor
-        Staff staffDetails = new Staff(staff.getStaffId(), staff.getUsername(), staff.getRole(), staff.getFirstName(), staff.getLastName(), staff.getEmail(), staff.getPhone(), staff.getStatus(), staff.getCreatedDate(), staff.getUpdatedDate());
-
-        logService.log(
-            "INFO",
-            "StaffServiceImpl",
-            "Login",
-            "Staff Login",
-            "Staff logged in successfully",
-            staff.getUsername(),
-            null,
-            "{\"staffId\":\"" + staff.getStaffId() + "\"}",
-            "Staff",
-            "Auth"
-        );
-
-        return LoginResponse.forStaff(token, staff.getStaffId(), permissions, staffDetails);
+    // --- NEW: Check if the staff account is active ---
+    if (!"active".equalsIgnoreCase(staff.getStatus())) {
+        logger.warn("Login failed: Staff account is not active for username {}", request.getUsername());
+        throw new BadCredentialsException("Your account is disabled. Please contact an administrator.");
     }
+    // --- END OF NEW LOGIC ---
+
+    boolean passwordMatches = passwordEncoder.matches(request.getPassword(), staff.getPasswordHash());
+    if (!passwordMatches) {
+        logger.warn("Login failed: incorrect password for username {}", request.getUsername());
+        throw new BadCredentialsException("Invalid username or password");
+    }
+
+    Role role = roleRepository.findByName(staff.getRole())
+            .orElseThrow(() -> {
+                logger.warn("Login failed: role not found for role name {}", staff.getRole());
+                return new RuntimeException("Role not found");
+            });
+
+    List<String> permissions = rolePermissionRepository.findPermissionsByRole(role.getId());
+    String token = jwtUtil.generateToken(staff.getUsername());
+    logger.info("Login successful for staff username: {}", request.getUsername());
+
+    // Create a new Staff object excluding passwordHash
+    Staff staffDetails = new Staff(staff.getStaffId(), staff.getUsername(), staff.getRole(), staff.getFirstName(), staff.getLastName(), staff.getEmail(), staff.getPhone(), staff.getStatus(), staff.getCreatedDate(), staff.getUpdatedDate());
+
+    logService.log(
+        "INFO",
+        "StaffServiceImpl",
+        "Login",
+        "Staff Login",
+        "Staff logged in successfully",
+        staff.getUsername(),
+        null,
+        "{\"staffId\":\"" + staff.getStaffId() + "\"}",
+        "Staff",
+        "Auth"
+    );
+
+    return LoginResponse.forStaff(token, staff.getStaffId(), permissions, staffDetails);
+}
 
 
 

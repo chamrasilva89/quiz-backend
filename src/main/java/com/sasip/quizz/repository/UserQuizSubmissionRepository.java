@@ -43,4 +43,8 @@ public interface UserQuizSubmissionRepository extends JpaRepository<UserQuizSubm
 
     @Query("SELECT CASE WHEN COUNT(u) > 0 THEN TRUE ELSE FALSE END FROM UserQuizSubmission u WHERE u.userId = :userId AND u.quizId = :quizId")
     boolean existsByUserIdAndQuizId(@Param("userId") Long userId, @Param("quizId") String quizId);
+
+    // Add this new method to fetch full submission objects for a user and quiz type
+    @Query("SELECT u FROM UserQuizSubmission u JOIN Quiz q ON u.quizId = CAST(q.quizId AS string) WHERE u.userId = :userId AND q.quizType = 'SASIP'")
+    List<UserQuizSubmission> findSasipSubmissionsByUserId(@Param("userId") Long userId);
 }

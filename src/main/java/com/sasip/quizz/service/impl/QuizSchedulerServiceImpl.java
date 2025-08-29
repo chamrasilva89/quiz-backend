@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -70,10 +71,10 @@ public class QuizSchedulerServiceImpl implements QuizSchedulerService {
     @Scheduled(cron = "0 * * * * *") // Run every minute
     @Override
     public void checkAndNotifyQuizStart() {
-        LocalDateTime currentTime = LocalDateTime.now();
+         ZonedDateTime currentTime = ZonedDateTime.now(); 
 
         // Fetch quizzes that are scheduled before or at the current time and haven't been notified yet
-        List<Quiz> quizzes = quizRepository.findByScheduledTimeBeforeAndNotificationStatus(currentTime, NotificationStatus.NOT_STARTED);
+         List<Quiz> quizzes = quizRepository.findByScheduledTimeBeforeAndNotificationStatus(currentTime, NotificationStatus.NOT_STARTED);
 
         // Process the quizzes
         for (Quiz quiz : quizzes) {
@@ -101,7 +102,7 @@ public class QuizSchedulerServiceImpl implements QuizSchedulerService {
         sendAdminNotifications(currentTime);
     }
 
-private void sendAdminNotifications(LocalDateTime currentTime) {
+private void sendAdminNotifications(ZonedDateTime  currentTime) {
     // Fetch admin notifications that need to be sent today
     List<AdminNotification> adminNotifications = adminNotificationRepository.findByPublishOnBeforeAndStatus(currentTime, "Published");
 
@@ -160,7 +161,7 @@ private void sendAdminNotifications(LocalDateTime currentTime) {
     // Scheduled task for deadline approaching notification
     @Scheduled(cron = "0 0 10 * * *") // Run every day at 10:00 AM (Adjust as needed)
     public void checkAndNotifyDeadlineApproaching() {
-        LocalDateTime currentTime = LocalDateTime.now();
+        ZonedDateTime currentTime = ZonedDateTime.now();
 
         // Fetch quizzes where the deadline is approaching (e.g., within 24 hours)
         List<Quiz> quizzes = quizRepository.findByDeadlineBeforeAndNotificationStatus(currentTime.plusHours(24), NotificationStatus.START_NOTIFICATION);
@@ -191,7 +192,7 @@ private void sendAdminNotifications(LocalDateTime currentTime) {
     // Scheduled task for reminder notification after quiz start
     @Scheduled(cron = "0 0 9 * * *") // Run every day at 9:00 AM (Adjust as needed)
     public void checkAndSendReminder() {
-        LocalDateTime currentTime = LocalDateTime.now();
+        ZonedDateTime currentTime = ZonedDateTime.now();
 
         // Fetch quizzes that were started 5 days ago and haven't been reminded yet
         List<Quiz> quizzes = quizRepository.findByScheduledTimeBeforeAndNotificationStatus(currentTime.minusDays(5), NotificationStatus.START_NOTIFICATION);
@@ -221,7 +222,7 @@ private void sendAdminNotifications(LocalDateTime currentTime) {
 
 @Scheduled(cron = "0 0 8 * * *")  // Runs every day at 12 PM. Adjust as necessary.
 public void assignRewardsAfterQuizDeadline() {
-    LocalDateTime currentTime = LocalDateTime.now();
+   ZonedDateTime currentTime = ZonedDateTime.now(); 
 
     // Fetch quizzes that have passed their deadline
     List<Quiz> quizzes = quizRepository.findByDeadlineBeforeAndQuizStatus(currentTime, QuizStatus.ACTIVE);
@@ -691,19 +692,19 @@ private void createAndSaveNotification(User user, Badge badge, String badgeName)
      * @param earnedXp The total earned XP of the user.
      * @return The calculated level.
      */
-    private int calculateLevel(int earnedXp) {
-        if (earnedXp > 400) {
-            return 5;
-        } else if (earnedXp > 300) {
-            return 4;
-        } else if (earnedXp > 200) {
-            return 3;
-        } else if (earnedXp > 100) {
-            return 2;
-        } else {
-            return 1;
-        }
+private int calculateLevel(int earnedXp) {
+    if (earnedXp > 1600) {
+        return 5; // Assuming a level 5 for anything above 1600
+    } else if (earnedXp > 900) {
+        return 4; // Level 4 for 901-1600 XP
+    } else if (earnedXp > 400) {
+        return 3; // Level 3 for 401-900 XP
+    } else if (earnedXp > 100) {
+        return 2; // Level 2 for 101-400 XP
+    } else {
+        return 1; // Level 1 for 0-100 XP
     }
+}
 
 }
 

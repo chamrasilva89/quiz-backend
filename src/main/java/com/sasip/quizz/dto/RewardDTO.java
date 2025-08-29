@@ -1,30 +1,26 @@
 package com.sasip.quizz.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
+// @AllArgsConstructor // REMOVED: This is the source of the constructor error.
 public class RewardDTO {
     private Long id;
     private String name;
     private String description;
-    private int points;
     private String iconUrl;
-
-    // ✅ New fields
+    private Integer points; // Wrapper type
     private Integer maxQuantity;
-    private String type;          // e.g., "DAILY_STREAK", "SASIP_QUIZ", "CLAIM_POINTS"
-    private String status;        // e.g., "ACTIVE", "DISABLED"
-    private LocalDateTime validFrom;
-    private LocalDateTime validTo;
-    private boolean claimable;
-
-        // Newly added reward gift fields
-    private String giftType;      // Type of gift e.g., "FREE_CARD"
-    private String giftDetails;   // Details about the gift (free text or JSON)
+    private String type;
+    private String status;
+    private ZonedDateTime validFrom;
+    private ZonedDateTime validTo;
+    private Boolean claimable; // Wrapper type
+    private String giftType;
+    private String giftDetails;
 }
