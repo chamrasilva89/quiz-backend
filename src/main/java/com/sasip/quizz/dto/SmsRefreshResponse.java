@@ -2,11 +2,9 @@ package com.sasip.quizz.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class SmsLoginResponse {
+public class SmsRefreshResponse {
     private String accessToken;
-    private String refreshToken;
 
-    // Getters and Setters
     @JsonProperty("accessToken")
     public String getAccessToken() {
         return accessToken;
@@ -14,14 +12,5 @@ public class SmsLoginResponse {
 
     public void setAccessToken(String accessToken) {
         this.accessToken = accessToken;
-    }
-
-    @JsonProperty("refreshToken")
-    public String getRefreshToken() {
-        return refreshToken;
-    }
-
-    public void setRefreshToken(String refreshToken) {
-        this.refreshToken = refreshToken;
     }
 }

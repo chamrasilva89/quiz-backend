@@ -32,6 +32,7 @@ public class SasipQuizServiceImpl implements SasipQuizService {
             .where(QuizSpecifications.isSasip())
             .and(QuizSpecifications.hasStatus(filter.getStatus()))
             .and(QuizSpecifications.hasAnyModule(filter.getModule()))
+            .and(QuizSpecifications.hasAlYear(filter.getAlYear()))
             .and(QuizSpecifications.timeLimitBetween(filter.getMinTimeLimit(), filter.getMaxTimeLimit()));
 
         Pageable pg = PageRequest.of(filter.getPage(), filter.getSize());
@@ -159,62 +160,73 @@ public Page<SasipQuizListItem> listSasipQuizzesWithCompletion(Long userId, Pagea
 
 
     @Override
-    public SasipQuizStatsDTO getUserSasipStats(Long userId) {
-        // --- UPDATED LOGIC FOR AVERAGE PERCENTAGE ---
+public SasipQuizStatsDTO getUserSasipStats(Long userId) {
+    List<UserQuizSubmission> submissions = userQuizSubmissionRepository.findSasipSubmissionsByUserId(userId);
 
-        // 1. Fetch all of the user's SASIP quiz submissions
-        List<UserQuizSubmission> submissions = userQuizSubmissionRepository.findSasipSubmissionsByUserId(userId);
-
-        if (submissions.isEmpty()) {
-            // If no quizzes are completed, return stats with 0 values
-            long total = quizRepository.countAllSasipQuizzes();
-            return new SasipQuizStatsDTO(0.0, 0.0, 0, total);
-        }
-
-        // 2. Calculate the average percentage from the submissions
-        double totalPercentageSum = 0;
-        for (UserQuizSubmission submission : submissions) {
-            totalPercentageSum += calculatePercentageForSubmission(submission);
-        }
-        double averagePercentage = totalPercentageSum / submissions.size();
-
-        // 3. Get the other stats as before
-        double bestScore = Optional.ofNullable(userQuizSubmissionRepository.findMaxSasipScore(userId)).orElse(0.0);
-        long completed = submissions.size();
-        long totalQuizzes = quizRepository.countAllSasipQuizzes();
-
-        // 4. Return the DTO with the correctly calculated average
-        return new SasipQuizStatsDTO(bestScore, averagePercentage, completed, totalQuizzes);
+    if (submissions.isEmpty()) {
+        long total = quizRepository.countAllSasipQuizzes();
+        return new SasipQuizStatsDTO(0.0, 0.0, 0, total);
     }
+
+    double bestScorePercentage = 0.0;
+    double totalPercentageSum = 0.0;
+
+    for (UserQuizSubmission submission : submissions) {
+        // Calculate the percentage for the current submission
+        double currentPercentage = calculatePercentageForSubmission(submission);
+        
+        // Update the best score if the current one is higher
+        if (currentPercentage > bestScorePercentage) {
+            bestScorePercentage = currentPercentage;
+        }
+        
+        // Add to the total for calculating the average
+        totalPercentageSum += currentPercentage;
+    }
+
+    double averagePercentage = totalPercentageSum / submissions.size();
+    long completed = submissions.size();
+    long totalQuizzes = quizRepository.countAllSasipQuizzes();
+
+    // Round the scores to two decimal places for a cleaner output
+    bestScorePercentage = Math.round(bestScorePercentage * 100.0) / 100.0;
+    averagePercentage = Math.round(averagePercentage * 100.0) / 100.0;
+    
+    return new SasipQuizStatsDTO(bestScorePercentage, averagePercentage, completed, totalQuizzes);
+}
 
     /**
      * Calculates the percentage score for a single quiz submission.
      */
-    private double calculatePercentageForSubmission(UserQuizSubmission submission) {
-        Quiz quiz = quizRepository.findById(Long.parseLong(submission.getQuizId()))
-                .orElse(null);
+private double calculatePercentageForSubmission(UserQuizSubmission submission) {
+    Quiz quiz = quizRepository.findById(Long.parseLong(submission.getQuizId()))
+            .orElse(null);
 
-        if (quiz == null || quiz.getQuestionIds() == null || quiz.getQuestionIds().isEmpty()) {
-            return 0.0; // Cannot calculate percentage without quiz/question info
-        }
-
-        List<Question> questions = questionRepository.findAllById(quiz.getQuestionIds());
-
-        // Calculate the total possible points for this specific quiz
-        int totalPossiblePoints = questions.stream()
-                .mapToInt(q -> getPointsForDifficulty(q.getDifficultyLevel()))
-                .sum();
-
-        if (totalPossiblePoints == 0) {
-            return 0.0; // Avoid division by zero
-        }
-
-        // Calculate the percentage
-        double percentage = (submission.getTotalScore() / totalPossiblePoints) * 100.0;
-        
-        // Ensure the percentage doesn't exceed 100
-        return Math.min(percentage, 100.0);
+    if (quiz == null || quiz.getQuestionIds() == null || quiz.getQuestionIds().isEmpty()) {
+        return 0.0;
     }
+
+    List<Question> questions = questionRepository.findAllById(quiz.getQuestionIds());
+    
+    // Calculate the total possible points for this quiz
+    int totalPossiblePoints = questions.stream()
+            .mapToInt(q -> getPointsForDifficulty(q.getDifficultyLevel()))
+            .sum();
+
+    if (totalPossiblePoints == 0) {
+        return 0.0;
+    }
+
+    // ✅ CORRECTED FORMULA: Use the raw score from the submission
+    double rawScore = submission.getRawScore(); // Assuming you have a getRawScore() method
+    
+    // If you don't have getRawScore(), you can calculate it from correct_count
+    // double rawScore = submission.getCorrectCount() * 10; // Or whatever your base point value is
+
+    double percentage = (rawScore / totalPossiblePoints) * 100.0;
+    
+    return Math.min(percentage, 100.0);
+}
 
     /**
      * Helper method to get the point value for a question based on its difficulty.

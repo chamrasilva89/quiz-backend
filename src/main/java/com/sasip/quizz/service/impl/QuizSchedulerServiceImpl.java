@@ -437,7 +437,7 @@ public void checkTopScorerBadge() {
     List<Quiz> quizzes = quizRepository.findAll();
 
     for (Quiz quiz : quizzes) {
-        List<UserQuizSubmission> submissions = userQuizSubmissionRepository.findByQuizId(quiz.getQuizId());
+       List<UserQuizSubmission> submissions = userQuizSubmissionRepository.findByQuizId(quiz.getQuizId().toString());
 
         // Find the winner (user with the highest score)
         UserQuizSubmission winner = submissions.stream()

@@ -180,20 +180,19 @@ public class UserQuizAnswerServiceImpl implements UserQuizAnswerService {
 
 @Override
 public QuizSubmissionResult submitQuizAnswers(QuizSubmissionRequest request) {
-    // 1) Initial setup and user fetching (no change)
+    // 1) Initial setup and user fetching
     Long userIdLong = Long.valueOf(request.getUserId());
     User user = userRepository.findById(userIdLong)
             .orElseThrow(() -> new RuntimeException("User not found"));
 
-    // 2) Duplicate submission check (no change)
+    // 2) Duplicate submission check
     boolean alreadyAnswered = answerRepository
             .existsByUserIdAndQuizId(request.getUserId(), request.getQuizId());
     if (alreadyAnswered) {
         throw new DuplicateSubmissionException("You have already submitted this quiz.");
     }
-    // --- END OF UPDATE --
 
-    // 3) Process answers and calculate rawScore (leaderboard update removed from loop)
+    // 3) Process answers and calculate rawScore
     List<QuizSubmissionResult.QuestionResult> results = new ArrayList<>();
     int rawScore = 0;
     for (QuizSubmissionRequest.AnswerSubmission answer : request.getAnswers()) {
@@ -204,14 +203,25 @@ public QuizSubmissionResult submitQuizAnswers(QuizSubmissionRequest request) {
         int points = isCorrect ? getPointsForDifficulty(question.getDifficultyLevel()) : 0;
         rawScore += points;
 
-        // Save individual answer record (no change)
+        // --- FIX: Populate the UserQuizAnswer object before saving ---
         UserQuizAnswer ua = new UserQuizAnswer();
-        // ... set fields for ua ...
+        ua.setUserId(request.getUserId());
+        ua.setQuizId(request.getQuizId());
+        ua.setQuestionId(answer.getQuestionId());
+        ua.setSubmittedAnswerId(answer.getSubmittedAnswerId());
+        ua.setCorrectAnswerId(question.getCorrectAnswerId()); // This was the missing field
+        ua.setIsCorrect(isCorrect);
+        ua.setAwardedPoints(points);
         answerRepository.save(ua);
+        // --- END OF FIX ---
 
-        // Build per-question result DTO (no change)
+        // Build per-question result DTO
         QuizSubmissionResult.QuestionResult qr = new QuizSubmissionResult.QuestionResult();
-        // ... set fields for qr ...
+        qr.setQuestionId(answer.getQuestionId());
+        qr.setSubmittedAnswerId(answer.getSubmittedAnswerId());
+        qr.setCorrectAnswerId(question.getCorrectAnswerId());
+        qr.setCorrect(isCorrect);
+        qr.setAwardedPoints(points);
         results.add(qr);
     }
 
@@ -222,36 +232,57 @@ public QuizSubmissionResult submitQuizAnswers(QuizSubmissionRequest request) {
             .orElseThrow(() -> new RuntimeException("Quiz not found"));
     int maxTime = quiz.getTimeLimit() > 0 ? quiz.getTimeLimit() : MAX_TIME_SECONDS;
 
-    double timeRatio = (double) (maxTime - timeTaken) / maxTime;
-    double speedBonus = timeRatio * rawScore * SPEED_FACTOR;
+    // --- FIX: Prevent negative speed bonus ---
+    double speedBonus = 0.0;
+    // Only calculate a bonus if the user finished within the time limit.
+    if (timeTaken < maxTime) {
+        double timeRatio = (double) (maxTime - timeTaken) / maxTime;
+        speedBonus = timeRatio * rawScore * SPEED_FACTOR;
+    }
+    // --- END OF FIX ---
     double roundedBonus = Math.round(speedBonus * 100.0) / 100.0;
     double totalScore = rawScore + roundedBonus;
     double roundedTotalScore = Math.round(totalScore * 100.0) / 100.0;
     String grade = calculateGrade(roundedTotalScore);
 
-    // --- NEW: Update Leaderboards here, using the final totalScore ---
+    // 5) Update Leaderboards
     int totalScoreForLeaderboard = (int) Math.round(roundedTotalScore);
     upsertLeaderboard(userIdLong, user.getUsername(), user.getSchool(), user.getDistrict(), user.getAlYear(), totalScoreForLeaderboard);
     upsertMonthlyLeaderboard(userIdLong, user.getUsername(), user.getSchool(), user.getDistrict(), user.getAlYear(), totalScoreForLeaderboard);
-    // --- END OF NEW LOGIC ---
 
-    // 5) Update submission summary record (no change)
+    // 6) Update submission summary record
     UserQuizSubmission summary = submissionRepo
-        .findByUserIdAndQuizId(userIdLong, request.getQuizId())
-        .orElseThrow(() -> new RuntimeException("Submission record not found. Did you call /start?"));
-    // ... set fields for summary ...
+            .findByUserIdAndQuizId(userIdLong, request.getQuizId())
+            .orElseThrow(() -> new RuntimeException("Submission record not found. Did you call /start?"));
+    summary.setEndTime(LocalDateTime.now());
+    summary.setTimeTakenSeconds(timeTaken);
+    summary.setTotalQuestions(request.getAnswers().size());
+    int correctCount = (int) results.stream().filter(QuizSubmissionResult.QuestionResult::isCorrect).count();
+    summary.setCorrectCount(correctCount);
+    summary.setWrongCount(request.getAnswers().size() - correctCount);
+    summary.setRawScore(rawScore);
+    summary.setSpeedBonus(roundedBonus);
     summary.setTotalScore(roundedTotalScore);
     submissionRepo.save(summary);
 
-    // 6) Update user's cumulative stats (no change)
+    // 7) Update user's cumulative stats
     user.setEarnedXp(user.getEarnedXp() + earnedXp);
     user.setPoints(user.getPoints() + rawScore);
     userRepository.save(user);
 
-    // 7) Build and return final DTO (no change)
+    // 8) Build and return final DTO
     QuizSubmissionResult submissionResult = new QuizSubmissionResult();
-    // ... set fields for submissionResult ...
+    submissionResult.setResults(results);
+    submissionResult.setTotalQuestions(request.getAnswers().size());
+    submissionResult.setCorrectCount(correctCount);
+    submissionResult.setWrongCount(request.getAnswers().size() - correctCount);
+    submissionResult.setRawScore(rawScore);
+    submissionResult.setTimeTakenSeconds(request.getTimeTakenSeconds());
+    submissionResult.setSpeedBonus(roundedBonus);
     submissionResult.setTotalScore(roundedTotalScore);
+    submissionResult.setGrade(grade);
+    submissionResult.setEarnedXp(earnedXp);
+    submissionResult.setPoints(rawScore);
     
     return submissionResult;
 }

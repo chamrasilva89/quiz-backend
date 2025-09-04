@@ -30,23 +30,20 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/user/auth/**",         // for user login
-                                "/api/admin/auth/**",        // for admin login
-                                "/api/users/register",       // user registration
-                                "/api/admin/users/register", // admin registration
-                                "/v3/api-docs/**",           // Swagger OpenAPI docs
-                                "/swagger-ui/**",            // Swagger UI
-                                "/swagger-ui.html",           // Swagger UI HTML entry
-                                "/swagger-ui/favicon-32x32.png",  // Favicon
-                                "/v3/api-docs/swagger-config", // Swagger Config
+                                "/api/user/auth/**",
+                                "/api/admin/auth/**",
+                                // ✅ START: UPDATED REGISTRATION PATHS
+                                "/api/users/register/send-otp", // New endpoint for sending OTP
+                                "/api/users/register",          // Existing endpoint for completing registration
+                                // ✅ END: UPDATED REGISTRATION PATHS
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
                                 "/api/users/request-forgot-password-otp",
                                 "/api/users/confirm-forgot-password",
-                                "/api/users/confirm-registration-otp",
                                 "/api/users/check-username/**",
-                                // --- ADD THESE TWO LINES ---
-                                "/api/masterdata/districts", // Allow access to districts for registration
-                                "/api/alyears"               // Allow access to A/L years for registration
-                                // --- END OF ADDITION ---
+                                "/api/masterdata/districts",
+                                "/api/alyears"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

@@ -36,6 +36,7 @@ public class SasipQuizController {
             @RequestParam(required = false) List<String> module,
             @RequestParam(required = false) List<String> submodule,
             @RequestParam(required = false) List<String> difficulty,
+            @RequestParam(required = false) String alYear,
             @RequestParam(required = false) QuizStatus status,
             @RequestParam(required = false) Integer minTimeLimit,
             @RequestParam(required = false) Integer maxTimeLimit,
@@ -46,6 +47,7 @@ public class SasipQuizController {
         SasipQuizFilterRequest filter = new SasipQuizFilterRequest();
         filter.setModule(module);
         filter.setStatus(status);
+        filter.setAlYear(alYear);
         filter.setMinTimeLimit(minTimeLimit);
         filter.setMaxTimeLimit(maxTimeLimit);
         filter.setPage(page);

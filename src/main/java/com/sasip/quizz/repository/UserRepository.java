@@ -45,4 +45,5 @@ int countUsersByAlYearAndUserStatus(@Param("alYear") String alYear, @Param("user
 
     @Query("SELECT DISTINCT ub.user FROM UserBadge ub")
     Page<User> findUsersWithBadges(Pageable pageable);
+    
 }

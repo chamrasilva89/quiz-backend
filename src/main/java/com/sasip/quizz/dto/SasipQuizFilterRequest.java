@@ -14,6 +14,7 @@ public class SasipQuizFilterRequest {
     private List<String> module;     // Changed to List<String>
     private Integer minTimeLimit;    // optional
     private Integer maxTimeLimit;    // optional
+    private String alYear;
 
     // Getters
 
@@ -67,5 +68,13 @@ public class SasipQuizFilterRequest {
 
     public void setMaxTimeLimit(Integer maxTimeLimit) {
         this.maxTimeLimit = maxTimeLimit;
+    }
+
+      public String getAlYear() {
+        return alYear;
+    }
+
+ public void setAlYear(String alYear) {
+        this.alYear = alYear;
     }
 }

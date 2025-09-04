@@ -286,53 +286,47 @@ public RewardWinner claimRewardlist(Long userId, Long rewardId) {
     return rewardWinnerRepository.save(newRewardWinner);
 }
 
-@Override
-public RewardResponse getActiveRewardsForUser(Long userId) {
-    List<Reward> activeRewards = rewardRepository.findActiveRewards(LocalDateTime.now());
-    activeRewards.sort((r1, r2) -> r2.getValidFrom().compareTo(r1.getValidFrom()));
+    @Override
+    public RewardResponse getActiveRewardsForUser(Long userId) {
+        // --- FIX: Use ZonedDateTime.now() to match the repository's expected parameter type ---
+        List<Reward> activeRewards = rewardRepository.findActiveRewards(ZonedDateTime.now(), RewardStatus.ACTIVE);
+        activeRewards.sort((r1, r2) -> r2.getValidFrom().compareTo(r1.getValidFrom()));
 
-    List<RewardDetail> rewardDetails = new ArrayList<>();
+        List<RewardDetail> rewardDetails = new ArrayList<>();
 
-    for (Reward reward : activeRewards) {
-        RewardWinStatus status = getRewardStatusForUser(userId, reward);
+        for (Reward reward : activeRewards) {
+            RewardWinStatus status = getRewardStatusForUser(userId, reward);
 
-        // 1. Fetch the gift object
-        RewardGift gift = null;
-        if (reward.getGiftDetails() != null && !reward.getGiftDetails().isBlank()) {
-            try {
-                long giftId = Long.parseLong(reward.getGiftDetails());
-                gift = rewardGiftRepository.findById(giftId).orElse(null);
-            } catch (NumberFormatException e) {
-                // Ignore if giftDetails is not a valid number
+            RewardGift gift = null;
+            if (reward.getGiftDetails() != null && !reward.getGiftDetails().isBlank()) {
+                try {
+                    long giftId = Long.parseLong(reward.getGiftDetails());
+                    gift = rewardGiftRepository.findById(giftId).orElse(null);
+                } catch (NumberFormatException e) {
+                    // Ignore if giftDetails is not a valid number
+                }
             }
+
+            RewardWithGiftDTO rewardWithGift = RewardWithGiftDTO.from(reward, gift);
+            RewardDetail detail = new RewardDetail(rewardWithGift, status);
+
+            if (reward.getType() == RewardType.DAILY_STREAK) {
+                detail.setCurrentPoints(getUserStreakCount(userId));
+                detail.setRequiredPoints(reward.getPoints());
+            } else if (reward.getType() == RewardType.SASIP_QUIZ) {
+                int score = getUserQuizSubmissionScore(userId, reward);
+                detail.setScore((double) score);
+                detail.setRequiredPoints(reward.getPoints());
+            } else if (reward.getType() == RewardType.CLAIM_POINTS) {
+                detail.setCurrentPoints(getUserPoints(userId));
+                detail.setRequiredPoints(reward.getPoints());
+            }
+
+            rewardDetails.add(detail);
         }
 
-        // 2. Create the nested reward object using our new DTO
-        RewardWithGiftDTO rewardWithGift = RewardWithGiftDTO.from(reward, gift);
-
-        // 3. Create the main RewardDetail DTO
-        RewardDetail detail = new RewardDetail(rewardWithGift, status);
-
-        // 4. Set the context-specific fields (score, points, etc.)
-        if (reward.getType() == RewardType.DAILY_STREAK) {
-            detail.setCurrentPoints(getUserStreakCount(userId));
-            detail.setRequiredPoints(reward.getPoints());
-        } else if (reward.getType() == RewardType.SASIP_QUIZ) {
-            // Assuming getUserQuizSubmissionStatus returns a simple score
-            // You might need to adjust this part based on its actual return type
-            int score = getUserQuizSubmissionScore(userId, reward); // A hypothetical method
-            detail.setScore((double) score);
-            detail.setRequiredPoints(reward.getPoints());
-        } else if (reward.getType() == RewardType.CLAIM_POINTS) {
-            detail.setCurrentPoints(getUserPoints(userId));
-            detail.setRequiredPoints(reward.getPoints());
-        }
-
-        rewardDetails.add(detail);
+        return new RewardResponse(rewardDetails);
     }
-
-    return new RewardResponse(rewardDetails);
-}
 
 private int getUserQuizSubmissionScore(Long userId, Reward reward) {
     // 1. Fetch the user to determine their academic year (alYear)

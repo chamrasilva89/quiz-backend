@@ -13,9 +13,11 @@ import com.sasip.quizz.service.UserService;
 import com.sasip.quizz.service.LogService;
 import com.sasip.quizz.service.OtpService;
 import com.sasip.quizz.service.PerformanceChartService;
+import com.sasip.quizz.service.SmsService;
 import com.sasip.quizz.security.JwtUtil;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -28,6 +30,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.security.authentication.BadCredentialsException;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -43,6 +46,7 @@ public class UserServiceImpl implements UserService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final LogService logService;
+     private final SmsService smsService;
     @Autowired private OtpService otpService;
     @Autowired
     private UserBadgesRepository userBadgesRepository;
@@ -51,69 +55,71 @@ public class UserServiceImpl implements UserService {
     @Autowired
 private PerformanceChartService performanceChartService;
 
+
     private final Map<String, String> passwordCache = new ConcurrentHashMap<>();
     public UserServiceImpl(UserRepository userRepository,
                            BCryptPasswordEncoder passwordEncoder,
                            JwtUtil jwtUtil,
-                           LogService logService) {
+                           LogService logService,SmsService smsService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
         this.logService = logService;
+        this.smsService = smsService; // Assign it
+    }
+    // A helper method to generate a random 6-digit OTP
+    private String generateOtp() {
+        Random random = new SecureRandom();
+        int otp = 100000 + random.nextInt(900000);
+        return String.valueOf(otp);
     }
 
-@Override
-public User registerUser(UserRegistrationRequest request) {
-    logger.info("Registering user with username: {}", request.getUsername());
+    @Override
+    public User registerUser(UserRegistrationRequest request) {
+        logger.info("Attempting to register user with username: {}", request.getUsername());
 
-    // Ensure the user does not exist with the provided email
-    if (request.getEmail() != null && userRepository.existsByEmail(request.getEmail())) {
-        logger.warn("Email already in use: {}", request.getEmail());
-        throw new RuntimeException("Email already in use");
+        // 1. Verify the OTP first
+        if (!otpService.verifyOtp(request.getPhone(), request.getOtp())) {
+            throw new BadCredentialsException("Invalid or expired OTP.");
+        }
+
+        // 2. Perform validation checks (as before)
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new RuntimeException("Username already exists");
+        }
+        if (userRepository.existsByPhone(request.getPhone())) {
+            throw new RuntimeException("This phone number is already registered to another account.");
+        }
+        if (request.getEmail() != null && userRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Email already in use");
+        }
+
+
+        // 3. If OTP is valid and user doesn't exist, create the new user
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setPasswordHash(passwordEncoder.encode(request.getPassword())); // Hash the password
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setPhone(request.getPhone());
+        user.setEmail(request.getEmail());
+        user.setRole(request.getRole());
+        user.setAvatarUrl(request.getAvatarUrl());
+        user.setSchool(request.getSchool());
+        user.setAlYear(request.getAlYear());
+        user.setDistrict(request.getDistrict());
+        user.setMedium(request.getMedium());
+        user.setParentName(request.getParentName());
+        user.setParentContactNo(request.getParentContactNo());
+        user.setCreatedDate(LocalDateTime.now());
+        user.setUpdatedDate(LocalDateTime.now());
+        user.setUserStatus("active"); // User is active immediately
+
+        User savedUser = userRepository.save(user);
+        logger.info("User registered successfully: {}", savedUser.getUsername());
+
+        return savedUser;
     }
-
-    // Ensure the username does not already exist
-    if (userRepository.existsByUsername(request.getUsername())) {
-        logger.warn("Username already exists: {}", request.getUsername());
-        String newUsername = request.getUsername() + "_" + System.currentTimeMillis(); // handle conflict
-        logger.info("Username conflict, using generated username: {}", newUsername);
-        request.setUsername(newUsername);
-    }
-
-    // Create User object (but don't set password yet)
-    User user = new User();
-    user.setRole(request.getRole());
-    user.setFirstName(request.getFirstName());
-    user.setLastName(request.getLastName());
-    user.setAvatarUrl(request.getAvatarUrl());
-    user.setSchool(request.getSchool());
-    user.setAlYear(request.getAlYear());
-    user.setDistrict(request.getDistrict());
-    user.setMedium(request.getMedium());
-    user.setPhone(request.getPhone());
-    user.setEmail(request.getEmail());
-    user.setUsername(request.getUsername());
-
-    // Temporarily store plain-text password in cache for later hashing
-    passwordCache.put(request.getPhone(), request.getPassword());
-
-    user.setPasswordHash("");  // No password yet, will set later
-    user.setParentName(request.getParentName());
-    user.setParentContactNo(request.getParentContactNo());
-    user.setCreatedDate(LocalDateTime.now());
-    user.setUpdatedDate(LocalDateTime.now());
-    user.setUserStatus(request.getUserStatus() != null ? request.getUserStatus() : "active");
-
-    // Save the user temporarily without a password (for OTP verification)
-    User savedUser = userRepository.save(user);
-    logger.info("User registered successfully (temp): {}", savedUser.getUsername());
-
-    // Generate OTP and send it to the user's phone
-    otpService.generateAndSendOtpForSignup(savedUser.getPhone(), savedUser.getUserId());
-    otpService.cachePendingRegistration(savedUser.getPhone(), savedUser.getUserId());
-
-    return savedUser;
-}
 
 
     @Override
@@ -153,6 +159,12 @@ public User registerUser(UserRegistrationRequest request) {
                     return new BadCredentialsException("Invalid username or password");
                 });
 
+            // We are checking for "inactive" case-insensitively.
+            if ("inactive".equalsIgnoreCase(user.getUserStatus())) {
+                logger.warn("Login failed: user {} is inactive.", request.getUsername());
+                // You can create a custom exception, but for now, this clearly communicates the issue.
+                throw new BadCredentialsException("User account is inactive. Please contact support.");
+            }
         boolean passwordMatches = passwordEncoder.matches(request.getPassword(), user.getPasswordHash());
 
         if (!passwordMatches) {
@@ -237,7 +249,7 @@ public Page<User> filterUsers(UserFilterRequest filterRequest, Pageable pageable
         //logService.log("INFO", "UserServiceImpl", "Change Password", "Password changed for user: " + user.getUsername(), user.getUsername());
     }
 
-      @Override
+    @Override
     public Map<String, Object> getUserProfileById(Long userId) {
         // 1. Fetch the user details
         User user = userRepository.findById(userId)
@@ -245,13 +257,13 @@ public Page<User> filterUsers(UserFilterRequest filterRequest, Pageable pageable
 
         // Create a userDetails object without the password hash for security
         User userDetails = new User(
-            user.getUserId(), user.getUsername(), user.getRole(), user.getFirstName(), 
-            user.getLastName(), user.getAvatarUrl(), user.getSchool(), user.getAlYear(), 
-            user.getDistrict(), user.getMedium(), user.getPhone(), user.getEmail(), 
-            user.getEarnedXp(), user.getStreakCount(), user.getAverageScore(), 
-            user.getTotalQuizzesTaken(), user.getParentName(), user.getParentContactNo(), 
-            user.getCreatedDate(), user.getUpdatedDate(), user.getUserStatus(), 
-            user.getPoints(), user.getProfileImageBase64(), user.getFcmToken(), user.getLevel()
+                user.getUserId(), user.getUsername(), user.getRole(), user.getFirstName(),
+                user.getLastName(), user.getAvatarUrl(), user.getSchool(), user.getAlYear(),
+                user.getDistrict(), user.getMedium(), user.getPhone(), user.getEmail(),
+                user.getEarnedXp(), user.getStreakCount(), user.getAverageScore(),
+                user.getTotalQuizzesTaken(), user.getParentName(), user.getParentContactNo(),
+                user.getCreatedDate(), user.getUpdatedDate(), user.getUserStatus(),
+                user.getPoints(), user.getProfileImageBase64(), user.getFcmToken(), user.getLevel()
         );
         
         // 2. Fetch the user's earned badges
@@ -273,25 +285,38 @@ public Page<User> filterUsers(UserFilterRequest filterRequest, Pageable pageable
 
         // 4. Convert the userDetails object to a Map to create a flat structure
         Map<String, Object> userProfileMap = objectMapper.convertValue(userDetails, new TypeReference<>() {});
-        // --- NEW LOGIC TO CALCULATE SPENT XP ---
+
+        // --- NEW LOGIC TO CALCULATE XP FOR NEXT LEVEL ---
         int xpSpent = getXpSpentForLevel(user.getLevel());
+        int nextLevelXpThreshold = getNextLevelXpThreshold(user.getLevel());
         userProfileMap.put("xpSpentOnLevels", xpSpent);
-        //
+        userProfileMap.put("nextLevelXpThreshold", nextLevelXpThreshold);
+        
         // 5. Add the other complex objects to the map
         userProfileMap.put("earnedBadges", earnedBadges);
         userProfileMap.put("performanceCharts", performanceCharts);
-        //
+
         return userProfileMap;
     }
 
+    
+  private int getNextLevelXpThreshold(int currentLevel) {
+        // To reach the next level (currentLevel + 1), the required XP is:
+        // ((currentLevel + 1) - 1)^2 * 100, which simplifies to currentLevel^2 * 100.
+        if (currentLevel < 1) {
+            return 100; // Default threshold to reach Level 2 from Level 1.
+        }
+        return currentLevel * currentLevel * 100;
+    }
+
     private int getXpSpentForLevel(int currentLevel) {
-        // A user at Level 1 hasn't spent any XP to pass a level yet.
+        // This is a placeholder for your existing logic to calculate spent XP.
+        // You would replace this with the actual calculation if it's different.
         if (currentLevel <= 1) {
             return 0;
         }
-        // For any level above 1, the cost is 100 XP for each level they have passed.
-        // e.g., Level 2 has passed Level 1 (cost 100), Level 3 has passed Levels 1 & 2 (cost 200).
-        return (currentLevel - 1) * 100;
+        int previousLevel = currentLevel - 1;
+        return previousLevel * previousLevel * 100;
     }
 
     @Override

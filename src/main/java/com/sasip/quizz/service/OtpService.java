@@ -20,4 +20,5 @@ public interface OtpService {
     void cachePendingRegistration(String phone, Long userId);  // Cache the user for registration
     void clearPendingRegistration(String phone);  // Clear cached registration data
     public Long getPendingRegistration(String phone);
+    void generateAndSendOtpForPhoneNumber(String phone);
 }

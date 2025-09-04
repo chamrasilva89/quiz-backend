@@ -14,6 +14,7 @@ import com.sasip.quizz.exception.ResourceNotFoundException;
 import com.sasip.quizz.model.RewardWinner;
 import com.sasip.quizz.model.User;
 import com.sasip.quizz.security.JwtUtil;
+import com.sasip.quizz.service.OtpService;
 import com.sasip.quizz.service.RewardService;
 import com.sasip.quizz.service.TokenBlacklistService;
 import com.sasip.quizz.service.UserDailyStreakService;
@@ -38,6 +39,7 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+    private final OtpService otpService = null;
     @Autowired
     private TokenBlacklistService tokenBlacklistService;
 
@@ -57,7 +59,7 @@ public class UserController {
 
             // Return a response indicating OTP has been sent for confirmation
             return ResponseEntity.ok(new ApiResponse<>(Map.of(
-                "message", "OTP sent to your phone for confirmation",
+                "message", "OTP verification completed.",
                 "items", List.of(registeredUser)
             )));
             
@@ -314,5 +316,4 @@ public ResponseEntity<?> confirmChangePassword(@RequestParam Long userId, @Reque
             return new ApiResponse<>("Username already taken", 400);  // Status 400 for bad request
         }
     }
-
 }

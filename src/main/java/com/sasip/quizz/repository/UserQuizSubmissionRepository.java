@@ -28,9 +28,11 @@ public interface UserQuizSubmissionRepository extends JpaRepository<UserQuizSubm
       @Query("SELECT COUNT(u) FROM UserQuizSubmission u WHERE u.quizId = :quizId")
     Long countUsersWhoStartedQuiz(@Param("quizId") String quizId);
 
+     // ✅ ADD THIS METHOD (It correctly uses String)
+    List<UserQuizSubmission> findByQuizId(String quizId);
     // Add the new method
-    @Query("SELECT u FROM UserQuizSubmission u WHERE u.quizId = :quizId")
-    List<UserQuizSubmission> findByQuizId(@Param("quizId") Long quizId);
+    //@Query("SELECT u FROM UserQuizSubmission u WHERE u.quizId = :quizId")
+    //List<UserQuizSubmission> findByQuizId(@Param("quizId") Long quizId);
 
         @Query("SELECT u FROM UserQuizSubmission u WHERE u.quizId = :quizId ORDER BY u.totalScore DESC")
     List<UserQuizSubmission> findByQuizIdOrderByTotalScoreDesc(@Param("quizId") Long quizId);
